@@ -1,0 +1,107 @@
+name: MarketPulse CI-CD
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  security-scans:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install security tools
+        run: pip install pip-audit
+      - name: Run Python dependency vulnerability scan
+        run: pip-audit -r apps/api/requirements.txt --strict
+      - name: Run Node production dependency vulnerability scan
+        run: npm audit --omit=dev --audit-level=high
+
+  backend-tests:
+    runs-on: ubuntu-latest
+    needs: security-scans
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install backend dependencies
+        run: pip install -r requirements.txt
+      - name: Run backend tests
+        run: python -m pytest
+
+  api-readiness-smoke:
+    runs-on: ubuntu-latest
+    needs: backend-tests
+    steps:
+      - uses: actions/checkout@v4
+      - name: Boot infra stack for readiness smoke test
+        run: docker compose --env-file infra/.env.example -f infra/docker-compose.yml up -d postgres redis api
+      - name: Wait for API readiness
+        run: |
+          for i in {1..30}; do
+            STATUS=$(curl -s http://localhost:8000/api/v1/health/readiness | python3 -c "import sys, json; print('true' if json.load(sys.stdin).get('ready') else 'false')" || echo "false")
+            if [ "$STATUS" = "true" ]; then
+              echo "API readiness check passed."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "API readiness check failed."
+          docker compose --env-file infra/.env.example -f infra/docker-compose.yml logs api
+          exit 1
+      - name: Tear down infra stack
+        if: always()
+        run: docker compose --env-file infra/.env.example -f infra/docker-compose.yml down -v
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    needs: [backend-tests, api-readiness-smoke]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install monorepo dependencies
+        run: npm ci
+      - name: Build admin app
+        run: npm run build --workspace=apps/admin
+      - name: Run mobile tests
+        run: npm run test --workspace=apps/mobile -- --runInBand
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: frontend-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build -t marketpulse-api:${{ github.sha }} apps/api
+      - name: Build Admin image
+        run: docker build -t marketpulse-admin:${{ github.sha }} -f apps/admin/Dockerfile .
+      - name: Export image metadata
+        run: |
+          echo "Built images:"
+          echo "- marketpulse-api:${{ github.sha }}"
+          echo "- marketpulse-admin:${{ github.sha }}"
+
+  deploy-placeholder:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Deployment placeholder
+        run: |
+          echo "Add cloud-specific deploy commands here (ECS/Kubernetes/Fly/Render)."
+          echo "Use secrets for registry credentials and cloud auth tokens."

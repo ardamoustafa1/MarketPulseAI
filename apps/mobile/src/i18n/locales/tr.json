@@ -1,0 +1,27 @@
+{
+  "common": {
+    "overview": "Özet",
+    "markets": "Piyasalar",
+    "portfolio": "Portföy",
+    "profile": "Profil",
+    "source": "Kaynak",
+    "lastUpdate": "Son güncelleme",
+    "compare": "Karşılaştır",
+    "news": "Haberler",
+    "exportCsv": "İşlemleri dışa aktar (CSV)",
+    "fifoSummary": "FIFO özeti",
+    "planFree": "Ücretsiz",
+    "planPro": "Pro",
+    "language": "Dil"
+  },
+  "asset": {
+    "priceChart": "Fiyat grafiği",
+    "dataFromYahoo": "Geçmiş grafik Yahoo Finance üzerinden (gösterim amaçlı)."
+  },
+  "compare": {
+    "title": "Varlık karşılaştır",
+    "subtitle": "Aralığın başında 100'e normalize edilir.",
+    "symbolA": "Sembol A",
+    "symbolB": "Sembol B"
+  }
+}

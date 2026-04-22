@@ -1,0 +1,61 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "copyright": "2026 MarketPulse",
+    "categories": ["FINANCE", "NEWS"],
+    "advisory": {
+      "alcoholTobaccoOrDrugUseOrReferences": "NONE",
+      "contests": "NONE",
+      "gamblingSimulated": "NONE",
+      "horrorOrFearThemes": "NONE",
+      "matureOrSuggestiveThemes": "NONE",
+      "medicalOrTreatmentInformation": "NONE",
+      "profanityOrCrudeHumor": "NONE",
+      "sexualContentGraphicAndNudity": "NONE",
+      "sexualContentOrNudity": "NONE",
+      "violenceCartoonOrFantasy": "NONE",
+      "violenceRealistic": "NONE",
+      "violenceRealisticProlongedGraphicOrSadistic": "NONE",
+      "gambling": "NONE",
+      "unrestrictedWebAccess": "NONE",
+      "koreaAgeRatingOverride": "NONE"
+    },
+    "info": {
+      "en-US": {
+        "title": "MarketPulse AI",
+        "subtitle": "Markets, portfolio & alerts",
+        "description": "MarketPulse AI helps you follow crypto, fiat forex, and precious metals with live quotes, a personal portfolio, watchlist, price alerts, and a currency converter. Data is for information only—not financial advice.\n\n• Live market quotes with connection status\n• Portfolio and transaction tracking\n• Watchlist and favorites\n• Price alerts\n• AI-style market briefs (informational)\n\nReplace YOUR_DOMAIN links in EAS env with your real privacy policy and support URLs before App Store review.",
+        "keywords": [
+          "markets",
+          "crypto",
+          "forex",
+          "gold",
+          "portfolio",
+          "watchlist",
+          "alerts",
+          "finance"
+        ],
+        "marketingUrl": "https://YOUR_DOMAIN",
+        "supportUrl": "https://YOUR_DOMAIN/support",
+        "privacyPolicyUrl": "https://YOUR_DOMAIN/privacy"
+      },
+      "tr-TR": {
+        "title": "MarketPulse AI",
+        "subtitle": "Piyasalar, portföy ve alarmlar",
+        "description": "MarketPulse AI ile kripto, döviz ve değerli metalleri canlı fiyatlarla takip edin; portföy, izleme listesi, fiyat alarmları ve döviz çevirici tek uygulamada. Veriler yalnızca bilgilendirme amaçlıdır; yatırım tavsiyesi değildir.\n\n• Canlı piyasa kotasyonları\n• Portföy ve işlem takibi\n• İzleme listesi\n• Fiyat alarmları\n• Bilgilendirici piyasa özeti\n\nApp Store incelemesinden önce gizlilik ve destek URL’lerini gerçek alan adınızla eas.json / EAS env üzerinden güncelleyin.",
+        "keywords": [
+          "piyasa",
+          "kripto",
+          "döviz",
+          "altın",
+          "portföy",
+          "alarm",
+          "finans"
+        ],
+        "marketingUrl": "https://YOUR_DOMAIN",
+        "supportUrl": "https://YOUR_DOMAIN/support",
+        "privacyPolicyUrl": "https://YOUR_DOMAIN/privacy"
+      }
+    }
+  }
+}

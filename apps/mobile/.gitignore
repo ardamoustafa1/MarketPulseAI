@@ -1,0 +1,10 @@
+.expo/
+dist/
+*.jks
+*.p12
+*.p8
+*.mobileprovision
+credentials.json
+google-service-account.json
+.env
+.env.*

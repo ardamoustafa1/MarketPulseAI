@@ -1,0 +1,27 @@
+{
+  "common": {
+    "overview": "Overview",
+    "markets": "Markets",
+    "portfolio": "Portfolio",
+    "profile": "Profile",
+    "source": "Source",
+    "lastUpdate": "Last update",
+    "compare": "Compare",
+    "news": "News",
+    "exportCsv": "Export transactions (CSV)",
+    "fifoSummary": "FIFO summary",
+    "planFree": "Free",
+    "planPro": "Pro",
+    "language": "Language"
+  },
+  "asset": {
+    "priceChart": "Price chart",
+    "dataFromYahoo": "Historical chart via Yahoo Finance (indicative)."
+  },
+  "compare": {
+    "title": "Compare assets",
+    "subtitle": "Normalized to 100 at the start of the range.",
+    "symbolA": "Symbol A",
+    "symbolB": "Symbol B"
+  }
+}

@@ -1,0 +1,115 @@
+import { create } from 'zustand';
+import { apiClient } from '../api/client';
+
+export interface WatchlistAsset {
+  id: string;
+  symbol: string;
+  name: string;
+  type: string;
+  price?: number;
+  change_24h_percent?: number;
+  image_url?: string;
+  favorite?: boolean;
+}
+
+export interface WatchlistState {
+  favorites: Record<string, WatchlistAsset>;
+  isLoading: boolean;
+  error: string | null;
+  _toggleLock: Set<string>; // Prevents race conditions on rapid double-taps
+  
+  // Actions
+  fetchWatchlist: () => Promise<void>;
+  toggleFavorite: (asset: Partial<WatchlistAsset> & { symbol: string }) => Promise<void>;
+  isFavorite: (symbol: string) => boolean;
+  getFavoritesArray: () => WatchlistAsset[];
+  clearError: () => void;
+}
+
+export const useWatchlistStore = create<WatchlistState>((set, get) => ({
+  favorites: {},
+  isLoading: false,
+  error: null,
+  _toggleLock: new Set(),
+
+  fetchWatchlist: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await apiClient.get('/api/v1/watchlist/');
+      const payload = response.data;
+      const assets: WatchlistAsset[] = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.assets)
+          ? payload.assets
+          : [];
+      
+      const newFavorites: Record<string, WatchlistAsset> = {};
+      assets.forEach(asset => {
+        newFavorites[asset.symbol.toUpperCase()] = { ...asset, favorite: true };
+      });
+      
+      set({ favorites: newFavorites, isLoading: false });
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        set({ favorites: {}, isLoading: false, error: null });
+        return;
+      }
+      set({ error: error?.response?.data?.detail || error.message || 'Failed to load watchlist', isLoading: false });
+    }
+  },
+
+  toggleFavorite: async (asset) => {
+    const symbol = asset.symbol.toUpperCase();
+    const lock = get()._toggleLock;
+
+    // Debounce guard: prevent concurrent toggles for the same symbol
+    if (lock.has(symbol)) return;
+    lock.add(symbol);
+    set({ _toggleLock: new Set(lock) });
+    
+    const currentFavs = get().favorites;
+    const isFav = !!currentFavs[symbol];
+    
+    // Optimistic UI Update
+    if (isFav) {
+      const { [symbol]: _, ...rest } = currentFavs;
+      set({ favorites: rest });
+      
+      try {
+        await apiClient.delete(`/api/v1/watchlist/${encodeURIComponent(symbol)}`);
+      } catch (e: any) {
+        if (e?.response?.status === 401) {
+          set({ favorites: currentFavs, error: 'Login required to manage favorites.' });
+          return;
+        }
+        // Rollback
+        set({ favorites: currentFavs, error: e?.response?.data?.detail || 'Failed to remove from watchlist' });
+      }
+    } else {
+      set({ favorites: { ...currentFavs, [symbol]: { id: '', ...asset, favorite: true } as WatchlistAsset } });
+      
+      try {
+        await apiClient.post(`/api/v1/watchlist/${encodeURIComponent(symbol)}`);
+      } catch (e: any) {
+        if (e?.response?.status === 401) {
+          set({ favorites: currentFavs, error: 'Login required to manage favorites.' });
+          return;
+        }
+        // Rollback
+        set({ favorites: currentFavs, error: e?.response?.data?.detail || 'Failed to add to watchlist' });
+      }
+    }
+
+    // Release lock
+    lock.delete(symbol);
+    set({ _toggleLock: new Set(lock) });
+  },
+
+  isFavorite: (symbol: string) => {
+    return !!get().favorites[symbol.toUpperCase()];
+  },
+
+  getFavoritesArray: () => Object.values(get().favorites),
+
+  clearError: () => set({ error: null }),
+}));

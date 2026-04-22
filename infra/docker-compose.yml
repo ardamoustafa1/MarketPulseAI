@@ -1,0 +1,135 @@
+name: marketpulse-local
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: marketpulse_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-marketpulse_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secretpassword}
+      POSTGRES_DB: ${POSTGRES_DB:-marketpulse_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-marketpulse_user} -d ${POSTGRES_DB:-marketpulse_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: marketpulse_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+    container_name: marketpulse_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      PROJECT_NAME: MarketPulse AI
+      APP_ROLE: api
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-marketpulse_user}:${POSTGRES_PASSWORD:-secretpassword}@postgres:5432/${POSTGRES_DB:-marketpulse_db}
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-local-dev-secret-change-me}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_RELEASE: ${SENTRY_RELEASE:-}
+      SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0.1}
+      BILLING_WEBHOOK_SECRET: ${BILLING_WEBHOOK_SECRET:-change-me-webhook-secret}
+      LLM_PROVIDER: ${LLM_PROVIDER:-none}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+      LLM_API_BASE_URL: ${LLM_API_BASE_URL:-https://api.openai.com/v1}
+      ALGORITHM: HS256
+      JWT_ISSUER: ${JWT_ISSUER:-marketpulse-api}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-marketpulse-clients}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-15}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      AUTH_RATE_LIMIT_MAX_REQUESTS: ${AUTH_RATE_LIMIT_MAX_REQUESTS:-20}
+      AUTH_RATE_LIMIT_WINDOW_SECONDS: ${AUTH_RATE_LIMIT_WINDOW_SECONDS:-60}
+      WS_CONNECT_RATE_LIMIT_MAX_REQUESTS: ${WS_CONNECT_RATE_LIMIT_MAX_REQUESTS:-30}
+      WS_CONNECT_RATE_LIMIT_WINDOW_SECONDS: ${WS_CONNECT_RATE_LIMIT_WINDOW_SECONDS:-60}
+      HAREM_API_BASE_URL: ${HAREM_API_BASE_URL:-https://altinapi.com/api/v1}
+      HAREM_API_KEY: ${HAREM_API_KEY:-}
+      PRICE_SCHEDULER_ENABLED: "false"
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/').read()\""]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+
+  api_worker:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+    container_name: marketpulse_api_worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      PROJECT_NAME: MarketPulse AI
+      APP_ROLE: worker
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-marketpulse_user}:${POSTGRES_PASSWORD:-secretpassword}@postgres:5432/${POSTGRES_DB:-marketpulse_db}
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-local-dev-secret-change-me}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_RELEASE: ${SENTRY_RELEASE:-}
+      SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0.1}
+      BILLING_WEBHOOK_SECRET: ${BILLING_WEBHOOK_SECRET:-change-me-webhook-secret}
+      LLM_PROVIDER: ${LLM_PROVIDER:-none}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+      LLM_API_BASE_URL: ${LLM_API_BASE_URL:-https://api.openai.com/v1}
+      ALGORITHM: HS256
+      JWT_ISSUER: ${JWT_ISSUER:-marketpulse-api}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-marketpulse-clients}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-15}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      AUTH_RATE_LIMIT_MAX_REQUESTS: ${AUTH_RATE_LIMIT_MAX_REQUESTS:-20}
+      AUTH_RATE_LIMIT_WINDOW_SECONDS: ${AUTH_RATE_LIMIT_WINDOW_SECONDS:-60}
+      WS_CONNECT_RATE_LIMIT_MAX_REQUESTS: ${WS_CONNECT_RATE_LIMIT_MAX_REQUESTS:-30}
+      WS_CONNECT_RATE_LIMIT_WINDOW_SECONDS: ${WS_CONNECT_RATE_LIMIT_WINDOW_SECONDS:-60}
+      HAREM_API_BASE_URL: ${HAREM_API_BASE_URL:-https://altinapi.com/api/v1}
+      HAREM_API_KEY: ${HAREM_API_KEY:-}
+      PRICE_SCHEDULER_ENABLED: "true"
+
+  admin:
+    build:
+      context: ..
+      dockerfile: apps/admin/Dockerfile
+    container_name: marketpulse_admin
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "5173:80"
+
+volumes:
+  pgdata:
+  redisdata:

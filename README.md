@@ -1,0 +1,90 @@
+# MarketPulse AI
+
+This is a production-grade monorepo for MarketPulse AI, a premium portfolio and market tracking application.
+
+## 🧱 Architecture
+
+- `apps/mobile`: React Native (Expo) app.
+- `apps/admin`: React (Vite) admin panel using TailwindCSS.
+- `apps/api`: Python (FastAPI) core backend.
+- `packages/ui`: Shared React components.
+- `packages/types`: Shared TypeScript definitions and Zod schemas.
+- `packages/config`: ESLint, Prettier, and TypeScript base configurations.
+- `infra`: Docker-compose and deployment scripts.
+
+## 🚀 Getting Started
+
+Ensure you have Node.js, `yarn` or `npm`, and Python 3.11+ installed.
+
+1. **Install Dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Environment Variables:**
+   Copy `.env.example` files to `.env` in the respective `apps/` directories.
+
+3. **Infrastructure:**
+   Start PostgreSQL and Redis:
+   ```bash
+   cd infra && docker-compose up -d
+   ```
+
+4. **Dev Servers:**
+   Run all frontend/node services via Turborepo:
+   ```bash
+   npm run dev
+   ```
+
+   Run FastAPI server separately (or configure a python process runner):
+   ```bash
+   cd apps/api
+   pip install -r requirements.txt
+   uvicorn app.main:app --reload --port 8000
+   ```
+
+## 🐳 Full Stack with Docker
+
+- Copy env template:
+  - `cp infra/.env.example infra/.env`
+- Start full stack:
+  - `docker compose --env-file infra/.env -f infra/docker-compose.yml up -d --build`
+- Services:
+  - API: `http://localhost:8000`
+  - Admin: `http://localhost:5173`
+  - Postgres: `localhost:5432`
+  - Redis: `localhost:6379`
+
+## 📦 Deployment Docs
+
+- Deployment overview: `docs/DEPLOYMENT_README.md`
+- Production environment guide: `docs/PRODUCTION_ENVIRONMENT_GUIDE.md`
+- Operations runbook: `docs/RUNBOOK.md`
+- Security checklist: `docs/SECURITY_CHECKLIST.md`
+- App Store release checklist: `docs/APP_STORE_RELEASE_CHECKLIST.md`
+
+## ✅ Post-Deploy Smoke
+
+Run smoke checks against a deployed API:
+
+```bash
+bash infra/scripts/post_deploy_smoke.sh https://api.<your-domain>
+```
+
+## 🔐 Security Notes
+
+- Use strong, environment-specific secrets. In non-development environments, `SECRET_KEY` must be at least 32 characters.
+- Configure JWT claims via env:
+  - `JWT_ISSUER`
+  - `JWT_AUDIENCE`
+- Auth and websocket endpoints are rate-limited with Redis; keep Redis available in all deployed environments.
+- Refresh tokens are stored hashed in DB and rotated on refresh. Never log or persist raw refresh tokens in client logs.
+- Error responses are intentionally sanitized in production paths; avoid adding stack traces to API responses.
+- Admin operations are role-protected and auditable. Review audit logs regularly for suspicious actions.
+- Dependency hygiene:
+  - Run `npm audit` in repo root.
+  - Run `pip-audit` in `apps/api`.
+  - Patch high/critical CVEs before release.
+
+For an actionable hardening checklist, see `docs/SECURITY_CHECKLIST.md`.
+# MarketPulseAI
