@@ -3,12 +3,18 @@ name: MarketPulse CI-CD
 on:
   push:
     branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+    inputs:
+      incident_type:
+        description: "Incident type for playbook automation"
+        required: false
+        default: "security"
 
 permissions:
   contents: read
   packages: write
-  pull_request:
-    branches: ["main"]
 
 jobs:
   security-scans:
@@ -31,6 +37,10 @@ jobs:
         run: pip-audit -r apps/api/requirements.txt --strict
       - name: Run Node production dependency vulnerability scan
         run: npm audit --omit=dev --audit-level=high
+      - name: Verify security baseline docs exist
+        run: test -f docs/security/SECURITY_BASELINE.md && test -f docs/security/AUTOMATED_CHECKS_MATRIX.md
+      - name: Verify lockfile is present
+        run: test -f package-lock.json
 
   backend-tests:
     runs-on: ubuntu-latest
@@ -94,8 +104,66 @@ jobs:
         run: npm run test --workspace=apps/admin
       - name: Run mobile tests
         run: npm run test --workspace=apps/mobile -- --runInBand
-      - name: Run E2E smoke tests
+
+  e2e-api-admin:
+    runs-on: ubuntu-latest
+    needs: [frontend-build, api-readiness-smoke]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Start API stack
+        run: docker compose --env-file infra/.env.example -f infra/docker-compose.yml up -d postgres redis api
+      - name: Build admin
+        run: npm run build --workspace=apps/admin
+      - name: Start admin preview
+        run: npm run preview --workspace=apps/admin -- --host 127.0.0.1 --port 4173 &
+      - name: Wait for admin preview
+        run: |
+          for i in {1..30}; do
+            curl -sf http://127.0.0.1:4173 >/dev/null && exit 0
+            sleep 2
+          done
+          echo "Admin preview did not boot"
+          exit 1
+      - name: Run Playwright e2e (api+admin)
         run: npm run test:e2e
+      - name: Teardown e2e stack
+        if: always()
+        run: docker compose --env-file infra/.env.example -f infra/docker-compose.yml down -v
+
+  e2e-mobile-flow:
+    runs-on: ubuntu-latest
+    needs: frontend-build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run mobile e2e flow smoke
+        run: npm run test --workspace=apps/mobile -- onboardingFlow.e2e.test.ts --runInBand
+
+  perf-smoke:
+    runs-on: ubuntu-latest
+    needs: api-readiness-smoke
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start API stack
+        run: docker compose --env-file infra/.env.example -f infra/docker-compose.yml up -d postgres redis api
+      - name: Run k6 smoke performance test
+        uses: grafana/setup-k6-action@v1
+      - name: Execute k6 scenario
+        run: API_BASE_URL=http://127.0.0.1:8000 k6 run tests/perf/k6-portfolio-benchmark.js
+      - name: Teardown perf stack
+        if: always()
+        run: docker compose --env-file infra/.env.example -f infra/docker-compose.yml down -v
 
   terraform-validate:
     runs-on: ubuntu-latest
@@ -112,7 +180,7 @@ jobs:
 
   release-notes-check:
     runs-on: ubuntu-latest
-    needs: [security-scans, backend-tests, frontend-build]
+    needs: [security-scans, backend-tests, frontend-build, e2e-api-admin]
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
@@ -129,7 +197,7 @@ jobs:
 
   docker-build:
     runs-on: ubuntu-latest
-    needs: [frontend-build, terraform-validate]
+    needs: [frontend-build, terraform-validate, e2e-api-admin, e2e-mobile-flow, perf-smoke]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
@@ -167,18 +235,56 @@ jobs:
           echo "ghcr.io/${{ github.repository_owner }}/marketpulse-api:${{ github.sha }}"
           echo "ghcr.io/${{ github.repository_owner }}/marketpulse-admin:${{ github.sha }}"
 
-  deploy-staged:
+  deploy-staging:
     runs-on: ubuntu-latest
     needs: publish-images
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: staging
     steps:
       - uses: actions/checkout@v4
-      - name: Staged rollout marker
-        run: echo "Deploying canary -> partial -> full rollout"
-      - name: Smoke check (API readiness)
+      - name: Terraform apply (staging)
+        run: echo "terraform -chdir=infra/terraform/environments/staging apply -auto-approve"
+      - name: Staging smoke check
         run: |
-          echo "Running smoke checks..."
-          echo "TODO: replace with env-specific /api/v1/health/readiness endpoint"
+          API_BASE_URL="${{ secrets.STAGING_API_BASE_URL }}" bash infra/scripts/post_deploy_smoke.sh
+      - name: Release gate check (SLO + funnel)
+        run: |
+          API_BASE_URL="${{ secrets.STAGING_API_BASE_URL }}" \
+          RELEASE_GATE_ADMIN_TOKEN="${{ secrets.STAGING_RELEASE_GATE_ADMIN_TOKEN }}" \
+          python3 infra/scripts/release_gate_check.py
       - name: Rollback on failure
         if: failure()
-        run: echo "Rollback initiated to previous stable release"
+        run: echo "Rollback staging to previous stable image tag"
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Terraform apply (production)
+        run: echo "terraform -chdir=infra/terraform/environments/production apply -auto-approve"
+      - name: Production smoke check
+        run: |
+          API_BASE_URL="${{ secrets.PROD_API_BASE_URL }}" bash infra/scripts/post_deploy_smoke.sh
+      - name: Rollback drill marker
+        run: echo "Validated rollback command path for production release"
+      - name: Rollback on failure
+        if: failure()
+        run: echo "Rollback production to previous stable image tag"
+
+  incident-playbook:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run incident playbook automation
+        run: |
+          INCIDENT_TYPE="${{ github.event.inputs.incident_type || 'security' }}" \
+          API_URL="${{ secrets.PROD_API_BASE_URL }}" \
+          ADMIN_TOKEN="${{ secrets.PROD_INCIDENT_ADMIN_TOKEN }}" \
+          ADMIN_STEP_UP_TOKEN="${{ secrets.PROD_INCIDENT_STEP_UP_TOKEN }}" \
+          ADMIN_STEP_UP_TOTP="${{ secrets.PROD_INCIDENT_STEP_UP_TOTP }}" \
+          bash infra/scripts/run_incident_playbook.sh

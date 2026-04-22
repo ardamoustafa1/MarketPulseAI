@@ -36,6 +36,28 @@ Gercek zamanli piyasa verisi, portfoy analizi ve operasyonel admin kabiliyetini 
 - Security gate CI icinde merge oncesi fail-fast modeline baglandi.
 - Incident response akisi (rotate + revoke) dokumante ve scriptlesmis durumda.
 
+## Before / after metrics dashboard
+
+| Metric | Before | After | Delta |
+|---|---:|---:|---:|
+| Admin critical flow automated tests | 1 | 3+ | +200% |
+| End-to-end gates in CI | 0 | admin+api+mobile smoke | coverage introduced |
+| Security enforcement docs | checklist-only | baseline + checks matrix | governance formalized |
+| Deploy maturity | image publish only | staging+production staged flow + rollback drill | production ownership signal |
+| Perf evidence | none | k6 thresholded smoke suite | scalability proof path |
+
+## Experiment log (product + engineering)
+
+1. **Session hardening experiment**
+   - Hypothesis: HttpOnly cookie + CSRF will reduce token exfiltration risk surface.
+   - Result: Admin auth moved from LocalStorage token transport to cookie transport.
+2. **Release gate experiment**
+   - Hypothesis: SLO + funnel thresholds reduce bad-release probability.
+   - Result: CI includes release gate check script wired to staging deploy.
+3. **Perf confidence experiment**
+   - Hypothesis: Thresholded perf smoke catches latency regressions earlier.
+   - Result: k6 suite added with p95 and error-rate thresholds.
+
 ## What is next
 
 - Full integration/websocket/mobile e2e coverage buyutme

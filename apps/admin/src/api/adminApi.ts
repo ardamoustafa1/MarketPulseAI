@@ -124,7 +124,7 @@ export type AdminTransactionItem = {
   created_at: string;
 };
 
-function getApiBaseUrl(): string {
+export function getApiBaseUrl(): string {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
@@ -136,18 +136,24 @@ function getApiBaseUrl(): string {
   return 'http://localhost:8000';
 }
 
-function readCsrfToken(): string {
-  const fromSession = sessionStorage.getItem('admin_csrf_token');
-  if (fromSession) return fromSession;
-  const cookiePart = document.cookie
+export function extractCsrfToken(cookieHeader: string, sessionToken?: string | null): string {
+  if (sessionToken) return sessionToken;
+  const cookiePart = cookieHeader
     .split('; ')
     .find((entry) => entry.startsWith('mp_csrf_token='));
   const token = cookiePart ? decodeURIComponent(cookiePart.split('=')[1] ?? '') : '';
-  if (token) sessionStorage.setItem('admin_csrf_token', token);
   return token;
 }
 
-function authHeaders(): HeadersInit {
+export function readCsrfToken(): string {
+  const fromSession = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('admin_csrf_token') : null;
+  const cookieHeader = typeof document !== 'undefined' ? document.cookie : '';
+  const token = extractCsrfToken(cookieHeader, fromSession);
+  if (token && typeof sessionStorage !== 'undefined') sessionStorage.setItem('admin_csrf_token', token);
+  return token;
+}
+
+export function authHeaders(): HeadersInit {
   const csrf = readCsrfToken();
   return csrf ? { 'x-csrf-token': csrf } : {};
 }

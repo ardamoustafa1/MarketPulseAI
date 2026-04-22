@@ -4,7 +4,7 @@ from app.core.config import settings
 from app.services.price.scheduler import aggregated_provider
 from app.db.session import engine
 from app.db.redis import get_redis_client
-from app.observability.metrics import slo, snapshot
+from app.observability.metrics import release_gate_status, slo, snapshot
 from app.api.deps import get_current_admin
 from app.models.user import User
 
@@ -112,3 +112,12 @@ async def incident_center(current_admin: User = Depends(get_current_admin)):
         "open_incident_count": len(incidents),
         "incidents": incidents,
     }
+
+
+@router.get("/release-gate")
+async def release_gate(
+    coach_conversion_percent_7d: float = 0.0,
+    current_admin: User = Depends(get_current_admin),
+):
+    _ = current_admin
+    return release_gate_status(coach_conversion_percent_7d=coach_conversion_percent_7d)

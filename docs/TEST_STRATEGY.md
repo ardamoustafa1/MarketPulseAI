@@ -30,11 +30,35 @@
   - auth screen actions trigger expected handlers (`login`, `goBack`).
 - Basic flow tests
   - transaction validation flow: sanitize -> validate -> compute totals -> build payload.
+  - onboarding activation e2e smoke contract (`onboardingFlow.e2e.test.ts`).
+
+## Admin strategy
+
+- Critical route matrix tests
+  - dashboard/users/assets/logs/health/operations route presence and protection contract.
+- Auth helper tests
+  - csrf extraction and secure header-building behavior.
+- Route guard tests
+  - role-based access contract (`super_admin`, `ops_admin`, `viewer`).
+
+## End-to-end strategy
+
+- Playwright admin-ui smoke:
+  - login page load and critical control visibility.
+- Playwright API smoke:
+  - health + readiness contract.
+- Mobile flow smoke:
+  - onboarding journey contract.
+- Performance smoke:
+  - k6 threshold gate for request failure and p95 latency.
 
 ## Quality gates
 
 - Backend: `pytest` green before merge.
+- Admin: `vitest` green before merge.
 - Mobile: `npm test` green before merge.
+- E2E: Playwright API/Admin + mobile flow smoke must pass in CI.
+- Perf: k6 perf-smoke thresholds must pass in CI.
 - Any bugfix must include a test that would have failed before the fix.
 
 ## Remaining coverage targets

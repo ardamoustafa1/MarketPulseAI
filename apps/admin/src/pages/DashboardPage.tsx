@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchAssets, fetchIncidents, fetchNorthStar, fetchPrices, fetchReadiness, fetchUsers, type PriceItem } from '../api/adminApi';
 import type { KpiCard, PriceSourceHealthRecord } from '../types/admin';
+import { InlineBadge } from '@marketpulse/ui';
 
 const METRIC_GLYPHS = ['◉', '◈', '◍', '◎'];
 
@@ -185,7 +186,7 @@ export function DashboardPage() {
               </span>
             </div>
             <h2 className="metric-value">{card.value}</h2>
-            <span className="chip">{card.delta}</span>
+            <InlineBadge>{card.delta}</InlineBadge>
           </article>
         ))}
       </div>

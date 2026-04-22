@@ -23,6 +23,8 @@
    - redeploy previous image tag and recycle pods/containers.
 6. Post-deploy smoke:
    - `bash infra/scripts/post_deploy_smoke.sh https://api.<your-domain>`
+7. Release gate check:
+   - `API_BASE_URL=https://api.<your-domain> RELEASE_GATE_ADMIN_TOKEN=<token> python3 infra/scripts/release_gate_check.py`
 
 ## Admin deployment notes
 
@@ -57,6 +59,15 @@
   - check DB/Redis health and container logs
 - Admin blank screen:
   - verify `VITE_API_URL` and API CORS configuration
+
+## Staged deploy and rollback flow
+
+1. Deploy staging via CI environment `staging`.
+2. Run smoke and release gate checks.
+3. Promote to `production` environment gate.
+4. If failure detected:
+   - execute rollback to previous stable image tag
+   - rerun smoke and release gate checks
 
 ## Incident playbook (P1/P0)
 
@@ -98,3 +109,6 @@
 - [ ] Login/refresh/logout audit events appear
 - [ ] WebSocket subscribe receives updates
 - [ ] Rate limiting triggers correctly on abuse tests
+- [ ] Release gate passes (`slo` + `coach conversion` thresholds)
+- [ ] Incident playbook automation dry run:
+  - `INCIDENT_TYPE=security API_URL=https://api.<your-domain> ADMIN_TOKEN=... ADMIN_STEP_UP_TOKEN=... ADMIN_STEP_UP_TOTP=... bash infra/scripts/run_incident_playbook.sh`

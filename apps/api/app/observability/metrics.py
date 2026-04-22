@@ -87,3 +87,25 @@ def slo(window_seconds: int = 300, max_error_rate: float = 0.01, max_p95_latency
         },
         "breach": breach,
     }
+
+
+def release_gate_status(
+    coach_conversion_percent_7d: float,
+    max_error_rate: float = 0.02,
+    max_p95_latency_ms: float = 800,
+    min_coach_conversion_percent_7d: float = 5.0,
+) -> dict:
+    current_slo = slo(window_seconds=300, max_error_rate=max_error_rate, max_p95_latency_ms=max_p95_latency_ms)
+    slo_pass = not bool(current_slo.get("breach", False))
+    funnel_pass = coach_conversion_percent_7d >= min_coach_conversion_percent_7d
+    return {
+        "slo_pass": slo_pass,
+        "funnel_pass": funnel_pass,
+        "coach_conversion_percent_7d": coach_conversion_percent_7d,
+        "thresholds": {
+            "max_error_rate": max_error_rate,
+            "max_p95_latency_ms": max_p95_latency_ms,
+            "min_coach_conversion_percent_7d": min_coach_conversion_percent_7d,
+        },
+        "release_blocked": not (slo_pass and funnel_pass),
+    }

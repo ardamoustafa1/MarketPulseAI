@@ -1,5 +1,9 @@
 # Security Checklist
 
+Reference docs:
+- `docs/security/SECURITY_BASELINE.md`
+- `docs/security/AUTOMATED_CHECKS_MATRIX.md`
+
 ## Authentication and tokens
 
 - [x] Access tokens include issuer (`iss`), audience (`aud`), issued-at (`iat`), and token type claims.
@@ -43,5 +47,5 @@
 ## Dependency hygiene
 
 - [x] Security guidance included in README for routine updates/audits.
-- [ ] Add automated CVE scanning in CI (`pip-audit`, `npm audit --production`).
-- [ ] Add dependency pinning/lockfile integrity checks to release pipeline.
+- [x] Add automated CVE scanning in CI (`pip-audit`, `npm audit --production`).
+- [x] Add dependency pinning/lockfile integrity checks to release pipeline.

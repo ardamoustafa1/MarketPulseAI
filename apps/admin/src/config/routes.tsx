@@ -7,6 +7,7 @@ import { LogsPage } from '../pages/LogsPage';
 import { HealthPage } from '../pages/HealthPage';
 import { OperationsPage } from '../pages/OperationsPage';
 import { ProtectedRoute } from '../components/ProtectedRoute';
+import { ADMIN_CRITICAL_ROUTES } from './routeMatrix';
 
 export type AdminChildRoute = {
   path?: string;
@@ -16,13 +17,13 @@ export type AdminChildRoute = {
 
 export const adminChildRoutes: AdminChildRoute[] = [
   { index: true, element: <Navigate to="/dashboard" replace /> },
-  { path: 'dashboard', element: <DashboardPage /> },
-  { path: 'users', element: <UsersPage /> },
-  { path: 'assets', element: <AssetsPage /> },
-  { path: 'logs', element: <LogsPage /> },
-  { path: 'health', element: <HealthPage /> },
+  { path: ADMIN_CRITICAL_ROUTES[0], element: <DashboardPage /> },
+  { path: ADMIN_CRITICAL_ROUTES[1], element: <UsersPage /> },
+  { path: ADMIN_CRITICAL_ROUTES[2], element: <AssetsPage /> },
+  { path: ADMIN_CRITICAL_ROUTES[3], element: <LogsPage /> },
+  { path: ADMIN_CRITICAL_ROUTES[4], element: <HealthPage /> },
   {
-    path: 'operations',
+    path: ADMIN_CRITICAL_ROUTES[5],
     element: (
       <ProtectedRoute requiredRoles={['super_admin', 'ops_admin']}>
         <OperationsPage />

@@ -4,6 +4,12 @@ import { Box } from '../../components/ui/Box';
 import { Text } from '../../components/ui/Text';
 import { colors, radius, spacing } from '../../theme';
 
+export const ONBOARDING_STEPS = [
+  '1) Hesabini ac ve risk profilini sec',
+  '2) Ilk islemini gir, benchmarki otomatik baslat',
+  '3) Koc aksiyonlarini uygula, haftalik skoru yukselt',
+];
+
 export const OnboardingScreen = ({ navigation }: any) => {
   return (
     <Box flex={1} bg={colors.background.base} padding={spacing.lg} justify="flex-end">
@@ -13,9 +19,9 @@ export const OnboardingScreen = ({ navigation }: any) => {
       </Text>
 
       <Box bg={colors.background.surface} padding={spacing.md} radius={radius.md} style={{ marginBottom: spacing.md }}>
-        <Text variant="caption" color={colors.text.secondary}>1) Hesabini ac ve risk profilini sec</Text>
-        <Text variant="caption" color={colors.text.secondary}>2) Ilk islemini gir, benchmarki otomatik baslat</Text>
-        <Text variant="caption" color={colors.text.secondary}>3) Koc aksiyonlarini uygula, haftalik skoru yukselt</Text>
+        {ONBOARDING_STEPS.map((step) => (
+          <Text key={step} variant="caption" color={colors.text.secondary}>{step}</Text>
+        ))}
       </Box>
       <Box bg={colors.background.surface} padding={spacing.md} radius={radius.md} style={{ marginBottom: spacing.md }}>
         <Text variant="caption" color={colors.text.secondary}>
