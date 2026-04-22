@@ -24,12 +24,12 @@ import { setAppLanguage } from '../../i18n';
 const BIO_LOCK_KEY = 'biometric_app_lock_enabled';
 const PUSH_PREF_KEY = 'push_notifications_pref';
 
-function formatMemberSince(iso: string | undefined): string {
+function formatMemberSince(iso: string | undefined, locale: string): string {
   if (!iso) return '—';
   try {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return '—';
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    return d.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' });
   } catch {
     return '—';
   }
@@ -84,7 +84,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
   const exportTransactionsCsv = useCallback(async () => {
     try {
       if (!cacheDirectory) {
-        Alert.alert('Export unavailable', 'File system is not available in this environment.');
+        Alert.alert(t('profileScreen.exportUnavailable'), t('profileScreen.exportUnavailableDesc'));
         return;
       }
       const res = await apiClient.get('/api/v1/transactions/export/csv', {
@@ -94,9 +94,9 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
       const text = typeof res.data === 'string' ? res.data : String(res.data);
       const path = `${cacheDirectory}marketpulse-transactions.csv`;
       await writeAsStringAsync(path, text);
-      await Sharing.shareAsync(path, { mimeType: 'text/csv', dialogTitle: t('common:exportCsv') });
+      await Sharing.shareAsync(path, { mimeType: 'text/csv', dialogTitle: t('common.exportCsv') });
     } catch (e: any) {
-      Alert.alert('Export failed', e?.message ?? 'Could not export CSV.');
+      Alert.alert(t('profileScreen.exportFailed'), e?.message ?? t('profileScreen.exportFailedDesc'));
     }
   }, [activePortfolioId, t]);
 
@@ -123,7 +123,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
     if (fullName.length > 0) {
       return fullName;
     }
-    return user?.email ?? 'User';
+    return user?.email ?? t('profileScreen.userFallback');
   }, [user]);
 
   const initials = useMemo(() => {
@@ -137,10 +137,12 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
   }, [user]);
 
   const isSyncing = watchlistLoading || portfolioLoading;
-  const feedLabel = wsConnected ? 'Connected' : 'Disconnected';
+  const feedLabel = wsConnected ? t('common.connected') : t('common.disconnected');
   const feedColor = wsConnected ? colors.sentiment.bull_green : colors.sentiment.bear_red;
+  const activeLocale = i18n.language.startsWith('tr') ? 'tr-TR' : 'en-US';
+
   const lastFeedText = lastUpdatedAt
-    ? new Date(lastUpdatedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    ? new Date(lastUpdatedAt).toLocaleTimeString(activeLocale, { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     : '—';
 
   const mergedError = watchlistError ?? portfolioError;
@@ -169,10 +171,10 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
         }
       >
         <Text variant="h2" style={{ marginBottom: spacing.xs }} accessibilityRole="header">
-          Profile
+          {t('profileScreen.title')}
         </Text>
         <Text variant="caption" color={colors.text.muted} style={{ marginBottom: spacing.lg }}>
-          {user?.subscription_tier === 'pro' ? t('common:planPro') : t('common:planFree')}
+          {user?.subscription_tier === 'pro' ? t('common.planPro') : t('common.planFree')}
         </Text>
 
         <Pressable
@@ -192,7 +194,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
             }}
           >
             <Text variant="body" weight="600">
-              Edit name &amp; password
+              {t('profileScreen.editNamePassword')}
             </Text>
             <ChevronRight color={colors.text.muted} size={20} />
           </Box>
@@ -200,7 +202,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
 
         <Box style={{ marginBottom: spacing.md }}>
           <Text variant="caption" color={colors.text.muted} style={{ marginBottom: spacing.sm }}>
-            DATA &amp; TAX
+            {t('profileScreen.dataTax')}
           </Text>
           <Pressable onPress={exportTransactionsCsv} style={{ marginBottom: spacing.sm }}>
             <Box
@@ -216,7 +218,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
               }}
             >
               <Text variant="body" weight="600">
-                {t('common:exportCsv')}
+                {t('common.exportCsv')}
               </Text>
               <ChevronRight color={colors.text.muted} size={20} />
             </Box>
@@ -235,7 +237,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
               }}
             >
               <Text variant="body" weight="600">
-                {t('common:fifoSummary')}
+                {t('common.fifoSummary')}
               </Text>
               <ChevronRight color={colors.text.muted} size={20} />
             </Box>
@@ -253,7 +255,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
             }}
           >
             <Text variant="body" weight="600">
-              {t('common:language')}
+              {t('common.language')}
             </Text>
             <Box row>
               <Pressable onPress={() => setAppLanguage('en')} style={{ marginRight: spacing.md }}>
@@ -281,15 +283,15 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
           }}
         >
           <Text variant="caption" color={colors.text.muted} style={{ marginBottom: spacing.md }}>
-            SECURITY
+            {t('profileScreen.security')}
           </Text>
           <Box row align="center" justify="space-between" style={{ marginBottom: spacing.sm }}>
             <Box flex={1} style={{ paddingRight: spacing.md }}>
               <Text variant="body" weight="600">
-                Face ID / Touch ID lock
+                {t('profileScreen.feedLockTitle')}
               </Text>
               <Text variant="caption" color={colors.text.muted}>
-                Ask for biometrics when opening the app
+                {t('profileScreen.feedLockDesc')}
               </Text>
             </Box>
             <Switch
@@ -302,7 +304,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
                     return;
                   }
                   const r = await LocalAuthentication.authenticateAsync({
-                    promptMessage: 'Enable app lock',
+                    promptMessage: t('profileScreen.enableAppLock'),
                   });
                   if (!r.success) return;
                   await SecureStore.setItemAsync(BIO_LOCK_KEY, 'true');
@@ -319,10 +321,10 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
           <Box row align="center" justify="space-between">
             <Box flex={1} style={{ paddingRight: spacing.md }}>
               <Text variant="body" weight="600">
-                Price alert push notifications
+                {t('profileScreen.pushTitle')}
               </Text>
               <Text variant="caption" color={colors.text.muted}>
-                Notify when a price alert triggers (Expo push)
+                {t('profileScreen.pushDesc')}
               </Text>
             </Box>
             <Switch
@@ -361,7 +363,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
               }}
             >
               <Text variant="caption" color={colors.sentiment.bear_red}>
-                {mergedError} · Tap to dismiss
+                {t('profileScreen.tapDismiss', { error: mergedError })}
               </Text>
             </Box>
           </Pressable>
@@ -403,7 +405,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
               {user?.email ?? '—'}
             </Text>
             <Text variant="caption" color={colors.text.muted} style={{ marginTop: 6 }}>
-              Account ID {shortId(user?.id)}
+              {t('profileScreen.accountId')} {shortId(user?.id)}
             </Text>
           </Box>
         </Box>
@@ -419,11 +421,11 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
           }}
         >
           <Text variant="caption" color={colors.text.muted} style={{ marginBottom: spacing.sm }}>
-            ACCOUNT
+            {t('profileScreen.account')}
           </Text>
           <Box row justify="space-between" style={{ marginBottom: spacing.sm }}>
             <Text variant="body" color={colors.text.secondary}>
-              Role
+              {t('profileScreen.role')}
             </Text>
             <Text variant="body" weight="600">
               {user?.role ?? '—'}
@@ -431,22 +433,22 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
           </Box>
           <Box row justify="space-between" style={{ marginBottom: spacing.sm }}>
             <Text variant="body" color={colors.text.secondary}>
-              Status
+              {t('profileScreen.status')}
             </Text>
             <Text
               variant="body"
               weight="600"
               color={user?.is_active !== false ? colors.sentiment.bull_green : colors.sentiment.bear_red}
             >
-              {user?.is_active !== false ? 'Active' : 'Inactive'}
+              {user?.is_active !== false ? t('common.active') : t('common.inactive')}
             </Text>
           </Box>
           <Box row justify="space-between">
             <Text variant="body" color={colors.text.secondary}>
-              Member since
+              {t('profileScreen.memberSince')}
             </Text>
             <Text variant="body" weight="600">
-              {formatMemberSince(user?.created_at)}
+              {formatMemberSince(user?.created_at, activeLocale)}
             </Text>
           </Box>
         </Box>
@@ -462,7 +464,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
           }}
         >
           <Text variant="caption" color={colors.text.muted} style={{ marginBottom: spacing.sm }}>
-            PORTFOLIO
+            {t('profileScreen.portfolio')}
           </Text>
           {isSyncing && !summary ? (
             <Skeleton height={20} width="70%" style={{ marginBottom: spacing.sm }} />
@@ -470,7 +472,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
             <>
               <Box row justify="space-between" style={{ marginBottom: spacing.sm }}>
                 <Text variant="body" color={colors.text.secondary}>
-                  Total value
+                  {t('profileScreen.totalValue')}
                 </Text>
                 <Text variant="body" weight="700">
                   {summary ? formatCurrency(summary.totalValue) : '—'}
@@ -478,7 +480,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
               </Box>
               <Box row justify="space-between" style={{ marginBottom: spacing.sm }}>
                 <Text variant="body" color={colors.text.secondary}>
-                  Invested
+                  {t('profileScreen.invested')}
                 </Text>
                 <Text variant="body" weight="600">
                   {summary ? formatCurrency(summary.totalInvested) : '—'}
@@ -486,7 +488,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
               </Box>
               <Box row justify="space-between" style={{ marginBottom: spacing.sm }}>
                 <Text variant="body" color={colors.text.secondary}>
-                  Unrealized P&amp;L
+                  {t('profileScreen.unrealizedPnl')}
                 </Text>
                 <Text
                   variant="body"
@@ -502,7 +504,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
               </Box>
               <Box row justify="space-between" style={{ marginBottom: spacing.sm }}>
                 <Text variant="body" color={colors.text.secondary}>
-                  Positions
+                  {t('profileScreen.positions')}
                 </Text>
                 <Text variant="body" weight="600">
                   {positions.length}
@@ -510,16 +512,16 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
               </Box>
               <Box row justify="space-between">
                 <Text variant="body" color={colors.text.secondary}>
-                  Valuation
+                  {t('profileScreen.valuation')}
                 </Text>
                 <Text
                   variant="body"
                   weight="600"
                   color={summary?.valuationComplete ? colors.sentiment.bull_green : colors.text.secondary}
                 >
-                  {summary?.valuationComplete ? 'Complete' : 'Partial'}
-                  {summary && summary.stalePricePositions ? ` · ${summary.stalePricePositions} stale` : ''}
-                  {summary && summary.missingPricePositions ? ` · ${summary.missingPricePositions} missing price` : ''}
+                  {summary?.valuationComplete ? t('profileScreen.complete') : t('profileScreen.partial')}
+                  {summary && summary.stalePricePositions ? ` · ${summary.stalePricePositions} ${t('profileScreen.stale')}` : ''}
+                  {summary && summary.missingPricePositions ? ` · ${summary.missingPricePositions} ${t('profileScreen.missingPrice')}` : ''}
                 </Text>
               </Box>
             </>
@@ -537,18 +539,18 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
           }}
         >
           <Text variant="caption" color={colors.text.muted} style={{ marginBottom: spacing.sm }}>
-            WATCHLIST
+            {t('profileScreen.watchlist')}
           </Text>
           <Box row justify="space-between" style={{ marginBottom: spacing.xs }}>
             <Text variant="body" color={colors.text.secondary}>
-              Saved symbols
+              {t('profileScreen.savedSymbols')}
             </Text>
             <Text variant="body" weight="700">
               {favoriteCount}
             </Text>
           </Box>
           <Text variant="caption" color={colors.text.muted}>
-            Favorites sync with the server when you are logged in.
+            {t('profileScreen.watchlistSync')}
           </Text>
         </Box>
 
@@ -563,11 +565,11 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
           }}
         >
           <Text variant="caption" color={colors.text.muted} style={{ marginBottom: spacing.sm }}>
-            LIVE DATA
+            {t('profileScreen.liveData')}
           </Text>
           <Box row justify="space-between" style={{ marginBottom: spacing.xs }}>
             <Text variant="body" color={colors.text.secondary}>
-              WebSocket
+              {t('profileScreen.websocket')}
             </Text>
             <Text variant="body" weight="700" color={feedColor}>
               {feedLabel}
@@ -575,7 +577,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
           </Box>
           <Box row justify="space-between" style={{ marginBottom: spacing.xs }}>
             <Text variant="body" color={colors.text.secondary}>
-              Last quote update
+              {t('profileScreen.lastQuoteUpdate')}
             </Text>
             <Text variant="body" weight="600">
               {lastFeedText}
@@ -583,10 +585,10 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
           </Box>
           <Box row justify="space-between" align="center">
             <Text variant="body" color={colors.text.secondary}>
-              Account data
+              {t('profileScreen.accountData')}
             </Text>
             <Text variant="body" weight="600" color={isSyncing ? colors.text.secondary : colors.sentiment.bull_green}>
-              {isSyncing ? 'Syncing…' : 'Up to date'}
+              {isSyncing ? t('common.syncing') : t('common.upToDate')}
             </Text>
           </Box>
         </Box>
@@ -594,7 +596,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
         <Pressable onPress={logout}>
           <Box bg={colors.background.surface} padding={spacing.md} radius={radius.md} center>
             <Text color={colors.sentiment.bear_red} weight="700">
-              Log out
+              {t('profileScreen.logout')}
             </Text>
           </Box>
         </Pressable>

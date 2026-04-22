@@ -18,6 +18,7 @@ import { useTransactionForm } from '../../hooks/useTransactionForm';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
 import { colors, radius, spacing } from '../../theme';
 import { formatDateTimeByLocale } from '../../utils/localeFormat';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   ArrowDownRight,
@@ -34,6 +35,7 @@ import {
 } from 'lucide-react-native';
 
 export const AddTransactionScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
 
@@ -70,11 +72,11 @@ export const AddTransactionScreen = ({ navigation }: any) => {
       const notional = qty * price;
       if (form.type === 'sell' && notional >= 10000) {
         Alert.alert(
-          'Davranissal koruma',
-          'Yuksek tutarli satis tespit edildi. Panik satis riskini azaltmak icin 5 saniye dusunme molasi onerilir.',
+          t('addTx.behavioralTitle'),
+          t('addTx.behavioralDesc'),
           [
-            { text: 'Vazgec', style: 'cancel' },
-            { text: 'Devam et', style: 'destructive', onPress: () => setShowConfirm(true) },
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('common.continue'), style: 'destructive', onPress: () => setShowConfirm(true) },
           ]
         );
         return;
@@ -112,9 +114,9 @@ export const AddTransactionScreen = ({ navigation }: any) => {
   // ── Dismiss / Reset Warnings ──
   const handleBack = useCallback(() => {
     if (isDirty) {
-      Alert.alert('Degisiklikler kaydedilmedi', 'Formda kaydedilmemis alanlar var. Cikmak istiyor musun?', [
-        { text: 'Vazgec', style: 'cancel' },
-        { text: 'Cik', style: 'destructive', onPress: () => navigation?.goBack() }
+      Alert.alert(t('addTx.unsavedTitle'), t('addTx.unsavedDesc'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('addTx.exit'), style: 'destructive', onPress: () => navigation?.goBack() }
       ]);
     } else {
       navigation?.goBack();
@@ -123,9 +125,9 @@ export const AddTransactionScreen = ({ navigation }: any) => {
 
   const handleReset = useCallback(() => {
     if (isDirty) {
-      Alert.alert('Formu sifirla', 'Tum alanlar temizlenecek. Emin misin?', [
-        { text: 'Vazgec', style: 'cancel' },
-        { text: 'Sifirla', style: 'destructive', onPress: reset }
+      Alert.alert(t('addTx.resetTitle'), t('addTx.resetDesc'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('addTx.reset'), style: 'destructive', onPress: reset }
       ]);
     }
   }, [isDirty, reset]);
@@ -160,17 +162,17 @@ export const AddTransactionScreen = ({ navigation }: any) => {
             </Box>
           </Pressable>
           <Box center>
-            <Text variant="h3" weight="700" style={{ letterSpacing: -0.3 }}>Islem Ekle</Text>
+            <Text variant="h3" weight="700" style={{ letterSpacing: -0.3 }}>{t('addTx.title')}</Text>
             {isDirty && (
               <Animated.View entering={FadeIn.duration(300)}>
                 <Text variant="caption" color={colors.accent.premium_gold} style={{ fontSize: 10, marginTop: 2 }}>
-                  Kaydedilmemis degisiklik
+                  {t('addTx.unsaved')}
                 </Text>
               </Animated.View>
             )}
           </Box>
           <Pressable hitSlop={20} onPress={handleReset} style={({ pressed }) => [{ opacity: pressed ? 0.6 : isDirty ? 1 : 0.3 }]} disabled={!isDirty}>
-            <Text variant="caption" weight="600" color={colors.text.muted}>Sifirla</Text>
+            <Text variant="caption" weight="600" color={colors.text.muted}>{t('addTx.reset')}</Text>
           </Pressable>
         </Box>
 
@@ -199,7 +201,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
                 >
                   <Box row center>
                     <ArrowDownRight color={isBuy ? colors.background.base : colors.text.muted} size={20} style={{ marginRight: 6 }} />
-                    <Text variant="h3" weight="700" color={isBuy ? colors.background.base : colors.text.muted}>Buy</Text>
+                    <Text variant="h3" weight="700" color={isBuy ? colors.background.base : colors.text.muted}>{t('common.buy')}</Text>
                   </Box>
                 </LinearGradient>
               </Pressable>
@@ -214,7 +216,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
                 >
                   <Box row center>
                     <ArrowUpRight color={!isBuy ? colors.background.base : colors.text.muted} size={20} style={{ marginRight: 6 }} />
-                    <Text variant="h3" weight="700" color={!isBuy ? colors.background.base : colors.text.muted}>Sell</Text>
+                    <Text variant="h3" weight="700" color={!isBuy ? colors.background.base : colors.text.muted}>{t('common.sell')}</Text>
                   </Box>
                 </LinearGradient>
               </Pressable>
@@ -223,7 +225,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
 
           {/* ── Asset Picker ── */}
           <Animated.View entering={FadeInUp.delay(100).springify()}>
-            <FormLabel label="Asset" icon={<Sparkles color={colors.accent.premium_gold} size={14} />} error={getVisibleError('assetId')} required />
+            <FormLabel label={t('addTx.asset')} icon={<Sparkles color={colors.accent.premium_gold} size={14} />} error={getVisibleError('assetId')} required />
             <Pressable onPress={() => setShowAssetPicker(true)}>
               <Box
                 row justify="space-between" align="center"
@@ -247,7 +249,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
                       </Box>
                     </>
                   ) : (
-                    <Text variant="body" color={colors.text.muted}>Varlik secmek icin dokun...</Text>
+                    <Text variant="body" color={colors.text.muted}>{t('addTx.selectAssetHint')}</Text>
                   )}
                 </Box>
                 <ChevronDown color={colors.text.muted} size={20} />
@@ -257,7 +259,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
 
           {/* ── Quantity ── */}
           <Animated.View entering={FadeInUp.delay(150).springify()}>
-            <FormLabel label="Quantity" icon={<Hash color={colors.text.muted} size={14} />} error={getVisibleError('quantity')} required />
+            <FormLabel label={t('addTx.quantity')} icon={<Hash color={colors.text.muted} size={14} />} error={getVisibleError('quantity')} required />
             <Box row align="center" style={[styles.inputContainer, getVisibleError('quantity') ? styles.inputError : null]}>
               <TextInput
                 style={[styles.textInput, { flex: 1 }]}
@@ -279,7 +281,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
 
           {/* ── Unit Price ── */}
           <Animated.View entering={FadeInUp.delay(200).springify()}>
-            <FormLabel label="Unit Price" icon={<DollarSign color={colors.text.muted} size={14} />} error={getVisibleError('unitPrice')} required />
+            <FormLabel label={t('addTx.unitPrice')} icon={<DollarSign color={colors.text.muted} size={14} />} error={getVisibleError('unitPrice')} required />
             <Box row align="center" style={[styles.inputContainer, getVisibleError('unitPrice') ? styles.inputError : null]}>
               <Text variant="body" color={colors.text.muted} weight="500" style={{ marginRight: 4 }}>$</Text>
               <TextInput
@@ -300,7 +302,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
 
           {/* ── Fee (Optional) ── */}
           <Animated.View entering={FadeInUp.delay(250).springify()}>
-            <FormLabel label="Fee" icon={<Percent color={colors.text.muted} size={14} />} error={getVisibleError('fee')} />
+            <FormLabel label={t('addTx.fee')} icon={<Percent color={colors.text.muted} size={14} />} error={getVisibleError('fee')} />
             <Box row align="center" style={[styles.inputContainer, getVisibleError('fee') ? styles.inputError : null]}>
               <Text variant="body" color={colors.text.muted} weight="500" style={{ marginRight: 4 }}>$</Text>
               <TextInput
@@ -321,7 +323,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
 
           {/* ── Date Picker ── */}
           <Animated.View entering={FadeInUp.delay(275).springify()}>
-            <FormLabel label="Transaction Date" icon={<Calendar color={colors.text.muted} size={14} />} error={getVisibleError('date')} required />
+            <FormLabel label={t('addTx.transactionDate')} icon={<Calendar color={colors.text.muted} size={14} />} error={getVisibleError('date')} required />
             <Pressable onPress={() => {
               // In production: use @react-native-community/datetimepicker
               // For now, we show the current date (date picker integration ready)
@@ -344,11 +346,11 @@ export const AddTransactionScreen = ({ navigation }: any) => {
 
           {/* ── Note (Optional) ── */}
           <Animated.View entering={FadeInUp.delay(300).springify()}>
-            <FormLabel label="Note" icon={<StickyNote color={colors.text.muted} size={14} />} error={getVisibleError('note')} />
+            <FormLabel label={t('addTx.note')} icon={<StickyNote color={colors.text.muted} size={14} />} error={getVisibleError('note')} />
             <Box style={[styles.inputContainer, getVisibleError('note') ? styles.inputError : null]}>
               <TextInput
                 style={[styles.textInput, { minHeight: 72, textAlignVertical: 'top', paddingTop: Platform.OS === 'ios' ? 12 : 8 }]}
-                placeholder="or. haftalik alim, limit emir gerceklesti..."
+                placeholder={t('addTx.notePlaceholder')}
                 placeholderTextColor={colors.text.muted}
                 multiline
                 maxLength={500}
@@ -375,11 +377,11 @@ export const AddTransactionScreen = ({ navigation }: any) => {
                 <Box row justify="space-between" align="center">
                   <Box>
                     <Text variant="caption" color={colors.text.muted} weight="700" style={{ letterSpacing: 1.2, fontSize: 11 }}>
-                      {isBuy ? 'ESTIMATED COST' : 'ESTIMATED PROCEEDS'}
+                      {isBuy ? t('addTx.estimatedCost') : t('addTx.estimatedProceeds')}
                     </Text>
                     {total.feeAmount > 0 && (
                       <Text variant="caption" color={colors.text.muted} style={{ marginTop: 4, fontSize: 11 }}>
-                        incl. ${total.feeAmount.toFixed(2)} fee
+                        {t('addTx.feeLine', { amount: total.feeAmount.toFixed(2) })}
                       </Text>
                     )}
                   </Box>
@@ -397,7 +399,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
               <Box row align="center" style={styles.errorSummary}>
                 <AlertCircle color={colors.sentiment.bear_red} size={16} />
                 <Text variant="caption" color={colors.sentiment.bear_red} weight="500" style={{ marginLeft: spacing.xs }}>
-                  Isleme devam etmek icin isaretli alanlari duzelt.
+                  {t('addTx.errorSummary')}
                 </Text>
               </Box>
             </Animated.View>
@@ -412,7 +414,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
                 style={styles.reviewBtn}
               >
                 <Text variant="h3" weight="700" color={colors.background.base} style={{ fontSize: 17, letterSpacing: -0.2 }}>
-                  Islemi Onizle
+                  {t('addTx.preview')}
                 </Text>
               </LinearGradient>
             </Pressable>

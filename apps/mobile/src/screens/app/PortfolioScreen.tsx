@@ -16,6 +16,7 @@ import { colors, radius, spacing } from '../../theme';
 import { HelpCircle, PlusCircle } from 'lucide-react-native';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
 import { formatCurrencyByLocale, formatNumberByLocale } from '../../utils/localeFormat';
+import { useTranslation } from 'react-i18next';
 
 const ALLOCATION_COLORS = ['#F7931A', '#627EEA', '#14F195', '#26A17B', '#C8A97E', '#4A5C82'];
 
@@ -23,6 +24,7 @@ const formatCurrency = (value: string) => formatCurrencyByLocale(value, 'USD');
 const formatCompactNumber = (value: string) => formatNumberByLocale(value, 4);
 
 export const PortfolioScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const {
     summary,
@@ -99,9 +101,9 @@ export const PortfolioScreen = ({ navigation }: any) => {
 
   const renderEmptyState = () => (
     <GuidedStateCard
-      title="Henuz varlik kaydin yok"
-      description="Ilk isleminden sonra getiri, maliyet ve AI icgorusu otomatik hesaplanir. Baslamak icin ilk islemini ekle."
-      ctaLabel="Ilk islemi ekle"
+      title={t('portfolioScreen.emptyTitle')}
+      description={t('portfolioScreen.emptyDesc')}
+      ctaLabel={t('dashboard.firstTx')}
       onPress={handleAddTx}
       icon={<HelpCircle color={colors.text.muted} size={32} />}
     />
@@ -110,10 +112,10 @@ export const PortfolioScreen = ({ navigation }: any) => {
   const renderErrorState = () => (
     <PremiumCard delay={150} style={{ paddingVertical: spacing.xl, alignItems: 'center', marginTop: spacing.xl }}>
       <Text variant="h3" weight="600" style={{ marginBottom: spacing.sm }}>
-        Portfolio verisi yuklenemedi
+        {t('portfolioScreen.loadErrorTitle')}
       </Text>
       <Text variant="body" color={colors.text.secondary} align="center" style={{ marginBottom: spacing.lg, paddingHorizontal: spacing.md }}>
-        {error ?? 'Portfoyu yuklemek icin baglantini kontrol et ve tekrar dene.'}
+        {error ?? t('portfolioScreen.loadErrorDefault')}
       </Text>
       <Pressable
         onPress={() => {
@@ -123,7 +125,7 @@ export const PortfolioScreen = ({ navigation }: any) => {
         style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
       >
         <Box bg={colors.text.primary} padding={spacing.md} radius={radius.pill}>
-          <Text color={colors.background.base} weight="600">Tekrar dene</Text>
+          <Text color={colors.background.base} weight="600">{t('common.retry')}</Text>
         </Box>
       </Pressable>
     </PremiumCard>
@@ -138,10 +140,10 @@ export const PortfolioScreen = ({ navigation }: any) => {
       <View style={styles.blurHeaderWrap}>
         <BlurView intensity={80} tint="dark" style={[styles.blurHeader, { paddingTop: insets.top + 8 }]}>
           <Box row justify="space-between" align="center" style={styles.headerContent}>
-            <Text variant="h3" weight="700" style={{ letterSpacing: -0.5 }}>Portfoyum</Text>
+            <Text variant="h3" weight="700" style={{ letterSpacing: -0.5 }}>{t('portfolioScreen.title')}</Text>
             <Pressable onPress={handleAddTx} hitSlop={15} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}> 
               <Box row align="center" style={styles.addBtn}>
-                <Text variant="caption" weight="600" color={colors.accent.premium_gold} style={{ marginRight: 6 }}>Ekle</Text>
+                <Text variant="caption" weight="600" color={colors.accent.premium_gold} style={{ marginRight: 6 }}>{t('common.add')}</Text>
                 <PlusCircle color={colors.accent.premium_gold} size={18} />
               </Box>
             </Pressable>
@@ -192,7 +194,10 @@ export const PortfolioScreen = ({ navigation }: any) => {
         {summary && summary.valuationComplete === false ? (
           <Box style={{ marginBottom: spacing.md, padding: spacing.sm, borderRadius: radius.md, borderWidth: 1, borderColor: 'rgba(255,184,0,0.28)', backgroundColor: 'rgba(255,184,0,0.08)' }}>
             <Text variant="caption" color={colors.text.secondary}>
-              {`Degerleme kismen tamamlandi: ${summary.missingPricePositions ?? 0} fiyat eksik, ${summary.stalePricePositions ?? 0} fiyat gecikmeli.`}
+              {t('portfolioScreen.partialValuation', {
+                missing: summary.missingPricePositions ?? 0,
+                stale: summary.stalePricePositions ?? 0,
+              })}
             </Text>
           </Box>
         ) : null}
@@ -216,7 +221,7 @@ export const PortfolioScreen = ({ navigation }: any) => {
             {allocationData.length > 0 ? <AllocationChart data={allocationData} /> : null}
 
             <Box row justify="space-between" align="flex-end" style={{ marginBottom: spacing.md }}>
-              <Text variant="h2" weight="600" style={{ letterSpacing: -0.5 }}>Varliklarin</Text>
+                <Text variant="h2" weight="600" style={{ letterSpacing: -0.5 }}>{t('portfolioScreen.yourAssets')}</Text>
             </Box>
 
             <Box style={{ marginBottom: spacing.xl }}>

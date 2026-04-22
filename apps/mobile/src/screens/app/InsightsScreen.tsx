@@ -23,6 +23,7 @@ import {
 } from 'lucide-react-native';
 import { useInsightStore, InsightCard } from '../../store/useInsightStore';
 import { formatDateTimeByLocale } from '../../utils/localeFormat';
+import { useTranslation } from 'react-i18next';
 
 const CATEGORY_CONFIG: Record<string, { icon: any; color: string; label: string }> = {
   portfolio: {
@@ -50,7 +51,7 @@ const SEVERITY_COLORS: Record<string, string> = {
 };
 
 // ── Single Insight Card ──
-const InsightCardItem = ({ card, index, navigation }: { card: InsightCard; index: number; navigation: any }) => {
+const InsightCardItem = ({ card, index, navigation, t }: { card: InsightCard; index: number; navigation: any; t: (key: string, opts?: any) => string }) => {
   const config = CATEGORY_CONFIG[card.category] || CATEGORY_CONFIG.market;
   const IconComponent = config.icon;
   const severityColor = SEVERITY_COLORS[card.severity] || SEVERITY_COLORS.neutral;
@@ -89,7 +90,10 @@ const InsightCardItem = ({ card, index, navigation }: { card: InsightCard; index
         </Text>
         <Box row style={{ marginTop: spacing.xs }}>
           <Text variant="caption" color={colors.text.muted}>
-            {`Kaynak: ${card.source_quality ?? 'medium'} · Guncellenme: ${card.last_updated_at ? formatDateTimeByLocale(new Date(card.last_updated_at)).time : 'n/a'}`}
+            {t('insightsScreen.sourceLine', {
+              source: card.source_quality ?? 'medium',
+              time: card.last_updated_at ? formatDateTimeByLocale(new Date(card.last_updated_at)).time : 'n/a',
+            })}
           </Text>
         </Box>
         {Array.isArray(card.evidence) && card.evidence.length > 0 ? (
@@ -116,10 +120,10 @@ const InsightCardItem = ({ card, index, navigation }: { card: InsightCard; index
             <Box style={styles.actionChip}>
               <Text variant="caption" weight="700" color={colors.accent.primary_blue}>
                 {card.category === 'portfolio'
-                  ? 'Portfoyde uygula'
+                  ? t('insightsScreen.applyPortfolio')
                   : card.category === 'watchlist'
-                    ? 'Izleme listesinde uygula'
-                    : 'Piyasada kontrol et'}
+                    ? t('insightsScreen.applyWatchlist')
+                    : t('insightsScreen.applyMarkets')}
               </Text>
             </Box>
           </Pressable>
@@ -131,6 +135,7 @@ const InsightCardItem = ({ card, index, navigation }: { card: InsightCard; index
 
 // ── Main Screen ──
 export const InsightsScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { latestInsight, isLoading, isGenerating, error, fetchLatestInsight, generateNewInsight, clearError } = useInsightStore();
 
@@ -169,7 +174,7 @@ export const InsightsScreen = ({ navigation }: any) => {
 
             <Box row align="center">
               <Sparkles color={colors.accent.premium_gold} size={18} style={{ marginRight: spacing.xs }} />
-              <Text variant="h3" weight="700" style={{ letterSpacing: -0.3 }}>AI Icgoruler</Text>
+              <Text variant="h3" weight="700" style={{ letterSpacing: -0.3 }}>{t('insightsScreen.title')}</Text>
             </Box>
 
             {/* Generate Button */}
@@ -210,10 +215,10 @@ export const InsightsScreen = ({ navigation }: any) => {
                   </Box>
                 </Animated.View>
                 <Text variant="h1" weight="700" style={{ fontSize: 28, letterSpacing: -1, marginTop: spacing.md, marginBottom: spacing.xs }}>
-                  Piyasa Ozeti
+                  {t('insightsScreen.heroTitle')}
                 </Text>
                 <Text variant="body" color={colors.text.secondary} align="center" style={{ paddingHorizontal: spacing.xl, lineHeight: 22 }}>
-                  Portfoyun, izleme listen ve genel piyasa icin veri odakli ozet ve sonraki adim onerileri.
+                  {t('insightsScreen.heroDesc')}
                 </Text>
               </Box>
             </LinearGradient>
@@ -226,9 +231,9 @@ export const InsightsScreen = ({ navigation }: any) => {
             <Box row align="center" style={{ marginHorizontal: spacing.lg, marginBottom: spacing.md, padding: spacing.md, backgroundColor: 'rgba(255,92,92,0.08)', borderRadius: radius.lg, borderWidth: 1, borderColor: 'rgba(255,92,92,0.15)' }}>
               <AlertTriangle color={colors.sentiment.bear_red} size={18} style={{ marginRight: spacing.sm }} />
               <Text variant="body" color={colors.sentiment.bear_red} style={{ flex: 1 }}>
-                {`${error} Yeniden denemek icin bildirimi kapatip tekrar uret.`}
+                {t('insightsScreen.errorHint', { error })}
               </Text>
-              <Text variant="caption" color={colors.text.muted}>Kapat</Text>
+              <Text variant="caption" color={colors.text.muted}>{t('common.tapToDismiss')}</Text>
             </Box>
           </Pressable>
         )}
@@ -238,20 +243,20 @@ export const InsightsScreen = ({ navigation }: any) => {
           <Box padding={spacing.lg} style={{ paddingTop: 0 }}>
             {isGenerating ? (
               <Text variant="caption" color={colors.text.muted} style={{ marginBottom: spacing.sm }}>
-                Yeni icgoru uretiliyor, mevcut kartlar korunuyor...
+                {t('insightsScreen.generating')}
               </Text>
             ) : null}
             {latestInsight?.cards.map((card, index) => (
-              <InsightCardItem key={card.id} card={card} index={index} navigation={navigation} />
+              <InsightCardItem key={card.id} card={card} index={index} navigation={navigation} t={t} />
             ))}
 
             {(!latestInsight || latestInsight.cards.length === 0) && !error && (
               <Animated.View entering={FadeInDown.duration(500).springify()}>
                 <Box center style={{ marginTop: spacing.xxl }}>
                   <Info color={colors.text.muted} size={32} style={{ marginBottom: spacing.md }} />
-                  <Text variant="h3" color={colors.text.secondary}>Henuz icgoru uretilmedi.</Text>
+                  <Text variant="h3" color={colors.text.secondary}>{t('insightsScreen.emptyTitle')}</Text>
                   <Text variant="body" color={colors.text.muted} align="center" style={{ marginTop: spacing.sm }}>
-                    Yukaridaki yenile ikonuna dokunarak ilk AI ozetini olustur.
+                    {t('insightsScreen.emptyDesc')}
                   </Text>
                 </Box>
               </Animated.View>
@@ -264,7 +269,10 @@ export const InsightsScreen = ({ navigation }: any) => {
           <Animated.View entering={FadeInUp.delay(600).springify()}>
             <Box center style={{ marginTop: spacing.md, marginBottom: spacing.lg }}>
               <Text variant="caption" color={colors.text.muted}>
-                {`Uretim zamani ${formatDateTimeByLocale(new Date(latestInsight.created_at)).date} ${formatDateTimeByLocale(new Date(latestInsight.created_at)).time}`}
+                {t('insightsScreen.generatedAt', {
+                  date: formatDateTimeByLocale(new Date(latestInsight.created_at)).date,
+                  time: formatDateTimeByLocale(new Date(latestInsight.created_at)).time,
+                })}
               </Text>
             </Box>
           </Animated.View>
@@ -277,7 +285,7 @@ export const InsightsScreen = ({ navigation }: any) => {
           <Box row align="center" style={{ paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}>
             <ShieldAlert color={colors.text.muted} size={14} style={{ marginRight: spacing.sm }} />
             <Text variant="caption" color={colors.text.muted} style={{ flex: 1, lineHeight: 16 }}>
-              {latestInsight?.disclaimer || 'AI ozetleri bilgilendirme amaclidir; yatirim tavsiyesi degildir.'}
+              {latestInsight?.disclaimer || t('insightsScreen.defaultDisclaimer')}
             </Text>
           </Box>
         </BlurView>

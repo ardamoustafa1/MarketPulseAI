@@ -14,13 +14,16 @@
 
 1. Build image:
    - `docker build -t marketpulse-api:latest apps/api`
-2. Run migrations (if using Alembic in deployment pipeline).
+   - publish image to ECR repository output: `api_ecr_repository_url`
+2. Run migrations:
+   - `DATABASE_URL=<db-url> cd apps/api && alembic upgrade head`
 3. Deploy service with env from secret manager.
 4. Health check endpoint:
    - `GET /`
    - `GET /api/v1/health/readiness`
 5. Rollback:
-   - redeploy previous image tag and recycle pods/containers.
+   - run concrete rollback commands via:
+   - `ENVIRONMENT=staging ROLLBACK_API_CMD="<platform api rollback>" ROLLBACK_ADMIN_CMD="<platform admin rollback>" API_BASE_URL=https://api.<your-domain> bash infra/scripts/rollback_release.sh`
 6. Post-deploy smoke:
    - `bash infra/scripts/post_deploy_smoke.sh https://api.<your-domain>`
 7. Release gate check:
@@ -30,6 +33,7 @@
 
 1. Build image:
    - `docker build -t marketpulse-admin:latest -f apps/admin/Dockerfile .`
+   - publish image to ECR repository output: `admin_ecr_repository_url`
 2. Set `VITE_API_URL` at build time/environment policy level.
 3. Serve via Nginx/CDN with cache headers for static assets.
 4. Rollback:
@@ -64,10 +68,27 @@
 
 1. Deploy staging via CI environment `staging`.
 2. Run smoke and release gate checks.
-3. Promote to `production` environment gate.
-4. If failure detected:
-   - execute rollback to previous stable image tag
+3. Confirm Terraform runtime outputs:
+   - `alb_dns_name`
+   - `ecs_cluster_name`
+   - `vpc_id`
+4. Promote to `production` environment gate.
+5. If failure detected:
+   - execute rollback via `ROLLBACK_API_CMD` and `ROLLBACK_ADMIN_CMD` secrets
    - rerun smoke and release gate checks
+
+## Terraform production profile flags
+
+- Baseline:
+  - `api_image`, `admin_image`
+  - `api_desired_count`, `admin_desired_count`
+- Security/perimeter:
+  - `acm_certificate_arn` (enables HTTPS listener)
+  - `enable_waf=true`
+- Database:
+  - `enable_rds=true`
+  - `db_name`, `db_username`, `db_instance_class`
+  - RDS master password is managed in Secrets Manager (see `rds_master_user_secret_arn` output)
 
 ## Incident playbook (P1/P0)
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Pressable } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
+import { useTranslation } from 'react-i18next';
 import { Box } from '../ui/Box';
 import { Text } from '../ui/Text';
 import { colors, spacing } from '../../theme';
@@ -20,19 +21,21 @@ export const PortfolioHero: React.FC<PortfolioHeroProps> = ({
   totalValue,
   dailyChange,
   dailyChangePercent,
-  changeLineLabel = 'Today',
+  changeLineLabel,
   onAddAlert,
 }) => {
+  const { t } = useTranslation();
   const isPositive = dailyChangePercent >= 0;
   const sentimentColor = isPositive ? colors.sentiment.bull_green : colors.sentiment.bear_red;
   const sign = isPositive ? '+' : '';
+  const effectiveChangeLineLabel = changeLineLabel ?? t('summaryWidget.today');
 
   return (
     <Animated.View entering={FadeInUp.duration(800).springify()} style={styles.container}>
       <Box row justify="space-between" align="center" style={{ marginBottom: spacing.md }}>
         <Box style={styles.badge}>
           <Text variant="caption" color={colors.text.secondary} weight="700" style={{ letterSpacing: 1.2 }}>
-            PORTFOLIO VALUE
+            {t('portfolioHero.portfolioValue')}
           </Text>
         </Box>
         {onAddAlert && (
@@ -56,7 +59,7 @@ export const PortfolioHero: React.FC<PortfolioHeroProps> = ({
           </Text>
         </Box>
         <Text variant="body" color={colors.text.muted} style={{ marginLeft: spacing.sm, fontWeight: '500' }}>
-          {changeLineLabel}
+          {effectiveChangeLineLabel}
         </Text>
       </Box>
     </Animated.View>

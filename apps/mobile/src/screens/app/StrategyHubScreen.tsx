@@ -8,6 +8,7 @@ import { PremiumCard } from '../../components/ui/PremiumCard';
 import { colors, radius, spacing } from '../../theme';
 import { apiClient } from '../../api/client';
 import { flushAnalyticsQueue, logEvent, logScreen } from '../../monitoring/analytics';
+import { useTranslation } from 'react-i18next';
 
 type CoachAction = {
   id: string;
@@ -38,12 +39,13 @@ type Goal = {
 };
 
 export const StrategyHubScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const [coachSummary, setCoachSummary] = useState('Yukleniyor...');
+  const [coachSummary, setCoachSummary] = useState(t('strategyHub.loading'));
   const [coachActions, setCoachActions] = useState<CoachAction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [riskGuidance, setRiskGuidance] = useState<string[]>([]);
-  const [weeklyHeadline, setWeeklyHeadline] = useState('Haftalik rapor yukleniyor...');
+  const [weeklyHeadline, setWeeklyHeadline] = useState(t('strategyHub.weeklyLoading'));
   const [shareLink, setShareLink] = useState<string>('');
   const [goalTitle, setGoalTitle] = useState('');
   const [goalTarget, setGoalTarget] = useState('');
@@ -64,14 +66,14 @@ export const StrategyHubScreen = ({ navigation }: any) => {
       setCoachActions(Array.isArray(coachRes.data.actions) ? coachRes.data.actions : []);
       setGoals(Array.isArray(goalsRes.data.goals) ? goalsRes.data.goals : []);
       setRiskGuidance(Array.isArray(riskRes.data.guidance) ? riskRes.data.guidance : []);
-      setWeeklyHeadline(weeklyRes.data.headline ?? 'Haftalik rapor hazir.');
+      setWeeklyHeadline(weeklyRes.data.headline ?? t('strategyHub.weeklyReady'));
       const whatIfRes = await apiClient.post('/api/v1/strategy/what-if', {
         target_allocations: { BTC: 35, ETH: 25, USDTRY: 15, XAU: 10, OTHER: 15 },
         rebalance_budget: 2500,
       });
       setWhatIf(whatIfRes.data ?? null);
     } catch {
-      setError('Strateji merkezi yuklenemedi. Lutfen tekrar dene.');
+      setError(t('strategyHub.loadError'));
     }
   }, []);
 
@@ -89,13 +91,13 @@ export const StrategyHubScreen = ({ navigation }: any) => {
       await apiClient.post(`/api/v1/strategy/coach-actions/${actionId}`, {});
       await load();
     } catch {
-      setError('Aksiyon uygulanamadi. Tekrar dene.');
+      setError(t('strategyHub.actionError'));
     }
   };
 
   const saveGoal = async () => {
     if (!goalTitle.trim() || !goalTarget.trim() || !goalDate.trim()) {
-      setError('Hedef icin baslik, tutar ve tarih gir.');
+      setError(t('strategyHub.goalValidation'));
       return;
     }
     const nextGoals = [
@@ -112,7 +114,7 @@ export const StrategyHubScreen = ({ navigation }: any) => {
       setGoals(nextGoals);
       setError(null);
     } catch {
-      setError('Hedef kaydedilemedi. Girdileri kontrol edip tekrar dene.');
+      setError(t('strategyHub.goalSaveError'));
     }
   };
 
@@ -121,11 +123,11 @@ export const StrategyHubScreen = ({ navigation }: any) => {
       logEvent('strategy_snapshot_created');
       await flushAnalyticsQueue();
       const { data } = await apiClient.post('/api/v1/strategy/public-snapshot/create');
-      const compare = data?.compare_badge ? `\nBadge: ${data.compare_badge}` : '';
-      const challenge = data?.challenge_link ? `\nChallenge: ${data.challenge_link}` : '';
+      const compare = data?.compare_badge ? `\n${t('strategyHub.badgeLabel')}: ${data.compare_badge}` : '';
+      const challenge = data?.challenge_link ? `\n${t('strategyHub.challengeLabel')}: ${data.challenge_link}` : '';
       setShareLink(`${data?.share_url ?? ''}${compare}${challenge}`);
     } catch {
-      setError('Paylasim linki olusturulamadi. Tekrar dene.');
+      setError(t('strategyHub.snapshotError'));
     }
   };
 
@@ -135,7 +137,7 @@ export const StrategyHubScreen = ({ navigation }: any) => {
         <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={{ marginRight: spacing.md }}>
           <ArrowLeft color={colors.text.primary} size={22} />
         </Pressable>
-        <Text variant="h3" weight="700">Yatirim Kocu</Text>
+        <Text variant="h3" weight="700">{t('strategyHub.title')}</Text>
       </Box>
 
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xl }}>
@@ -146,24 +148,24 @@ export const StrategyHubScreen = ({ navigation }: any) => {
         ) : null}
 
         <PremiumCard delay={80} style={{ marginBottom: spacing.md }}>
-          <Text variant="h3" weight="700" style={{ marginBottom: spacing.xs }}>Gunluk + Haftalik Ozet</Text>
+          <Text variant="h3" weight="700" style={{ marginBottom: spacing.xs }}>{t('strategyHub.dailyWeekly')}</Text>
           <Text variant="body" color={colors.text.secondary}>{coachSummary}</Text>
         </PremiumCard>
 
         <PremiumCard delay={120} style={{ marginBottom: spacing.md }}>
-          <Text variant="h3" weight="700" style={{ marginBottom: spacing.sm }}>Insight -> Action</Text>
+          <Text variant="h3" weight="700" style={{ marginBottom: spacing.sm }}>{t('strategyHub.insightAction')}</Text>
           {coachActions.length === 0 ? (
-            <Text variant="caption" color={colors.text.secondary}>Bugun icin aksiyon yok.</Text>
+            <Text variant="caption" color={colors.text.secondary}>{t('strategyHub.noActions')}</Text>
           ) : (
             coachActions.map((a) => (
               <Box key={a.id} style={{ marginBottom: spacing.sm, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' }}>
                 <Text variant="body" weight="600">{a.title}</Text>
                 <Text variant="caption" color={colors.text.secondary} style={{ marginTop: 2 }}>{a.description}</Text>
                 <Text variant="caption" color={colors.text.muted} style={{ marginTop: 2 }}>
-                  {`Neden: ${a.reason}`}
+                  {t('strategyHub.reasonLine', { reason: a.reason })}
                 </Text>
                 <Text variant="caption" color={colors.text.muted} style={{ marginTop: 2 }}>
-                  {`Beklenen etki: ${a.expected_impact} · Guven: ${a.confidence_score}`}
+                  {t('strategyHub.impactLine', { impact: a.expected_impact, confidence: a.confidence_score })}
                 </Text>
                 <Pressable onPress={() => applyCoachAction(a.id)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: spacing.xs }]}>
                   <Text variant="caption" color={colors.accent.primary_blue} weight="700">{a.cta}</Text>
@@ -176,24 +178,24 @@ export const StrategyHubScreen = ({ navigation }: any) => {
         <PremiumCard delay={160} style={{ marginBottom: spacing.md }}>
           <Box row align="center" style={{ marginBottom: spacing.sm }}>
             <Target color={colors.accent.primary_blue} size={16} style={{ marginRight: spacing.xs }} />
-            <Text variant="h3" weight="700">Hedef Bazli Portfoy</Text>
+            <Text variant="h3" weight="700">{t('strategyHub.goalPortfolio')}</Text>
           </Box>
           {goals.map((g, idx) => (
             <Text key={`${g.title}-${idx}`} variant="caption" color={colors.text.secondary} style={{ marginBottom: 4 }}>
-              {`• ${g.title} -> ${g.target_value} (son tarih ${g.due_date})`}
+              {t('strategyHub.goalLine', { title: g.title, target: g.target_value, dueDate: g.due_date })}
             </Text>
           ))}
           <TextInput
             value={goalTitle}
             onChangeText={setGoalTitle}
-            placeholder="Hedef basligi"
+            placeholder={t('strategyHub.goalTitlePlaceholder')}
             placeholderTextColor={colors.text.muted}
             style={{ color: colors.text.primary, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 10, padding: 10, marginTop: spacing.sm }}
           />
           <TextInput
             value={goalTarget}
             onChangeText={setGoalTarget}
-            placeholder="Hedef tutar (USD)"
+            placeholder={t('strategyHub.goalAmountPlaceholder')}
             placeholderTextColor={colors.text.muted}
             keyboardType="numeric"
             style={{ color: colors.text.primary, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 10, padding: 10, marginTop: spacing.sm }}
@@ -201,19 +203,19 @@ export const StrategyHubScreen = ({ navigation }: any) => {
           <TextInput
             value={goalDate}
             onChangeText={setGoalDate}
-            placeholder="Son tarih (YYYY-MM-DD)"
+            placeholder={t('strategyHub.goalDatePlaceholder')}
             placeholderTextColor={colors.text.muted}
             style={{ color: colors.text.primary, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 10, padding: 10, marginTop: spacing.sm }}
           />
           <Pressable onPress={saveGoal} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: spacing.sm }]}>
-            <Text variant="caption" color={colors.accent.primary_blue} weight="700">Hedefi kaydet</Text>
+            <Text variant="caption" color={colors.accent.primary_blue} weight="700">{t('strategyHub.saveGoal')}</Text>
           </Pressable>
         </PremiumCard>
 
         <PremiumCard delay={200} style={{ marginBottom: spacing.md }}>
           <Box row align="center" style={{ marginBottom: spacing.sm }}>
             <ShieldAlert color={colors.sentiment.bear_red} size={16} style={{ marginRight: spacing.xs }} />
-            <Text variant="h3" weight="700">Proaktif Risk Motoru</Text>
+            <Text variant="h3" weight="700">{t('strategyHub.riskEngine')}</Text>
           </Box>
           {riskGuidance.map((line) => (
             <Text key={line} variant="caption" color={colors.text.secondary} style={{ marginBottom: 4 }}>
@@ -223,36 +225,36 @@ export const StrategyHubScreen = ({ navigation }: any) => {
         </PremiumCard>
 
         <PremiumCard delay={240} style={{ marginBottom: spacing.md }}>
-          <Text variant="h3" weight="700" style={{ marginBottom: spacing.xs }}>Lifecycle / Engagement</Text>
+          <Text variant="h3" weight="700" style={{ marginBottom: spacing.xs }}>{t('strategyHub.lifecycle')}</Text>
           <Text variant="caption" color={colors.text.secondary}>{weeklyHeadline}</Text>
         </PremiumCard>
 
         <PremiumCard delay={260} style={{ marginBottom: spacing.md }}>
-          <Text variant="h3" weight="700" style={{ marginBottom: spacing.xs }}>What-if / Auto-Rebalance</Text>
+          <Text variant="h3" weight="700" style={{ marginBottom: spacing.xs }}>{t('strategyHub.whatIf')}</Text>
           {whatIf ? (
             <>
               <Text variant="caption" color={colors.text.secondary}>
-                {`Konsantrasyon: ${whatIf.current_concentration_score} -> ${whatIf.projected_concentration_score}`}
+                {t('strategyHub.concentrationLine', { from: whatIf.current_concentration_score, to: whatIf.projected_concentration_score })}
               </Text>
               <Text variant="caption" color={colors.text.secondary}>
-                {`Oynaklik: ${whatIf.current_volatility_score} -> ${whatIf.projected_volatility_score}`}
+                {t('strategyHub.volatilityLine', { from: whatIf.current_volatility_score, to: whatIf.projected_volatility_score })}
               </Text>
               <Text variant="caption" color={colors.text.secondary}>
-                {`Tahmini maliyet: ${whatIf.rebalance_cost_estimate}`}
+                {t('strategyHub.costLine', { cost: whatIf.rebalance_cost_estimate })}
               </Text>
               <Text variant="caption" color={colors.text.muted} style={{ marginTop: spacing.xs }}>
                 {whatIf.expected_impact_summary}
               </Text>
             </>
           ) : (
-            <Text variant="caption" color={colors.text.secondary}>Simulasyon hazirlaniyor...</Text>
+            <Text variant="caption" color={colors.text.secondary}>{t('strategyHub.whatIfLoading')}</Text>
           )}
         </PremiumCard>
 
         <PremiumCard delay={280}>
-          <Text variant="h3" weight="700" style={{ marginBottom: spacing.xs }}>Growth Surface</Text>
+          <Text variant="h3" weight="700" style={{ marginBottom: spacing.xs }}>{t('strategyHub.growthSurface')}</Text>
           <Pressable onPress={createShareSnapshot} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
-            <Text variant="caption" color={colors.accent.primary_blue} weight="700">Public snapshot linki olustur</Text>
+            <Text variant="caption" color={colors.accent.primary_blue} weight="700">{t('strategyHub.createSnapshot')}</Text>
           </Pressable>
           {shareLink ? (
             <Text variant="caption" color={colors.text.secondary} style={{ marginTop: spacing.sm }}>{shareLink}</Text>

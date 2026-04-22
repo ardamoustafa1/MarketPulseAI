@@ -54,9 +54,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install backend dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements-dev.txt
       - name: Run backend tests
-        run: python -m pytest --cov=app --cov-report=term-missing --cov-report=xml
+        run: python -m pytest --cov=app --cov-report=term-missing --cov-report=xml --cov-fail-under=75
       - name: Upload backend coverage artifact
         uses: actions/upload-artifact@v4
         with:
@@ -116,6 +116,8 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
       - name: Start API stack
         run: docker compose --env-file infra/.env.example -f infra/docker-compose.yml up -d postgres redis api
       - name: Build admin
@@ -160,7 +162,10 @@ jobs:
       - name: Run k6 smoke performance test
         uses: grafana/setup-k6-action@v1
       - name: Execute k6 scenario
-        run: API_BASE_URL=http://127.0.0.1:8000 k6 run tests/perf/k6-portfolio-benchmark.js
+        run: |
+          API_BASE_URL=http://127.0.0.1:8000 \
+          PERF_AUTH_TOKEN="${{ secrets.PERF_TEST_USER_ACCESS_TOKEN }}" \
+          k6 run tests/perf/k6-portfolio-benchmark.js
       - name: Teardown perf stack
         if: always()
         run: docker compose --env-file infra/.env.example -f infra/docker-compose.yml down -v
@@ -242,8 +247,32 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform init (staging)
+        run: terraform -chdir=infra/terraform/environments/staging init
+      - name: Terraform plan (staging)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.STAGING_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.STAGING_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.STAGING_AWS_REGION }}
+        run: terraform -chdir=infra/terraform/environments/staging plan -out=tfplan
       - name: Terraform apply (staging)
-        run: echo "terraform -chdir=infra/terraform/environments/staging apply -auto-approve"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.STAGING_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.STAGING_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.STAGING_AWS_REGION }}
+        run: terraform -chdir=infra/terraform/environments/staging apply tfplan
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run DB migrations (staging)
+        working-directory: apps/api
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: |
+          test -n "${DATABASE_URL}"
+          pip install -r requirements.txt
+          alembic upgrade head
       - name: Staging smoke check
         run: |
           API_BASE_URL="${{ secrets.STAGING_API_BASE_URL }}" bash infra/scripts/post_deploy_smoke.sh
@@ -254,7 +283,14 @@ jobs:
           python3 infra/scripts/release_gate_check.py
       - name: Rollback on failure
         if: failure()
-        run: echo "Rollback staging to previous stable image tag"
+        run: |
+          ENVIRONMENT=staging \
+          PREVIOUS_API_IMAGE="${{ secrets.STAGING_PREVIOUS_API_IMAGE }}" \
+          PREVIOUS_ADMIN_IMAGE="${{ secrets.STAGING_PREVIOUS_ADMIN_IMAGE }}" \
+          ROLLBACK_API_CMD="${{ secrets.STAGING_ROLLBACK_API_CMD }}" \
+          ROLLBACK_ADMIN_CMD="${{ secrets.STAGING_ROLLBACK_ADMIN_CMD }}" \
+          API_BASE_URL="${{ secrets.STAGING_API_BASE_URL }}" \
+          bash infra/scripts/rollback_release.sh
 
   deploy-production:
     runs-on: ubuntu-latest
@@ -263,8 +299,32 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform init (production)
+        run: terraform -chdir=infra/terraform/environments/production init
+      - name: Terraform plan (production)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.PROD_AWS_REGION }}
+        run: terraform -chdir=infra/terraform/environments/production plan -out=tfplan
       - name: Terraform apply (production)
-        run: echo "terraform -chdir=infra/terraform/environments/production apply -auto-approve"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.PROD_AWS_REGION }}
+        run: terraform -chdir=infra/terraform/environments/production apply tfplan
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run DB migrations (production)
+        working-directory: apps/api
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: |
+          test -n "${DATABASE_URL}"
+          pip install -r requirements.txt
+          alembic upgrade head
       - name: Production smoke check
         run: |
           API_BASE_URL="${{ secrets.PROD_API_BASE_URL }}" bash infra/scripts/post_deploy_smoke.sh
@@ -272,7 +332,14 @@ jobs:
         run: echo "Validated rollback command path for production release"
       - name: Rollback on failure
         if: failure()
-        run: echo "Rollback production to previous stable image tag"
+        run: |
+          ENVIRONMENT=production \
+          PREVIOUS_API_IMAGE="${{ secrets.PROD_PREVIOUS_API_IMAGE }}" \
+          PREVIOUS_ADMIN_IMAGE="${{ secrets.PROD_PREVIOUS_ADMIN_IMAGE }}" \
+          ROLLBACK_API_CMD="${{ secrets.PROD_ROLLBACK_API_CMD }}" \
+          ROLLBACK_ADMIN_CMD="${{ secrets.PROD_ROLLBACK_ADMIN_CMD }}" \
+          API_BASE_URL="${{ secrets.PROD_API_BASE_URL }}" \
+          bash infra/scripts/rollback_release.sh
 
   incident-playbook:
     runs-on: ubuntu-latest

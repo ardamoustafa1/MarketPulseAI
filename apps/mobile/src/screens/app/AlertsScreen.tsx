@@ -10,8 +10,10 @@ import { CreateAlertSheet } from '../../components/alert/CreateAlertSheet';
 import { colors, radius, spacing } from '../../theme';
 import { Bell, ArrowLeft, History, Plus, Trash2, ArrowUpRight, ArrowDownRight } from 'lucide-react-native';
 import { formatCurrencyByLocale } from '../../utils/localeFormat';
+import { useTranslation } from 'react-i18next';
 
 export const AlertsScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { alerts, isLoading, fetchAlerts, toggleAlert, deleteAlert, error } = useAlertStore();
   const [showCreate, setShowCreate] = useState(false);
@@ -38,7 +40,7 @@ export const AlertsScreen = ({ navigation }: any) => {
               <Box style={{ marginLeft: spacing.md }}>
                 <Text variant="h3" weight="700">{alert.asset_id.toUpperCase()}</Text>
                 <Text variant="caption" color={colors.text.muted} style={{ marginTop: 2 }}>
-                  {isPct ? (isUp ? 'Yuzde yukselirse' : 'Yuzde duserse') : (isUp ? 'Uzerine cikarsa' : 'Altina inerse')}
+                  {isPct ? (isUp ? t('alertsScreen.pctUp') : t('alertsScreen.pctDown')) : (isUp ? t('alertsScreen.priceAbove') : t('alertsScreen.priceBelow'))}
                 </Text>
               </Box>
             </Box>
@@ -53,7 +55,7 @@ export const AlertsScreen = ({ navigation }: any) => {
             <Pressable onPress={() => deleteAlert(alert.id)} hitSlop={10}>
               <Box row align="center">
                 <Trash2 color={colors.sentiment.bear_red} size={16} />
-                <Text variant="caption" color={colors.sentiment.bear_red} style={{ marginLeft: 6 }}>Sil</Text>
+                <Text variant="caption" color={colors.sentiment.bear_red} style={{ marginLeft: 6 }}>{t('alertsScreen.delete')}</Text>
               </Box>
             </Pressable>
             <Switch
@@ -87,7 +89,7 @@ export const AlertsScreen = ({ navigation }: any) => {
             <ArrowLeft color={colors.text.primary} size={20} />
           </Box>
         </Pressable>
-        <Text variant="h3" weight="700" style={{ letterSpacing: -0.3 }}>Fiyat Alarmlari</Text>
+        <Text variant="h3" weight="700" style={{ letterSpacing: -0.3 }}>{t('alertsScreen.title')}</Text>
         <Pressable hitSlop={20} onPress={() => navigation?.navigate('AlertHistory')} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
           <Box center style={styles.headerBtn}>
             <History color={colors.text.primary} size={20} />
@@ -99,19 +101,19 @@ export const AlertsScreen = ({ navigation }: any) => {
         {error ? (
           <Box style={{ marginBottom: spacing.md, padding: spacing.sm, borderRadius: radius.md, borderWidth: 1, borderColor: 'rgba(255,92,92,0.2)', backgroundColor: 'rgba(255,92,92,0.1)' }}>
             <Text variant="caption" color={colors.sentiment.bear_red}>
-              {`${error} Tekrar denemek icin sayfayi asagi cekerek yenile.`}
+              {t('alertsScreen.errorHint', { error })}
             </Text>
           </Box>
         ) : null}
         {isLoading && alerts.length === 0 ? (
           <Box center padding={spacing.xl}>
-            <Text variant="body" color={colors.text.muted}>Alarmlar yukleniyor...</Text>
+            <Text variant="body" color={colors.text.muted}>{t('alertsScreen.loading')}</Text>
           </Box>
         ) : alerts.length === 0 ? (
           <GuidedStateCard
-            title="Aktif alarmin yok"
-            description="Firsatlari kacirmamak icin fiyat ya da yuzde degisim alarmini olustur."
-            ctaLabel="Ilk alarmi kur"
+            title={t('alertsScreen.emptyTitle')}
+            description={t('alertsScreen.emptyDesc')}
+            ctaLabel={t('alertsScreen.emptyCta')}
             onPress={() => setShowCreate(true)}
             icon={<Bell color={colors.text.muted} size={32} />}
           />
@@ -119,13 +121,13 @@ export const AlertsScreen = ({ navigation }: any) => {
           <>
             {activeAlerts.length > 0 && (
               <Box style={{ marginBottom: spacing.xl }}>
-                <Text variant="caption" weight="600" color={colors.text.muted} style={{ marginBottom: spacing.md, marginLeft: 4 }}>AKTIF ALARMLAR</Text>
+                <Text variant="caption" weight="600" color={colors.text.muted} style={{ marginBottom: spacing.md, marginLeft: 4 }}>{t('alertsScreen.activeSection')}</Text>
                 {activeAlerts.map(renderAlertCard)}
               </Box>
             )}
             {inactiveAlerts.length > 0 && (
               <Box>
-                <Text variant="caption" weight="600" color={colors.text.muted} style={{ marginBottom: spacing.md, marginLeft: 4 }}>PASIF ALARMLAR</Text>
+                <Text variant="caption" weight="600" color={colors.text.muted} style={{ marginBottom: spacing.md, marginLeft: 4 }}>{t('alertsScreen.inactiveSection')}</Text>
                 {inactiveAlerts.map(renderAlertCard)}
               </Box>
             )}

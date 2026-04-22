@@ -9,6 +9,7 @@ import { GuidedStateCard } from '../../components/ui/GuidedStateCard';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
 import { colors, spacing } from '../../theme';
 import { formatCurrency } from '../../utils/formatters';
+import { useTranslation } from 'react-i18next';
 
 type Row = {
   symbol: string;
@@ -18,6 +19,7 @@ type Row = {
 };
 
 export const FifoSummaryScreen = ({ navigation }: { navigation: { goBack: () => void } }) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const activePortfolioId = usePortfolioStore((s) => s.activePortfolioId);
   const [rows, setRows] = useState<Row[]>([]);
@@ -34,7 +36,7 @@ export const FifoSummaryScreen = ({ navigation }: { navigation: { goBack: () => 
       setRows(data?.rows ?? []);
     } catch {
       setRows([]);
-      setError('FIFO ozeti yuklenemedi. Baglantini kontrol edip tekrar dene.');
+      setError(t('fifoScreen.loadError'));
     } finally {
       setLoading(false);
     }
@@ -51,13 +53,13 @@ export const FifoSummaryScreen = ({ navigation }: { navigation: { goBack: () => 
           <ArrowLeft color={colors.text.primary} size={22} />
         </Pressable>
         <Text variant="h2" weight="600" style={{ marginLeft: spacing.md }}>
-          FIFO Ozeti
+          {t('fifoScreen.title')}
         </Text>
       </Box>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + 24 }}>
         <Text variant="caption" color={colors.text.muted} style={{ marginBottom: spacing.lg }}>
-          FIFO satis esleme ozeti (bilgilendirme amacli). Beyan oncesi mali musavir onayi al.
+          {t('fifoScreen.disclaimer')}
         </Text>
         {error ? (
           <Box style={{ marginBottom: spacing.md, padding: spacing.sm, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,92,92,0.2)', backgroundColor: 'rgba(255,92,92,0.1)' }}>
@@ -65,12 +67,12 @@ export const FifoSummaryScreen = ({ navigation }: { navigation: { goBack: () => 
           </Box>
         ) : null}
         {loading ? (
-          <Text color={colors.text.secondary}>FIFO ozeti hazirlaniyor...</Text>
+          <Text color={colors.text.secondary}>{t('fifoScreen.loading')}</Text>
         ) : rows.length === 0 ? (
           <GuidedStateCard
-            title="FIFO verisi bulunamadi"
-            description="FIFO ozeti icin secili portfoyde islem gecmisi olmasi gerekir. Once islem ekleyip tekrar dene."
-            ctaLabel="Islem ekrana git"
+            title={t('fifoScreen.emptyTitle')}
+            description={t('fifoScreen.emptyDesc')}
+            ctaLabel={t('fifoScreen.emptyCta')}
             onPress={() => navigation.goBack()}
           />
         ) : (
@@ -79,9 +81,12 @@ export const FifoSummaryScreen = ({ navigation }: { navigation: { goBack: () => 
               <Text variant="h3" weight="700" style={{ marginBottom: spacing.sm }}>
                 {r.symbol}
               </Text>
-              <Text variant="body">Gerceklesen (FIFO): {formatCurrency(r.fifo_realized_pnl)}</Text>
+              <Text variant="body">{t('fifoScreen.realized', { amount: formatCurrency(r.fifo_realized_pnl) })}</Text>
               <Text variant="caption" color={colors.text.secondary} style={{ marginTop: 4 }}>
-                {`Kalan miktar ${r.remaining_quantity} · Maliyet bazi ${formatCurrency(r.remaining_cost_basis_fifo)}`}
+                {t('fifoScreen.remainingLine', {
+                  quantity: r.remaining_quantity,
+                  cost: formatCurrency(r.remaining_cost_basis_fifo),
+                })}
               </Text>
             </Box>
           ))

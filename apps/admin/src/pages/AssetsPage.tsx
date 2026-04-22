@@ -251,7 +251,7 @@ export function AssetsPage() {
         isLoading={isLoading}
         filters={[
           { key: 'status', label: 'Health', options: ['healthy', 'stale'] },
-          { key: 'source', label: 'Source', options: ['binance', 'yahoo', 'harem', 'unknown'] },
+          { key: 'source', label: 'Source', options: ['binance', 'exchange_rate_host', 'frankfurter', 'gold_api', 'twelve_data', 'alpha_vantage', 'yahoo', 'stooq', 'unknown'] },
         ]}
         searchableKeys={['symbol', 'source', 'status']}
         searchPlaceholder="Search by symbol/source"

@@ -58,8 +58,13 @@ class Settings(BaseSettings):
     PRICE_PROVIDER_RETRY_BACKOFF_SECONDS: float = 0.4
     PRICE_CACHE_TTL_SECONDS: int = 300
     PRICE_STALE_THRESHOLD_SECONDS: int = 60
-    HAREM_API_BASE_URL: str = "https://altinapi.com/api/v1"
-    HAREM_API_KEY: str | None = None
+    EXCHANGE_RATE_HOST_BASE_URL: str = "https://open.er-api.com/v6"
+    FRANKFURTER_BASE_URL: str = "https://api.frankfurter.dev/v1"
+    GOLD_API_BASE_URL: str = "https://api.gold-api.com/price"
+    TWELVE_DATA_BASE_URL: str = "https://api.twelvedata.com"
+    TWELVE_DATA_API_KEY: str | None = None
+    ALPHA_VANTAGE_BASE_URL: str = "https://www.alphavantage.co/query"
+    ALPHA_VANTAGE_API_KEY: str | None = None
     PRICE_SYMBOLS: List[str] = [
         "BTC",
         "ETH",

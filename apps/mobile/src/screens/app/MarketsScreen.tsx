@@ -15,13 +15,6 @@ import { colors, spacing } from '../../theme';
 import { formatQuoteSourceLabel, formatQuoteTime } from '../../utils/quoteLabels';
 import { formatCurrencyByLocale } from '../../utils/localeFormat';
 
-const CATEGORIES: Array<{ id: 'favorites' | AssetCategory; label: string }> = [
-  { id: 'favorites', label: 'Favorites' },
-  { id: 'crypto', label: 'Crypto' },
-  { id: 'forex', label: 'Forex/Fiat' },
-  { id: 'metals', label: 'Gold & Metals' },
-];
-
 type DisplayCurrency = 'USD' | 'EUR' | 'TRY';
 const DISPLAY_CURRENCIES: DisplayCurrency[] = ['USD', 'EUR', 'TRY'];
 const BASE_CURRENCY_BY_SYMBOL: Record<string, DisplayCurrency> = {
@@ -62,6 +55,15 @@ function toDataBadge(item: MarketQuote): 'LIVE' | 'DERIVED' | 'STALE' {
 
 export const MarketsScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
+  const categories = useMemo<Array<{ id: 'favorites' | AssetCategory; label: string }>>(
+    () => [
+      { id: 'favorites', label: t('marketsScreen.favorites') },
+      { id: 'crypto', label: t('marketsScreen.crypto') },
+      { id: 'forex', label: t('marketsScreen.forex') },
+      { id: 'metals', label: t('marketsScreen.metals') },
+    ],
+    [t]
+  );
   const [activeTab, setActiveTab] = useState<'favorites' | AssetCategory>('crypto');
   const [searchQuery, setSearchQuery] = useState('');
   const [displayCurrency, setDisplayCurrency] = useState<DisplayCurrency>('USD');
@@ -242,7 +244,7 @@ export const MarketsScreen = ({ navigation }: any) => {
     <Box flex={1} bg={colors.background.base}>
       <Box style={{ marginTop: spacing.xxl + 20, paddingHorizontal: spacing.lg }}>
         <Text variant="h1" style={{ fontSize: 32, letterSpacing: -1, marginBottom: spacing.sm }}>
-          Discover
+          {t('marketsScreen.title')}
         </Text>
 
         <Box row style={{ marginBottom: spacing.md }}>
@@ -261,7 +263,7 @@ export const MarketsScreen = ({ navigation }: any) => {
         <Box row align="center" style={{ marginBottom: spacing.md }}>
           <Input
             withSearch
-            placeholder="Search assets..."
+            placeholder={t('marketsScreen.searchPlaceholder')}
             value={searchQuery}
             onChangeText={setSearchQuery}
             onClear={() => setSearchQuery('')}
@@ -286,7 +288,7 @@ export const MarketsScreen = ({ navigation }: any) => {
       </Box>
 
       <Box style={{ marginBottom: spacing.sm }}>
-        <CategoryTabs categories={CATEGORIES} activeId={activeTab} onChange={(id) => setActiveTab(id as 'favorites' | AssetCategory)} />
+        <CategoryTabs categories={categories} activeId={activeTab} onChange={(id) => setActiveTab(id as 'favorites' | AssetCategory)} />
       </Box>
 
       {activeTab !== 'forex' && (
@@ -338,10 +340,10 @@ export const MarketsScreen = ({ navigation }: any) => {
           >
             <AlertTriangle color={colors.sentiment.bear_red} size={16} style={{ marginRight: spacing.sm }} />
             <Text variant="caption" color={colors.sentiment.bear_red} style={{ flex: 1 }}>
-              {`${mergedError} Veri akisini yenilemek icin bu bildirime dokun.`}
+              {t('marketsScreen.errorRefreshHint', { error: mergedError })}
             </Text>
             <Text variant="caption" color={colors.text.muted}>
-              Temizle
+              {t('common.clear')}
             </Text>
           </Box>
         </Pressable>
@@ -357,7 +359,7 @@ export const MarketsScreen = ({ navigation }: any) => {
                 <Box center style={{ marginTop: spacing.xxl }}>
                   <Info color={colors.text.muted} size={32} style={{ marginBottom: spacing.md }} />
                   <Text variant="h3" color={colors.text.secondary}>
-                    Sonuc bulunamadi. Aramayi degistir veya kategori sec.
+                    {t('marketsScreen.searchEmpty')}
                   </Text>
                 </Box>
               ) : (

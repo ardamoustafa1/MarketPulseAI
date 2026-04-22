@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { Box } from '../ui/Box';
 import { Text } from '../ui/Text';
 import { colors, radius, spacing } from '../../theme';
@@ -18,6 +19,7 @@ interface PortfolioSummaryProps {
 export const SummaryWidget: React.FC<PortfolioSummaryProps> = ({
   totalValue, totalInvested, unrealizedPnl, unrealizedPnlPercent, realizedPnl, dailyChange, dailyChangePercent
 }) => {
+  const { t } = useTranslation();
   const isDailyPos = dailyChangePercent >= 0;
   const isUnrealizedPos = unrealizedPnlPercent >= 0;
 
@@ -26,7 +28,7 @@ export const SummaryWidget: React.FC<PortfolioSummaryProps> = ({
       <Box style={{ marginBottom: spacing.xl, paddingHorizontal: spacing.md }}>
         <Box style={{ backgroundColor: 'rgba(255,255,255,0.03)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99, alignSelf: 'flex-start', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', marginBottom: 12 }}>
            <Text variant="caption" color={colors.text.secondary} weight="700" style={{ letterSpacing: 1.5 }}>
-             TOTAL PORTFOLIO
+             {t('summaryWidget.totalPortfolio')}
            </Text>
         </Box>
         <Text variant="h1" style={{ fontSize: 56, letterSpacing: -2.5, fontWeight: '700' }}>
@@ -39,7 +41,7 @@ export const SummaryWidget: React.FC<PortfolioSummaryProps> = ({
             </Text>
           </Box>
           <Text variant="body" color={colors.text.muted} style={{ marginLeft: spacing.sm, fontWeight: '600' }}>
-            Today
+            {t('summaryWidget.today')}
           </Text>
         </Box>
       </Box>
@@ -52,17 +54,17 @@ export const SummaryWidget: React.FC<PortfolioSummaryProps> = ({
         >
           <Box row justify="space-between">
             <Box flex={1}>
-               <Text variant="caption" color={colors.text.muted} weight="700" style={{ marginBottom: 6, letterSpacing: 0.5 }}>INVESTED</Text>
+               <Text variant="caption" color={colors.text.muted} weight="700" style={{ marginBottom: 6, letterSpacing: 0.5 }}>{t('summaryWidget.invested')}</Text>
                <Text variant="h3" weight="700" style={{ letterSpacing: -0.5, fontSize: 17 }}>{totalInvested}</Text>
             </Box>
             <Box flex={1}>
-               <Text variant="caption" color={colors.text.muted} weight="700" style={{ marginBottom: 6, letterSpacing: 0.5, textAlign: 'center' }}>UNREALIZED</Text>
+               <Text variant="caption" color={colors.text.muted} weight="700" style={{ marginBottom: 6, letterSpacing: 0.5, textAlign: 'center' }}>{t('summaryWidget.unrealized')}</Text>
                <Text variant="h3" weight="700" color={isUnrealizedPos ? colors.sentiment.bull_green : colors.sentiment.bear_red} style={{ letterSpacing: -0.5, fontSize: 17, textAlign: 'center' }}>
                   {isUnrealizedPos ? '+' : ''}{unrealizedPnl}
                </Text>
             </Box>
             <Box flex={1} align="flex-end">
-               <Text variant="caption" color={colors.text.muted} weight="700" style={{ marginBottom: 6, letterSpacing: 0.5 }}>REALIZED</Text>
+               <Text variant="caption" color={colors.text.muted} weight="700" style={{ marginBottom: 6, letterSpacing: 0.5 }}>{t('summaryWidget.realized')}</Text>
                <Text variant="h3" weight="700" style={{ letterSpacing: -0.5, fontSize: 17, color: colors.text.primary }}>
                   {realizedPnl}
                </Text>

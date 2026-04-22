@@ -12,6 +12,7 @@ import { useWatchlistStore } from '../../store/useWatchlistStore';
 import { useMarketDataStore } from '../../store/useMarketDataStore';
 import * as Haptics from 'expo-haptics';
 import { formatCurrencyByLocale } from '../../utils/localeFormat';
+import { useTranslation } from 'react-i18next';
 
 function toDataBadge(source?: string, isStale?: boolean): 'LIVE' | 'DERIVED' | 'STALE' {
   if (isStale) {
@@ -24,6 +25,7 @@ function toDataBadge(source?: string, isStale?: boolean): 'LIVE' | 'DERIVED' | '
 }
 
 export const WatchlistScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { fetchWatchlist, favorites, isLoading, error, toggleFavorite, clearError } = useWatchlistStore();
   const { initializeRealtime, fetchQuotes, getQuote } = useMarketDataStore();
@@ -49,9 +51,9 @@ export const WatchlistScreen = ({ navigation }: any) => {
   const renderEmptyState = () => (
     <Animated.View entering={FadeInDown.duration(600).springify()}>
       <GuidedStateCard
-        title="Izleme listen bos"
-        description="Ilgili varliklari favorilere alarak fiyat degisimlerini tek ekranda takip edebilirsin."
-        ctaLabel="Piyasalari kesfet"
+        title={t('watchlistScreen.emptyTitle')}
+        description={t('watchlistScreen.emptyDesc')}
+        ctaLabel={t('watchlistScreen.emptyCta')}
         onPress={() => navigation.navigate('Tabs', { screen: 'Markets' })}
         icon={<Star color={colors.accent.premium_gold} size={32} />}
       />
@@ -61,7 +63,7 @@ export const WatchlistScreen = ({ navigation }: any) => {
   return (
     <Box flex={1} bg={colors.background.base}>
       <Box style={{ paddingTop: insets.top + spacing.lg, paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}>
-        <Text variant="h1" style={{ fontSize: 32, letterSpacing: -1 }}>Izleme Listem</Text>
+        <Text variant="h1" style={{ fontSize: 32, letterSpacing: -1 }}>{t('watchlistScreen.title')}</Text>
       </Box>
 
       {/* Error Banner */}
@@ -70,9 +72,9 @@ export const WatchlistScreen = ({ navigation }: any) => {
           <Box row align="center" style={{ marginHorizontal: spacing.lg, marginBottom: spacing.sm, padding: spacing.sm, backgroundColor: 'rgba(255,92,92,0.1)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,92,92,0.2)' }}>
             <AlertTriangle color={colors.sentiment.bear_red} size={16} style={{ marginRight: spacing.sm }} />
             <Text variant="caption" color={colors.sentiment.bear_red} style={{ flex: 1 }}>
-              {`${error} Tekrar denemek icin bildirime dokun.`}
+              {t('watchlistScreen.errorHint', { error })}
             </Text>
-            <Text variant="caption" color={colors.text.muted}>Kapat</Text>
+            <Text variant="caption" color={colors.text.muted}>{t('common.tapToDismiss')}</Text>
           </Box>
         </Pressable>
       )}

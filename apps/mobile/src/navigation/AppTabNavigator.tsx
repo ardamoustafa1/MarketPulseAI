@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Home, LineChart, PieChart, User, Repeat } from 'lucide-react-native';
 import type { AppStackParamList, TabParamList } from './types';
+import { useTranslation } from 'react-i18next';
 
 import { HomeDashboardScreen } from '../screens/app/HomeDashboardScreen';
 import { MarketsScreen } from '../screens/app/MarketsScreen';
@@ -28,6 +29,7 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
 
 // ── Tab-level Navigator (main bottom tabs) ──
 const TabNavigator = () => {
+  const { t } = useTranslation();
   return (
     <Tab.Navigator
       screenOptions={{
@@ -46,6 +48,7 @@ const TabNavigator = () => {
         name="Dashboard" 
         component={HomeDashboardScreen} 
         options={{
+          tabBarLabel: t('common.overview'),
           tabBarIcon: ({ color, size }) => <Home color={color} size={size} />
         }} 
       />
@@ -53,6 +56,7 @@ const TabNavigator = () => {
         name="Markets" 
         component={MarketsScreen} 
         options={{
+          tabBarLabel: t('common.markets'),
           tabBarIcon: ({ color, size }) => <LineChart color={color} size={size} />
         }} 
       />
@@ -60,6 +64,7 @@ const TabNavigator = () => {
         name="Convert"
         component={ConverterScreen}
         options={{
+          tabBarLabel: t('common.convert'),
           tabBarIcon: ({ color, size }) => <Repeat color={color} size={size} />
         }}
       />
@@ -67,6 +72,7 @@ const TabNavigator = () => {
         name="Portfolio" 
         component={PortfolioScreen} 
         options={{
+          tabBarLabel: t('common.portfolio'),
           tabBarIcon: ({ color, size }) => <PieChart color={color} size={size} />
         }} 
       />
@@ -74,6 +80,7 @@ const TabNavigator = () => {
         name="Profile" 
         component={ProfileScreen} 
         options={{
+          tabBarLabel: t('common.profile'),
           tabBarIcon: ({ color, size }) => <User color={color} size={size} />
         }} 
       />

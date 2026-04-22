@@ -10,7 +10,7 @@ from app.services.price.scheduler import aggregated_provider
 router = APIRouter()
 logger = logging.getLogger(__name__)
 ON_DEMAND_REFRESH_MAX_SYMBOLS = 8
-ON_DEMAND_REFRESH_TIMEOUT_SECONDS = 3.5
+ON_DEMAND_REFRESH_TIMEOUT_SECONDS = 8.0
 
 @router.get("", response_model=List[NormalizedPrice])
 @router.get("/", response_model=List[NormalizedPrice])

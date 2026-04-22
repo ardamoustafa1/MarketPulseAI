@@ -10,6 +10,7 @@ import {
 import { ArrowDownUp, ChevronDown, Copy, Search, Star } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as SecureStore from 'expo-secure-store';
+import { useTranslation } from 'react-i18next';
 
 import { Box } from '../../components/ui/Box';
 import { Text } from '../../components/ui/Text';
@@ -146,6 +147,7 @@ const SourceBadge = ({ symbol }: { symbol: string }) => {
 };
 
 export const ConverterScreen = () => {
+  const { t } = useTranslation();
   const {
     initializeRealtime,
     fetchQuotes,
@@ -363,13 +365,13 @@ export const ConverterScreen = () => {
     }
     const value = `${amountInput} ${fromSymbol} = ${formatNumberByLocale(result, 8)} ${toSymbol}`;
     await Clipboard.setStringAsync(value);
-    Alert.alert('Copied', value);
+    Alert.alert(t('converter.copied'), value);
   };
 
   return (
     <Box flex={1} bg={colors.background.base} padding={spacing.lg}>
       <Text variant="h1" style={{ fontSize: 32, letterSpacing: -1, marginTop: spacing.xxl, marginBottom: spacing.lg }}>
-        Converter
+        {t('converter.title')}
       </Text>
 
       <Box style={{ marginBottom: spacing.md }}>
@@ -379,7 +381,7 @@ export const ConverterScreen = () => {
           color={hasUsageData ? colors.accent.premium_gold : colors.text.secondary}
           style={{ marginBottom: spacing.xs }}
         >
-          {hasUsageData ? '🔥 Most Used' : 'Quick Pairs'}
+          {hasUsageData ? t('converter.mostUsed') : t('converter.quickPairs')}
         </Text>
         <Box row style={{ gap: spacing.sm }}>
           {dynamicQuickPairs.map((pair) => (
@@ -409,13 +411,13 @@ export const ConverterScreen = () => {
       ) : null}
 
       <Box style={styles.card}>
-        <Text variant="caption" color={colors.text.secondary} style={styles.label}>Amount</Text>
+        <Text variant="caption" color={colors.text.secondary} style={styles.label}>{t('converter.amount')}</Text>
         <TextInput
           value={amountInput}
           onChangeText={setAmountInput}
           keyboardType="decimal-pad"
           style={styles.amountInput}
-          placeholder="Enter amount"
+          placeholder={t('converter.amountPlaceholder')}
           placeholderTextColor={colors.text.muted}
         />
 
@@ -441,7 +443,7 @@ export const ConverterScreen = () => {
 
         <Box style={styles.resultBox}>
           <Box row justify="space-between" align="center">
-            <Text variant="caption" color={colors.text.secondary}>Converted</Text>
+            <Text variant="caption" color={colors.text.secondary}>{t('converter.converted')}</Text>
             <Box row align="center" style={{ gap: 8 }}>
               <Pressable onPress={toggleFavoritePair}>
                 <Star
@@ -471,14 +473,14 @@ export const ConverterScreen = () => {
           <Pressable style={{ flex: 1 }} onPress={() => setPickerVisible(false)} />
           <Box style={styles.modalBody}>
             <Text variant="h3" weight="700" style={{ marginBottom: spacing.md }}>
-              Select Instrument
+              {t('converter.selectInstrument')}
             </Text>
             <Box row align="center" style={styles.searchBox}>
               <Search size={16} color={colors.text.muted} />
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                placeholder="Search symbol or name"
+                placeholder={t('converter.searchSymbol')}
                 placeholderTextColor={colors.text.muted}
                 style={styles.searchInput}
               />

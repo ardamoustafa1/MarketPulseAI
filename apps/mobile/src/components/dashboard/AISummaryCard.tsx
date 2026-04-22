@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Pressable, Platform } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Box } from '../ui/Box';
 import { Text } from '../ui/Text';
 import { PremiumCard } from '../ui/PremiumCard';
@@ -14,6 +15,7 @@ interface AISummaryCardProps {
 }
 
 export const AISummaryCard: React.FC<AISummaryCardProps> = ({ summary, actionText, onPressAction }) => {
+  const { t } = useTranslation();
   const handlePress = () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPressAction?.();
@@ -28,7 +30,7 @@ export const AISummaryCard: React.FC<AISummaryCardProps> = ({ summary, actionTex
           </Box>
           <Box flex={1} style={{ marginLeft: spacing.md }}>
             <Text variant="h3" color={colors.accent.premium_gold} style={{ marginBottom: spacing.xs }}>
-              AI Market Insight
+              {t('aiSummary.title')}
             </Text>
             <Text variant="body" color={colors.text.secondary} style={{ lineHeight: 22 }}>
               {summary}
@@ -49,7 +51,7 @@ export const AISummaryCard: React.FC<AISummaryCardProps> = ({ summary, actionTex
         <Box row align="center" style={styles.disclaimer}>
           <ShieldAlert color={colors.text.muted} size={10} style={{ marginRight: 4 }} />
           <Text variant="caption" color={colors.text.muted} style={{ fontSize: 10 }}>
-            AI-generated · Not financial advice
+            {t('aiSummary.disclaimer')}
           </Text>
         </Box>
       </PremiumCard>

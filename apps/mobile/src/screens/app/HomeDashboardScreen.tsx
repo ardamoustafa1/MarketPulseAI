@@ -18,9 +18,11 @@ import { useInsightStore } from '../../store/useInsightStore';
 import { colors, radius, spacing } from '../../theme';
 import { formatCurrency } from '../../utils/formatters';
 import { apiClient } from '../../api/client';
+import { useTranslation } from 'react-i18next';
 
 export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (name: string, params?: object) => void } }) => {
-  const [benchmarkText, setBenchmarkText] = useState<string>('Benchmark verisi hesaplanmadi');
+  const { t } = useTranslation();
+  const [benchmarkText, setBenchmarkText] = useState<string>(t('dashboard.benchmarkMissing'));
 
   const { initializeRealtime, fetchQuotes, isLoading: marketLoading, quotes, lastUpdatedAt, getAssetCatalog } =
     useMarketDataStore();
@@ -40,12 +42,17 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
     try {
       const { data } = await apiClient.get('/api/v1/portfolio/benchmark');
       setBenchmarkText(
-        `Getirin ${data.user_return_pct}% | Piyasa medyani ${data.market_median_return_pct}% | Dilim ${data.percentile_rank}/${data.cohort_size}`
+        t('dashboard.benchmarkLine', {
+          user: data.user_return_pct,
+          median: data.market_median_return_pct,
+          rank: data.percentile_rank,
+          cohort: data.cohort_size,
+        })
       );
     } catch {
-      setBenchmarkText('Benchmark icin once maliyet olusturan en az bir islem gir.');
+      setBenchmarkText(t('dashboard.benchmarkNeedTx'));
     }
-  }, [fetchPortfolio, fetchQuotes, initializeRealtime, fetchWatchlist, fetchAlerts, fetchLatestInsight]);
+  }, [fetchPortfolio, fetchQuotes, initializeRealtime, fetchWatchlist, fetchAlerts, fetchLatestInsight, t]);
 
   useEffect(() => {
     void loadAll();
@@ -85,19 +92,19 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
 
   const nextBestAction = useMemo(() => {
     if (!hasPortfolio) {
-      return { label: 'Ilk islemi ekle', target: 'AddTransaction' as const };
+      return { label: t('dashboard.firstTx'), target: 'AddTransaction' as const };
     }
     if (favoritesCount === 0) {
-      return { label: 'Izleme listene varlik ekle', target: 'Watchlist' as const };
+      return { label: t('dashboard.addWatchlist'), target: 'Watchlist' as const };
     }
     if (activeAlertsCount === 0) {
-      return { label: 'Ilk fiyati alarmini kur', target: 'Alerts' as const };
+      return { label: t('dashboard.firstAlert'), target: 'Alerts' as const };
     }
     if (!hasInsight) {
-      return { label: 'Ilk AI icgorunu uret', target: 'Insights' as const };
+      return { label: t('dashboard.firstInsight'), target: 'Insights' as const };
     }
-    return { label: 'Yatirim kocu panelini ac', target: 'StrategyHub' as const };
-  }, [hasPortfolio, favoritesCount, activeAlertsCount, hasInsight]);
+    return { label: t('dashboard.openCoach'), target: 'StrategyHub' as const };
+  }, [hasPortfolio, favoritesCount, activeAlertsCount, hasInsight, t]);
 
   const renderSkeletons = () => (
     <Box padding={spacing.lg}>
@@ -126,9 +133,9 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
 
   const renderEmptyPortfolio = () => (
     <GuidedStateCard
-      title="Portfoyun henuz bos"
-      description="Ilk alim veya satim islemini ekledigin anda gercek getirini, riskini ve AI destekli yorumlari gorebilirsin."
-      ctaLabel="Ilk islemi ekle"
+      title={t('dashboard.emptyTitle')}
+      description={t('dashboard.emptyDesc')}
+      ctaLabel={t('dashboard.firstTx')}
       onPress={() => navigation.navigate('AddTransaction')}
       icon={<HelpCircle color={colors.text.muted} size={32} />}
     />
@@ -151,7 +158,7 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
         <HelpCircle color={colors.text.muted} size={32} />
       </Box>
       <Text variant="h2" weight="600" style={{ marginBottom: spacing.sm, letterSpacing: -0.5 }}>
-        Varliklar senkronize ediliyor
+        {t('dashboard.loadingAssetsTitle')}
       </Text>
       <Text
         variant="body"
@@ -159,12 +166,12 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
         align="center"
         style={{ marginBottom: spacing.xl, paddingHorizontal: spacing.md, lineHeight: 24 }}
       >
-        Toplam deger hazir, kalemler yukleniyor. Ekrani yenileyerek devam et.
+        {t('dashboard.loadingAssetsDesc')}
       </Text>
       <Pressable style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]} onPress={() => void loadAll()}>
         <Box bg={colors.text.primary} padding={spacing.md} radius={radius.pill} row align="center">
           <Text color={colors.background.base} weight="600" style={{ marginRight: spacing.xs }}>
-            Yenile
+            {t('dashboard.refresh')}
           </Text>
           <ArrowUpRight color={colors.background.base} size={18} />
         </Box>
@@ -191,7 +198,7 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
         <Box padding={spacing.lg}>
           <Box row justify="space-between" align="center" style={{ paddingTop: spacing.xl, paddingBottom: spacing.sm }}>
             <Text variant="h2" weight="600" style={{ letterSpacing: -0.5 }}>
-              Genel Bakis
+              {t('dashboard.overviewTitle')}
             </Text>
             <Pressable hitSlop={15} onPress={() => navigation.navigate('Watchlist')} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
               <Box
@@ -214,38 +221,38 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
             totalValue={totalValueStr}
             dailyChange={summary ? formatCurrency(summary.unrealizedPnl) : formatCurrency('0')}
             dailyChangePercent={unrealizedPct}
-            changeLineLabel="Gerceklesmemis"
+            changeLineLabel={t('dashboard.heroChangeLine')}
             onAddAlert={() => navigation.navigate('Alerts')}
           />
 
           <PremiumCard delay={140} style={{ marginTop: spacing.md, marginBottom: spacing.md }}>
             <Box row justify="space-between" align="center" style={{ marginBottom: spacing.sm }}>
-              <Text variant="h3" weight="700">Haftalik ilerleme</Text>
-              <Text variant="caption" color={colors.accent.primary_blue}>{checklistProgress}% tamamlandi</Text>
+              <Text variant="h3" weight="700">{t('dashboard.weeklyProgress')}</Text>
+              <Text variant="caption" color={colors.accent.primary_blue}>{t('dashboard.progressDone', { value: checklistProgress })}</Text>
             </Box>
             <Box style={{ height: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden', marginBottom: spacing.sm }}>
               <Box style={{ width: `${checklistProgress}%`, height: '100%', backgroundColor: colors.accent.primary_blue }} />
             </Box>
             <Text variant="caption" color={colors.text.secondary} style={{ marginBottom: spacing.xs }}>
-              {hasPortfolio ? '✓ Portfoy olustu' : '• Ilk islemini ekle'}
+              {hasPortfolio ? t('dashboard.holdingsReady') : t('dashboard.holdingsMissing')}
             </Text>
             <Text variant="caption" color={colors.text.secondary} style={{ marginBottom: spacing.xs }}>
-              {favoritesCount > 0 ? `✓ Izleme listesi hazir (${favoritesCount})` : '• En az 1 varligi izle'}
+              {favoritesCount > 0 ? t('dashboard.watchlistReady', { count: favoritesCount }) : t('dashboard.watchlistMissing')}
             </Text>
             <Text variant="caption" color={colors.text.secondary}>
-              {activeAlertsCount > 0 ? `✓ Alarm kuruldu (${activeAlertsCount})` : '• En az 1 fiyat alarmi kur'}
+              {activeAlertsCount > 0 ? t('dashboard.alertsReady', { count: activeAlertsCount }) : t('dashboard.alertsMissing')}
             </Text>
           </PremiumCard>
 
           <PremiumCard delay={200} style={{ marginBottom: spacing.md }}>
             <Box row justify="space-between" align="center">
               <Box flex={1}>
-                <Text variant="caption" color={colors.text.muted}>Siradaki en iyi adim</Text>
+                <Text variant="caption" color={colors.text.muted}>{t('dashboard.nextBestAction')}</Text>
                 <Text variant="h3" weight="700" style={{ marginTop: 4 }}>{nextBestAction.label}</Text>
               </Box>
               <Pressable onPress={() => navigation.navigate(nextBestAction.target)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
                 <Box row align="center" bg={colors.text.primary} padding={spacing.sm} radius={radius.pill}>
-                  <Text color={colors.background.base} weight="600" style={{ marginRight: spacing.xs }}>Uygula</Text>
+                  <Text color={colors.background.base} weight="600" style={{ marginRight: spacing.xs }}>{t('dashboard.apply')}</Text>
                   <ArrowUpRight color={colors.background.base} size={16} />
                 </Box>
               </Pressable>
@@ -262,12 +269,12 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
           <PremiumCard delay={280} style={{ marginBottom: spacing.md }}>
             <Box row justify="space-between" align="center">
               <Box flex={1}>
-                <Text variant="caption" color={colors.text.muted}>Kisisel yatirim kocu akisi</Text>
-                <Text variant="h3" weight="700" style={{ marginTop: 4 }}>Insight -> Action -> Outcome</Text>
+                <Text variant="caption" color={colors.text.muted}>{t('dashboard.coachFlow')}</Text>
+                <Text variant="h3" weight="700" style={{ marginTop: 4 }}>{t('dashboard.coachFlowLine')}</Text>
               </Box>
               <Pressable onPress={() => navigation.navigate('StrategyHub')} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
                 <Box row align="center" bg={colors.text.primary} padding={spacing.sm} radius={radius.pill}>
-                  <Text color={colors.background.base} weight="600" style={{ marginRight: spacing.xs }}>Ac</Text>
+                  <Text color={colors.background.base} weight="600" style={{ marginRight: spacing.xs }}>{t('dashboard.open')}</Text>
                   <ArrowUpRight color={colors.background.base} size={16} />
                 </Box>
               </Pressable>
@@ -281,15 +288,15 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
           ) : (
             <>
               <AISummaryCard
-                summary="Portfoy ozetin canli fiyatlarla guncellenir. AI icgoruyu acip dogrudan aksiyon al."
-                actionText="Icgorulere git"
+                summary={t('dashboard.emptyDesc')}
+                actionText={t('dashboard.insightsCta')}
                 onPressAction={() => navigation.navigate('Insights')}
               />
 
               <Box row justify="space-between" align="flex-end" style={{ marginBottom: spacing.md }}>
-                <Text variant="h2">En buyuk varliklar</Text>
+                <Text variant="h2">{t('dashboard.largestAssets')}</Text>
                 <Text variant="body" color={colors.accent.primary_blue}>
-                  {lastUpdatedAt ? `Fiyatlar ${new Date(lastUpdatedAt).toLocaleTimeString()}` : 'Canli'}
+                  {lastUpdatedAt ? `${t('common.lastUpdate')} ${new Date(lastUpdatedAt).toLocaleTimeString()}` : t('dashboard.live')}
                 </Text>
               </Box>
 

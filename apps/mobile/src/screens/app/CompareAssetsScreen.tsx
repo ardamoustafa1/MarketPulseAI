@@ -9,10 +9,12 @@ import { Input } from '../../components/ui/Input';
 import { Text } from '../../components/ui/Text';
 import { fetchCompare } from '../../api/charts';
 import { colors, radius, spacing } from '../../theme';
+import { useTranslation } from 'react-i18next';
 
 const RANGE_KEYS = ['1W', '1M', '1Y'] as const;
 
 export const CompareAssetsScreen = ({ navigation }: { navigation: { goBack: () => void } }) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [a, setA] = useState('BTC');
   const [b, setB] = useState('ETH');
@@ -32,7 +34,7 @@ export const CompareAssetsScreen = ({ navigation }: { navigation: { goBack: () =
       setSeriesA(s0);
       setSeriesB(s1);
     } catch (e: any) {
-      setErr(e?.response?.data?.detail || e?.message || 'Karsilastirma yuklenemedi. Sembolleri kontrol edip tekrar dene.');
+      setErr(e?.response?.data?.detail || e?.message || t('compareScreen.loadError'));
       setSeriesA([]);
       setSeriesB([]);
     } finally {
@@ -50,13 +52,13 @@ export const CompareAssetsScreen = ({ navigation }: { navigation: { goBack: () =
         <Pressable
           onPress={() => navigation.goBack()}
           accessibilityRole="button"
-          accessibilityLabel="Varlik karsilastir"
+          accessibilityLabel={t('compareScreen.accessibilityLabel')}
           style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.7 : 1 }]}
         >
           <ArrowLeft color={colors.text.primary} size={22} />
         </Pressable>
         <Text variant="h2" weight="600">
-          Varlik Karsilastirma
+          {t('compareScreen.title')}
         </Text>
         <Pressable onPress={() => void load()} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
           <RefreshCw color={colors.text.secondary} size={22} />
@@ -65,19 +67,19 @@ export const CompareAssetsScreen = ({ navigation }: { navigation: { goBack: () =
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + 24 }}>
         <Text variant="body" color={colors.text.secondary} style={{ marginBottom: spacing.lg }}>
-          Iki varligin ayni donemdeki goreli performansini tek grafikte izle.
+          {t('compareScreen.desc')}
         </Text>
 
         <Box row style={{ marginBottom: spacing.md }}>
           <Box flex={1} style={{ marginRight: spacing.sm }}>
             <Text variant="caption" color={colors.text.muted} style={{ marginBottom: 4 }}>
-              Varlik A
+              {t('compareScreen.assetA')}
             </Text>
             <Input value={a} onChangeText={setA} autoCapitalize="characters" placeholder="BTC" />
           </Box>
           <Box flex={1}>
             <Text variant="caption" color={colors.text.muted} style={{ marginBottom: 4 }}>
-              Varlik B
+              {t('compareScreen.assetB')}
             </Text>
             <Input value={b} onChangeText={setB} autoCapitalize="characters" placeholder="ETH" />
           </Box>
@@ -109,13 +111,13 @@ export const CompareAssetsScreen = ({ navigation }: { navigation: { goBack: () =
 
         {loading ? (
           <Text variant="body" color={colors.text.secondary}>
-            Karsilastirma verisi yukleniyor...
+            {t('compareScreen.loading')}
           </Text>
         ) : seriesA.length === 0 || seriesB.length === 0 ? (
           <GuidedStateCard
-            title="Karsilastirma verisi bulunamadi"
-            description="Secilen semboller icin bu zaman araliginda yeterli veri yok. Farkli sembol veya aralik deneyin."
-            ctaLabel="1M araligina don"
+            title={t('compareScreen.emptyTitle')}
+            description={t('compareScreen.emptyDesc')}
+            ctaLabel={t('compareScreen.emptyCta')}
             onPress={() => setRange('1M')}
           />
         ) : (

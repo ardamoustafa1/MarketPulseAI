@@ -14,5 +14,7 @@ RUN npm run build --workspace=apps/admin
 
 FROM nginx:1.27-alpine AS runner
 COPY --from=builder /workspace/apps/admin/dist /usr/share/nginx/html
-EXPOSE 80
+COPY apps/admin/nginx.conf /etc/nginx/conf.d/default.conf
+USER nginx
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]

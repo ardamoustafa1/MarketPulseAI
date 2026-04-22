@@ -5,8 +5,12 @@ export function formatQuoteSourceLabel(raw: string | undefined): string {
   if (s.startsWith('derived')) return 'Derived';
   const map: Record<string, string> = {
     binance: 'Binance',
+    exchange_rate_host: 'ExchangeRate.host',
+    frankfurter: 'Frankfurter',
+    gold_api: 'Gold API',
+    twelve_data: 'Twelve Data',
+    alpha_vantage: 'Alpha Vantage',
     yahoo: 'Yahoo Finance',
-    harem: 'Harem / Altın API',
     stooq: 'Stooq',
     aggregator: 'Aggregator',
   };

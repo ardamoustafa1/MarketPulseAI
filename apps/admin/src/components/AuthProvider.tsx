@@ -16,6 +16,11 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+function getCsrfHeaders(): Record<string, string> {
+  const csrf = sessionStorage.getItem('admin_csrf_token');
+  return csrf ? { 'x-csrf-token': csrf } : {};
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const apiBaseUrl =
     import.meta.env.VITE_API_URL ??
@@ -29,16 +34,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    const role = localStorage.getItem('admin_role') as AdminRole | null;
-    const username = localStorage.getItem('admin_username');
-    if (role && username) {
-      setState({
-        isAuthenticated: true,
-        role,
-        username,
-      });
-    }
-  }, []);
+    let cancelled = false;
+    const bootstrapFromServer = async () => {
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/v1/users/me`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: getCsrfHeaders(),
+        });
+        if (!response.ok) {
+          throw new Error('not authenticated');
+        }
+        const payload = await response.json();
+        const backendRole = String(payload?.role ?? '').toLowerCase();
+        const mappedRole: AdminRole =
+          backendRole === 'super_admin' || backendRole === 'admin'
+            ? 'super_admin'
+            : backendRole === 'ops_admin'
+              ? 'ops_admin'
+              : 'viewer';
+        const username = String(payload?.email ?? '');
+        if (!username) {
+          throw new Error('missing user email');
+        }
+        localStorage.setItem('admin_role', mappedRole);
+        localStorage.setItem('admin_username', username);
+        if (!cancelled) {
+          setState({
+            isAuthenticated: true,
+            role: mappedRole,
+            username,
+          });
+        }
+      } catch {
+        localStorage.removeItem('admin_role');
+        localStorage.removeItem('admin_username');
+        if (!cancelled) {
+          setState({
+            isAuthenticated: false,
+            role: null,
+            username: null,
+          });
+        }
+      }
+    };
+    void bootstrapFromServer();
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBaseUrl]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -87,10 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void fetch(`${apiBaseUrl}/api/v1/auth/logout`, {
       method: 'POST',
       credentials: 'include',
-      headers: (() => {
-        const csrf = sessionStorage.getItem('admin_csrf_token');
-        return csrf ? { 'x-csrf-token': csrf } : {};
-      })(),
+      headers: getCsrfHeaders(),
       body: JSON.stringify({}),
     }).catch(() => undefined);
     localStorage.removeItem('admin_role');
