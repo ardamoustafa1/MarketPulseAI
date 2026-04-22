@@ -17,6 +17,7 @@ from app.models.portfolio import Portfolio, Transaction, TransactionTypeEnum
 from app.models.user import User
 from app.services.portfolio.access import resolve_portfolio
 from app.services.jobs.queue import enqueue_job, get_job_result, register_job_handler
+from app.db.redis import get_redis_client
 
 router = APIRouter()
 
@@ -59,6 +60,7 @@ class TaxReportSummary(BaseModel):
 class TaxReportAsyncRequest(BaseModel):
     country: str = "TR"
     portfolio_id: Optional[UUID] = None
+    report_pack: str = "standard"
 
 
 def _resolve_asset(db: Session, payload: TransactionCreateRequest) -> Asset:
@@ -243,6 +245,67 @@ def export_tax_report(
     )
 
 
+@router.get("/export/report-pack")
+def export_report_pack(
+    country: str = Query("TR"),
+    pack: str = Query("standard"),
+    portfolio_id: Optional[UUID] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    portfolio = resolve_portfolio(db, current_user.id, portfolio_id)
+    rows = (
+        db.query(Transaction, Asset.symbol)
+        .join(Asset, Asset.id == Transaction.asset_id)
+        .filter(Transaction.portfolio_id == portfolio.id)
+        .order_by(Transaction.transaction_date.asc(), Transaction.created_at.asc())
+        .all()
+    )
+    csv_data, summary = _build_tax_report(rows, country=country)
+    notes = [
+        f"pack={pack}",
+        f"country={summary.country}",
+        f"template={summary.template}",
+        f"transaction_count={summary.transaction_count}",
+        f"total_buy_notional={summary.total_buy_notional}",
+        f"total_sell_notional={summary.total_sell_notional}",
+        f"net_notional={summary.net_notional}",
+    ]
+    payload = "\n".join(["# MarketPulse Report Pack", *notes, "", csv_data])
+    filename = f"marketpulse-report-pack-{pack}-{country.upper()}-{portfolio.id}.txt"
+    return StreamingResponse(
+        iter([payload]),
+        media_type="text/plain; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/export/pdf")
+def export_transactions_pdf(
+    portfolio_id: Optional[UUID] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    portfolio = resolve_portfolio(db, current_user.id, portfolio_id)
+    rows = (
+        db.query(Transaction, Asset.symbol)
+        .join(Asset, Asset.id == Transaction.asset_id)
+        .filter(Transaction.portfolio_id == portfolio.id)
+        .order_by(Transaction.transaction_date.asc(), Transaction.created_at.asc())
+        .all()
+    )
+    lines = ["MarketPulse Statement", f"portfolio={portfolio.name}", f"row_count={len(rows)}", ""]
+    for tx, symbol in rows[:300]:
+        lines.append(f"{tx.transaction_date.isoformat()} | {symbol} | {tx.type.value} | qty={tx.quantity} | price={tx.price or Decimal('0')}")
+    content = "\n".join(lines)
+    filename = f"marketpulse-statement-{portfolio.id}.pdf"
+    return StreamingResponse(
+        iter([content.encode("utf-8")]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.post("/report-jobs")
 async def create_tax_report_job(
     payload: TaxReportAsyncRequest,
@@ -256,6 +319,7 @@ async def create_tax_report_job(
             "user_id": str(current_user.id),
             "portfolio_id": str(portfolio.id),
             "country": payload.country.upper(),
+            "report_pack": payload.report_pack,
         },
     )
     return {"job_id": job_id, "status": "queued"}
@@ -286,7 +350,7 @@ register_job_handler("tax_report", _tax_report_job_handler)
 
 @router.post("", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
-def create_transaction(
+async def create_transaction(
     payload: TransactionCreateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -349,5 +413,8 @@ def create_transaction(
     db.add(tx)
     db.commit()
     db.refresh(tx)
+    redis = get_redis_client()
+    await redis.delete(f"portfolio:summary:{current_user.id}:{portfolio.id}")
+    await redis.delete(f"portfolio:benchmark:{current_user.id}:{portfolio.id}")
 
     return _to_response(tx, asset.symbol)

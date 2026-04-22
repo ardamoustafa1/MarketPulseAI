@@ -4,7 +4,9 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user, RoleChecker
 from app.schemas.user import User as UserSchema, UserUpdate
 from app.models.user import User
-from app.core.security import get_password_hash
+from app.core.security import get_password_hash, verify_password
+from app.core.config import settings
+import hmac
 
 router = APIRouter()
 
@@ -28,6 +30,10 @@ def update_user_me(
     if user_in.last_name is not None:
         current_user.last_name = user_in.last_name
     if user_in.password is not None:
+        if not user_in.current_password or not verify_password(user_in.current_password, current_user.hashed_password):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Current password verification failed")
+        if not user_in.step_up_token or not hmac.compare_digest(user_in.step_up_token, settings.ADMIN_STEP_UP_TOKEN):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Step-up challenge failed")
         current_user.hashed_password = get_password_hash(user_in.password)
 
     db.commit()

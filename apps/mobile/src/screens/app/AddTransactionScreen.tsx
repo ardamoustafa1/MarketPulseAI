@@ -65,12 +65,26 @@ export const AddTransactionScreen = ({ navigation }: any) => {
     Keyboard.dismiss();
     const isFormValid = validateAll();
     if (isFormValid) {
+      const qty = Number(form.quantity || '0');
+      const price = Number(form.unitPrice || '0');
+      const notional = qty * price;
+      if (form.type === 'sell' && notional >= 10000) {
+        Alert.alert(
+          'Davranissal koruma',
+          'Yuksek tutarli satis tespit edildi. Panik satis riskini azaltmak icin 5 saniye dusunme molasi onerilir.',
+          [
+            { text: 'Vazgec', style: 'cancel' },
+            { text: 'Devam et', style: 'destructive', onPress: () => setShowConfirm(true) },
+          ]
+        );
+        return;
+      }
       setShowConfirm(true);
     } else {
       // Scroll up to show errors
       scrollRef.current?.scrollTo({ y: 0, animated: true });
     }
-  }, [validateAll]);
+  }, [validateAll, form.quantity, form.unitPrice, form.type]);
 
   const handleConfirm = useCallback(async () => {
     const result = await submitTransaction(form);

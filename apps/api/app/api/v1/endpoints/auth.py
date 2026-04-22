@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, Request, status
+import secrets
+from fastapi import APIRouter, Depends, Request, Response, HTTPException, status
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_current_user, enforce_csrf_for_cookie_auth
 from app.schemas.user import UserCreate, User as UserSchema
 from app.schemas.auth import (
     AuthResponse,
@@ -10,6 +11,7 @@ from app.schemas.auth import (
     ResetPasswordRequest,
 )
 from app.models.user import User
+from app.core.config import settings
 from app.core.rate_limit import enforce_auth_rate_limit
 from app.core.security import decode_token
 from jose import JWTError
@@ -18,8 +20,38 @@ from app.services.auth_service import AuthService
 
 router = APIRouter()
 
+
+def _set_auth_cookies(response: Response, access_token: str, refresh_token: str, csrf_token: str) -> None:
+    response.set_cookie(
+        key=settings.AUTH_COOKIE_NAME,
+        value=access_token,
+        httponly=True,
+        secure=settings.COOKIE_SECURE,
+        samesite=settings.COOKIE_SAMESITE,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/",
+    )
+    response.set_cookie(
+        key=settings.REFRESH_COOKIE_NAME,
+        value=refresh_token,
+        httponly=True,
+        secure=settings.COOKIE_SECURE,
+        samesite=settings.COOKIE_SAMESITE,
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        path="/",
+    )
+    response.set_cookie(
+        key=settings.CSRF_COOKIE_NAME,
+        value=csrf_token,
+        httponly=False,
+        secure=settings.COOKIE_SECURE,
+        samesite=settings.COOKIE_SAMESITE,
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        path="/",
+    )
+
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-async def register(user_in: UserCreate, request: Request, db: Session = Depends(get_db)):
+async def register(user_in: UserCreate, request: Request, response: Response, db: Session = Depends(get_db)):
     await enforce_auth_rate_limit(request, "register")
     auth_service = AuthService(db)
     user = auth_service.create_user(user_in)
@@ -32,10 +64,12 @@ async def register(user_in: UserCreate, request: Request, db: Session = Depends(
         actor=user,
     )
     db.commit()
+    csrf_token = secrets.token_urlsafe(24)
+    _set_auth_cookies(response, token.access_token, token.refresh_token, csrf_token)
     return AuthResponse(user=user, token=token)
 
 @router.post("/login", response_model=AuthResponse)
-async def login(payload: LoginPayload, request: Request, db: Session = Depends(get_db)):
+async def login(payload: LoginPayload, request: Request, response: Response, db: Session = Depends(get_db)):
     await enforce_auth_rate_limit(request, "login")
     auth_service = AuthService(db)
     user = await auth_service.authenticate(payload.email, payload.password)
@@ -48,13 +82,18 @@ async def login(payload: LoginPayload, request: Request, db: Session = Depends(g
         actor=user,
     )
     db.commit()
+    csrf_token = secrets.token_urlsafe(24)
+    _set_auth_cookies(response, token.access_token, token.refresh_token, csrf_token)
     return AuthResponse(user=user, token=token)
 
 @router.post("/refresh", response_model=AuthResponse)
-async def refresh_token(payload: RefreshTokenRequest, request: Request, db: Session = Depends(get_db)):
+async def refresh_token(payload: RefreshTokenRequest, request: Request, response: Response, db: Session = Depends(get_db)):
     await enforce_auth_rate_limit(request, "refresh")
     auth_service = AuthService(db)
-    user, token = auth_service.refresh_access_token(payload.refresh_token)
+    refresh = payload.refresh_token or request.cookies.get(settings.REFRESH_COOKIE_NAME)
+    if not refresh:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing refresh token")
+    user, token = auth_service.refresh_access_token(refresh)
     AuditService(db).log(
         action="auth.refresh",
         entity_table="users",
@@ -63,18 +102,29 @@ async def refresh_token(payload: RefreshTokenRequest, request: Request, db: Sess
         actor=user,
     )
     db.commit()
+    csrf_token = secrets.token_urlsafe(24)
+    _set_auth_cookies(response, token.access_token, token.refresh_token, csrf_token)
     return AuthResponse(user=user, token=token)
 
 @router.post("/logout")
-def logout(payload: RefreshTokenRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def logout(
+    payload: RefreshTokenRequest | None = None,
+    request: Request = None,
+    response: Response = None,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_csrf_for_cookie_auth),
+    current_user: User = Depends(get_current_user),
+):
+    refresh_token = (payload.refresh_token if payload else None) or (request.cookies.get(settings.REFRESH_COOKIE_NAME) if request else None)
     try:
-        token_payload = decode_token(payload.refresh_token)
+        token_payload = decode_token(refresh_token) if refresh_token else {}
     except JWTError:
         return {"message": "Logged out successfully"}
     if token_payload.get("sub") != str(current_user.id):
         return {"message": "Logged out successfully"}
     auth_service = AuthService(db)
-    auth_service.revoke_token(payload.refresh_token)
+    if refresh_token:
+        auth_service.revoke_token(refresh_token)
     AuditService(db).log(
         action="auth.logout",
         entity_table="users",
@@ -83,6 +133,10 @@ def logout(payload: RefreshTokenRequest, db: Session = Depends(get_db), current_
         actor=current_user,
     )
     db.commit()
+    if response is not None:
+        response.delete_cookie(settings.AUTH_COOKIE_NAME, path="/")
+        response.delete_cookie(settings.REFRESH_COOKIE_NAME, path="/")
+        response.delete_cookie(settings.CSRF_COOKIE_NAME, path="/")
     return {"message": "Logged out successfully"}
 
 @router.post("/forgot-password")

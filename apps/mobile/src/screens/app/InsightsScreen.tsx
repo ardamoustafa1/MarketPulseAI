@@ -87,6 +87,22 @@ const InsightCardItem = ({ card, index, navigation }: { card: InsightCard; index
         <Text variant="body" color={colors.text.secondary} style={{ lineHeight: 22 }}>
           {card.content}
         </Text>
+        <Box row style={{ marginTop: spacing.xs }}>
+          <Text variant="caption" color={colors.text.muted}>
+            {`Kaynak: ${card.source_quality ?? 'medium'} · Guncellenme: ${card.last_updated_at ? formatDateTimeByLocale(new Date(card.last_updated_at)).time : 'n/a'}`}
+          </Text>
+        </Box>
+        {Array.isArray(card.evidence) && card.evidence.length > 0 ? (
+          <Box row style={{ marginTop: spacing.xs, flexWrap: 'wrap' }}>
+            {card.evidence.map((e) => (
+              <Box key={e} style={styles.actionChip}>
+                <Text variant="caption" color={colors.text.secondary}>
+                  {e}
+                </Text>
+              </Box>
+            ))}
+          </Box>
+        ) : null}
 
         <Box row style={{ marginTop: spacing.md }}>
           <Pressable
@@ -218,8 +234,13 @@ export const InsightsScreen = ({ navigation }: any) => {
         )}
 
         {/* ── Insight Cards ── */}
-        {isLoading || isGenerating ? renderSkeletons() : (
+        {isLoading && !latestInsight ? renderSkeletons() : (
           <Box padding={spacing.lg} style={{ paddingTop: 0 }}>
+            {isGenerating ? (
+              <Text variant="caption" color={colors.text.muted} style={{ marginBottom: spacing.sm }}>
+                Yeni icgoru uretiliyor, mevcut kartlar korunuyor...
+              </Text>
+            ) : null}
             {latestInsight?.cards.map((card, index) => (
               <InsightCardItem key={card.id} card={card} index={index} navigation={navigation} />
             ))}

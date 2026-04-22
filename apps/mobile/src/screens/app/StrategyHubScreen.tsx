@@ -21,6 +21,15 @@ type CoachAction = {
   metadata?: Record<string, unknown>;
 };
 
+type WhatIfSimulation = {
+  current_concentration_score: string;
+  projected_concentration_score: string;
+  current_volatility_score: string;
+  projected_volatility_score: string;
+  rebalance_cost_estimate: string;
+  expected_impact_summary: string;
+};
+
 type Goal = {
   title: string;
   target_value: string;
@@ -40,6 +49,7 @@ export const StrategyHubScreen = ({ navigation }: any) => {
   const [goalTarget, setGoalTarget] = useState('');
   const [goalDate, setGoalDate] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [whatIf, setWhatIf] = useState<WhatIfSimulation | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -55,6 +65,11 @@ export const StrategyHubScreen = ({ navigation }: any) => {
       setGoals(Array.isArray(goalsRes.data.goals) ? goalsRes.data.goals : []);
       setRiskGuidance(Array.isArray(riskRes.data.guidance) ? riskRes.data.guidance : []);
       setWeeklyHeadline(weeklyRes.data.headline ?? 'Haftalik rapor hazir.');
+      const whatIfRes = await apiClient.post('/api/v1/strategy/what-if', {
+        target_allocations: { BTC: 35, ETH: 25, USDTRY: 15, XAU: 10, OTHER: 15 },
+        rebalance_budget: 2500,
+      });
+      setWhatIf(whatIfRes.data ?? null);
     } catch {
       setError('Strateji merkezi yuklenemedi. Lutfen tekrar dene.');
     }
@@ -106,7 +121,9 @@ export const StrategyHubScreen = ({ navigation }: any) => {
       logEvent('strategy_snapshot_created');
       await flushAnalyticsQueue();
       const { data } = await apiClient.post('/api/v1/strategy/public-snapshot/create');
-      setShareLink(data?.share_url ?? '');
+      const compare = data?.compare_badge ? `\nBadge: ${data.compare_badge}` : '';
+      const challenge = data?.challenge_link ? `\nChallenge: ${data.challenge_link}` : '';
+      setShareLink(`${data?.share_url ?? ''}${compare}${challenge}`);
     } catch {
       setError('Paylasim linki olusturulamadi. Tekrar dene.');
     }
@@ -208,6 +225,28 @@ export const StrategyHubScreen = ({ navigation }: any) => {
         <PremiumCard delay={240} style={{ marginBottom: spacing.md }}>
           <Text variant="h3" weight="700" style={{ marginBottom: spacing.xs }}>Lifecycle / Engagement</Text>
           <Text variant="caption" color={colors.text.secondary}>{weeklyHeadline}</Text>
+        </PremiumCard>
+
+        <PremiumCard delay={260} style={{ marginBottom: spacing.md }}>
+          <Text variant="h3" weight="700" style={{ marginBottom: spacing.xs }}>What-if / Auto-Rebalance</Text>
+          {whatIf ? (
+            <>
+              <Text variant="caption" color={colors.text.secondary}>
+                {`Konsantrasyon: ${whatIf.current_concentration_score} -> ${whatIf.projected_concentration_score}`}
+              </Text>
+              <Text variant="caption" color={colors.text.secondary}>
+                {`Oynaklik: ${whatIf.current_volatility_score} -> ${whatIf.projected_volatility_score}`}
+              </Text>
+              <Text variant="caption" color={colors.text.secondary}>
+                {`Tahmini maliyet: ${whatIf.rebalance_cost_estimate}`}
+              </Text>
+              <Text variant="caption" color={colors.text.muted} style={{ marginTop: spacing.xs }}>
+                {whatIf.expected_impact_summary}
+              </Text>
+            </>
+          ) : (
+            <Text variant="caption" color={colors.text.secondary}>Simulasyon hazirlaniyor...</Text>
+          )}
         </PremiumCard>
 
         <PremiumCard delay={280}>

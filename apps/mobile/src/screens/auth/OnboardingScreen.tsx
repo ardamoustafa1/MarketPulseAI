@@ -13,9 +13,17 @@ export const OnboardingScreen = ({ navigation }: any) => {
       </Text>
 
       <Box bg={colors.background.surface} padding={spacing.md} radius={radius.md} style={{ marginBottom: spacing.md }}>
-        <Text variant="caption" color={colors.text.secondary}>1) Hesabini ac</Text>
-        <Text variant="caption" color={colors.text.secondary}>2) Ilk islemini gir</Text>
-        <Text variant="caption" color={colors.text.secondary}>3) Canli fiyat + AI icgorulerini takip et</Text>
+        <Text variant="caption" color={colors.text.secondary}>1) Hesabini ac ve risk profilini sec</Text>
+        <Text variant="caption" color={colors.text.secondary}>2) Ilk islemini gir, benchmarki otomatik baslat</Text>
+        <Text variant="caption" color={colors.text.secondary}>3) Koc aksiyonlarini uygula, haftalik skoru yukselt</Text>
+      </Box>
+      <Box bg={colors.background.surface} padding={spacing.md} radius={radius.md} style={{ marginBottom: spacing.md }}>
+        <Text variant="caption" color={colors.text.secondary}>
+          Ilk 10 dakikada:
+        </Text>
+        <Text variant="caption" color={colors.text.secondary}>• Portfoy gorunurlugu</Text>
+        <Text variant="caption" color={colors.text.secondary}>• Ilk risk raporu</Text>
+        <Text variant="caption" color={colors.text.secondary}>• Kisisel sonraki adim</Text>
       </Box>
       
       <Pressable onPress={() => navigation.navigate('Login')}>

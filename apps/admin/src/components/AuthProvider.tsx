@@ -29,10 +29,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('admin_access_token');
     const role = localStorage.getItem('admin_role') as AdminRole | null;
     const username = localStorage.getItem('admin_username');
-    if (token && role && username) {
+    if (role && username) {
       setState({
         isAuthenticated: true,
         role,
@@ -46,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch(`${apiBaseUrl}/api/v1/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
@@ -62,20 +62,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             ? 'ops_admin'
             : 'viewer';
       const username = payload?.user?.email ?? email;
-      const accessToken = payload?.token?.access_token;
-      const refreshToken = payload?.token?.refresh_token;
-      if (typeof accessToken !== 'string' || accessToken.length === 0) {
-        return false;
-      }
-
-      localStorage.setItem('admin_access_token', accessToken);
-      if (typeof refreshToken === 'string' && refreshToken.length > 0) {
-        localStorage.setItem('admin_refresh_token', refreshToken);
-      } else {
-        localStorage.removeItem('admin_refresh_token');
-      }
       localStorage.setItem('admin_role', mappedRole);
       localStorage.setItem('admin_username', username);
+      const csrf = document.cookie
+        .split('; ')
+        .find((entry) => entry.startsWith('mp_csrf_token='))
+        ?.split('=')[1];
+      if (csrf) {
+        sessionStorage.setItem('admin_csrf_token', decodeURIComponent(csrf));
+      }
 
       setState({
         isAuthenticated: true,
@@ -89,10 +84,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('admin_access_token');
-    localStorage.removeItem('admin_refresh_token');
+    void fetch(`${apiBaseUrl}/api/v1/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: (() => {
+        const csrf = sessionStorage.getItem('admin_csrf_token');
+        return csrf ? { 'x-csrf-token': csrf } : {};
+      })(),
+      body: JSON.stringify({}),
+    }).catch(() => undefined);
     localStorage.removeItem('admin_role');
     localStorage.removeItem('admin_username');
+    sessionStorage.removeItem('admin_csrf_token');
     setState({
       isAuthenticated: false,
       role: null,

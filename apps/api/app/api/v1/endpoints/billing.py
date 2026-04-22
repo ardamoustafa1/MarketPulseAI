@@ -19,6 +19,7 @@ from app.schemas.billing import (
     SubscriptionUpdateRequest,
 )
 from app.services.audit_service import AuditService
+from app.db.redis import get_redis_client
 
 router = APIRouter()
 
@@ -81,6 +82,13 @@ async def billing_webhook(
     x_signature: str | None = Header(default=None, alias="x-signature"),
     db: Session = Depends(get_db),
 ):
+    redis = get_redis_client()
+    signature_fingerprint = f"{x_signature or 'none'}:{len(raw_body)}"
+    replay_key = f"billing:webhook:replay:{signature_fingerprint}"
+    if await redis.get(replay_key):
+        return {"status": "replay_ignored"}
+    await redis.set(replay_key, "1", ex=60 * 15)
+
     raw_body = await request.body()
     if not verify_payload_signature(raw_body, settings.BILLING_WEBHOOK_SECRET, x_signature):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid billing signature")
@@ -98,6 +106,10 @@ async def billing_webhook(
     )
     if existing:
         return {"status": "duplicate_ignored"}
+    event_replay_key = f"billing:webhook:event:{payload.event_id.strip()}"
+    if await redis.get(event_replay_key):
+        return {"status": "duplicate_ignored"}
+    await redis.set(event_replay_key, "1", ex=60 * 60 * 24)
 
     user = db.query(User).filter(User.email == payload.user_email).first()
     if not user:

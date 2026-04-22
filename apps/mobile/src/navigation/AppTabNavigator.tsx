@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Home, LineChart, PieChart, User, Repeat } from 'lucide-react-native';
+import type { AppStackParamList, TabParamList } from './types';
 
 import { HomeDashboardScreen } from '../screens/app/HomeDashboardScreen';
 import { MarketsScreen } from '../screens/app/MarketsScreen';
@@ -22,8 +23,8 @@ import { StrategyHubScreen } from '../screens/app/StrategyHubScreen';
 
 import { colors } from '../theme/tokens';
 
-const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator<TabParamList>();
+const Stack = createNativeStackNavigator<AppStackParamList>();
 
 // ── Tab-level Navigator (main bottom tabs) ──
 const TabNavigator = () => {

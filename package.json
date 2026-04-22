@@ -14,11 +14,13 @@
     "setup:local": "bash infra/scripts/bootstrap_local.sh",
     "demo:live": "bash infra/scripts/run_live_demo.sh",
     "seed:local": "cd apps/api && python3 -m app.db.seed",
+    "test:e2e": "playwright test --config=tests/e2e/playwright.config.ts",
     "generate:api-types:admin": "openapi-typescript http://localhost:8000/api/v1/openapi.json -o apps/admin/src/api/generated.ts",
     "generate:api-types:mobile": "openapi-typescript http://localhost:8000/api/v1/openapi.json -o apps/mobile/src/api/generated.ts",
     "generate:api-types": "npm run generate:api-types:admin && npm run generate:api-types:mobile"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "expo": "54.0.33",
     "openapi-typescript": "^7.10.1",
     "prettier": "^3.0.0",

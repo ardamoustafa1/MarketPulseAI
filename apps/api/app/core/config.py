@@ -22,9 +22,15 @@ class Settings(BaseSettings):
     WS_CONNECT_RATE_LIMIT_WINDOW_SECONDS: int = 60
     TRUST_PROXY_HEADERS: bool = False
     TRUSTED_PROXY_HOPS: int = 1
+    TRUSTED_PROXY_CIDRS: List[str] = []
     ADMIN_STEP_UP_TOKEN: str = ""
     ADMIN_STEP_UP_TOTP_SECRET: str = ""
     PUBLIC_SNAPSHOT_EXPIRE_HOURS: int = 168
+    AUTH_COOKIE_NAME: str = "mp_access_token"
+    REFRESH_COOKIE_NAME: str = "mp_refresh_token"
+    CSRF_COOKIE_NAME: str = "mp_csrf_token"
+    COOKIE_SECURE: bool = True
+    COOKIE_SAMESITE: str = "lax"
     
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
@@ -131,6 +137,13 @@ class Settings(BaseSettings):
     def parse_price_symbols(cls, value):
         if isinstance(value, str):
             return [item.strip().upper() for item in value.split(",") if item.strip()]
+        return value
+
+    @field_validator("TRUSTED_PROXY_CIDRS", mode="before")
+    @classmethod
+    def parse_proxy_cidrs(cls, value):
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(",") if item.strip()]
         return value
 
     @field_validator("ENVIRONMENT", mode="before")

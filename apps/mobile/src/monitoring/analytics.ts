@@ -18,31 +18,47 @@ type AnalyticsEvent = {
 const MAX_ATTEMPTS = 5;
 const BASE_BACKOFF_MS = 2000;
 const MAX_BACKOFF_MS = 5 * 60 * 1000;
+const ANALYTICS_SESSION_KEY = 'analytics_session_id_v1';
+const DEFAULT_EXPERIMENT_ID = 'core-experience-v2';
+
+async function getSessionId(): Promise<string> {
+  const existing = await SecureStore.getItemAsync(ANALYTICS_SESSION_KEY);
+  if (existing) return existing;
+  const generated = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  await SecureStore.setItemAsync(ANALYTICS_SESSION_KEY, generated);
+  return generated;
+}
 
 export function logScreen(name: string, params?: Record<string, unknown>) {
   if (__DEV__) {
     console.log('[analytics:screen]', name, params);
   }
-  void enqueueEvent({
-    name: `screen_${name.toLowerCase()}`,
-    params,
-    ts: new Date().toISOString(),
-    attempts: 0,
-    nextRetryAt: 0,
-  });
+  void (async () => {
+    const sessionId = await getSessionId();
+    await enqueueEvent({
+      name: `screen_${name.toLowerCase()}`,
+      params: { ...(params ?? {}), session_id: sessionId, experiment_id: DEFAULT_EXPERIMENT_ID },
+      ts: new Date().toISOString(),
+      attempts: 0,
+      nextRetryAt: 0,
+    });
+  })();
 }
 
 export function logEvent(name: string, params?: Record<string, unknown>) {
   if (__DEV__) {
     console.log('[analytics:event]', name, params);
   }
-  void enqueueEvent({
-    name,
-    params,
-    ts: new Date().toISOString(),
-    attempts: 0,
-    nextRetryAt: 0,
-  });
+  void (async () => {
+    const sessionId = await getSessionId();
+    await enqueueEvent({
+      name,
+      params: { ...(params ?? {}), session_id: sessionId, experiment_id: DEFAULT_EXPERIMENT_ID },
+      ts: new Date().toISOString(),
+      attempts: 0,
+      nextRetryAt: 0,
+    });
+  })();
 }
 
 async function readQueue(): Promise<AnalyticsEvent[]> {

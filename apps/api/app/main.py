@@ -152,12 +152,18 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
+    request_id = request.headers.get("x-request-id", "unknown")
+    client_ip = request.client.host if request.client else "unknown"
     logger.exception(
-        "unhandled_exception method=%s path=%s error=%s",
+        "unhandled_exception method=%s path=%s error=%s request_id=%s client_ip=%s",
         request.method,
         request.url.path,
         type(exc).__name__,
+        request_id,
+        client_ip,
     )
+    if settings.SENTRY_DSN:
+        sentry_sdk.capture_exception(exc)
     return JSONResponse(
         status_code=500,
         content={"message": "An unexpected server error occurred.", "error": "Internal Server Error"},

@@ -7,6 +7,9 @@ export interface InsightCard {
   title: string;
   content: string;
   severity: 'positive' | 'negative' | 'neutral' | 'warning';
+  source_quality?: 'high' | 'medium' | 'low';
+  last_updated_at?: string | null;
+  evidence?: string[];
 }
 
 export interface InsightResponse {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fetchAssets, fetchNorthStar, fetchPrices, fetchReadiness, type PriceItem } from '../api/adminApi';
+import { fetchAssets, fetchIncidents, fetchNorthStar, fetchPrices, fetchReadiness, fetchUsers, type PriceItem } from '../api/adminApi';
 import type { KpiCard, PriceSourceHealthRecord } from '../types/admin';
 
 const METRIC_GLYPHS = ['◉', '◈', '◍', '◎'];
@@ -42,11 +42,19 @@ export function DashboardPage() {
     cohortRows: [],
   });
   const [hoveredCohortIndex, setHoveredCohortIndex] = useState<number | null>(null);
+  const [incidents, setIncidents] = useState<Array<{ type: string; severity: string; value: number }>>([]);
+  const [workspaceRows, setWorkspaceRows] = useState<Array<{ tenant: string; userCount: number }>>([]);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [readiness, assets, growth] = await Promise.all([fetchReadiness(), fetchAssets(), fetchNorthStar()]);
+        const [readiness, assets, growth, incidentCenter, users] = await Promise.all([
+          fetchReadiness(),
+          fetchAssets(),
+          fetchNorthStar(),
+          fetchIncidents(),
+          fetchUsers(),
+        ]);
         const symbols = assets.slice(0, 80).map((item) => item.symbol);
         const prices: PriceItem[] = await fetchPrices(symbols);
         const staleCount = prices.filter((p) => p.is_stale).length;
@@ -99,6 +107,18 @@ export function DashboardPage() {
             retention30d: c.retention_30d_percent,
           })),
         });
+        setIncidents(incidentCenter.incidents ?? []);
+        const grouped = users.reduce<Record<string, number>>((acc, user) => {
+          const tenant = user.email.split('@')[1] || 'unknown';
+          acc[tenant] = (acc[tenant] ?? 0) + 1;
+          return acc;
+        }, {});
+        setWorkspaceRows(
+          Object.entries(grouped)
+            .map(([tenant, userCount]) => ({ tenant, userCount }))
+            .sort((a, b) => b.userCount - a.userCount)
+            .slice(0, 20)
+        );
       } catch {
         setPriceSourceHealth([]);
       }
@@ -214,6 +234,62 @@ export function DashboardPage() {
             <p>{northStar.coachFunnel}</p>
           </div>
         </div>
+      </section>
+
+      <section className="panel" style={{ marginTop: '1rem' }}>
+        <div className="panel-header">
+          <h3>Advisor Workspace (Multi-account)</h3>
+          <p>Tenant benzeri segmentte hesap yogunlugu.</p>
+        </div>
+        {workspaceRows.length === 0 ? (
+          <p className="muted">Workspace verisi yok.</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Tenant</th>
+                <th>Accounts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {workspaceRows.map((row) => (
+                <tr key={row.tenant} className="data-row">
+                  <td>{row.tenant}</td>
+                  <td>{row.userCount}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      <section className="panel" style={{ marginTop: '1rem' }}>
+        <div className="panel-header">
+          <h3>Incident Center</h3>
+          <p>Error spike, queue lag, webhook failure sinyalleri.</p>
+        </div>
+        {incidents.length === 0 ? (
+          <p className="muted">Acik incident yok.</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Severity</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {incidents.map((incident, idx) => (
+                <tr key={`${incident.type}-${idx}`} className="data-row">
+                  <td>{incident.type}</td>
+                  <td>{incident.severity}</td>
+                  <td>{incident.value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </section>
 
       <section className="panel" style={{ marginTop: '1rem' }}>

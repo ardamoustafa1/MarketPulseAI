@@ -1,5 +1,5 @@
 from typing import Generator, Optional
-from fastapi import Depends
+from fastapi import Depends, Header, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 from sqlalchemy.orm import Session
@@ -10,7 +10,7 @@ from app.db.session import SessionLocal
 from app.models.user import User
 from app.services.websocket.manager import ConnectionManager
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login", auto_error=False)
 
 # Shared DI Instances
 _global_ws_manager = ConnectionManager()
@@ -28,10 +28,17 @@ def get_db() -> Generator:
 
 def get_current_user(
     db: Session = Depends(get_db), 
-    token: str = Depends(oauth2_scheme)
+    request: Request = None,
+    token: str = Depends(oauth2_scheme),
 ) -> User:
     try:
-        payload = decode_token(token)
+        resolved_token = token
+        if not resolved_token or resolved_token == "null":
+            cookie_name = settings.AUTH_COOKIE_NAME
+            resolved_token = request.cookies.get(cookie_name)
+        if not resolved_token:
+            raise UnauthorizedException(detail="Missing authentication token")
+        payload = decode_token(resolved_token)
         if payload.get("type") != "access":
             raise UnauthorizedException(detail="Invalid token type")
         user_id: str = payload.get("sub")
@@ -48,6 +55,20 @@ def get_current_user(
         return user
     except JWTError:
         raise UnauthorizedException(detail="Could not validate credentials")
+
+
+def enforce_csrf_for_cookie_auth(
+    request: Request,
+    x_csrf_token: str | None = Header(default=None, alias="x-csrf-token"),
+) -> None:
+    if request.method in {"GET", "HEAD", "OPTIONS"}:
+        return
+    auth_cookie = request.cookies.get(settings.AUTH_COOKIE_NAME)
+    if not auth_cookie:
+        return
+    csrf_cookie = request.cookies.get(settings.CSRF_COOKIE_NAME)
+    if not csrf_cookie or not x_csrf_token or csrf_cookie != x_csrf_token:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid CSRF token")
 
 def get_current_admin(current_user: User = Depends(get_current_user)):
     if current_user.role.value != "admin":

@@ -9,6 +9,9 @@ class InsightCard(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, description="Short, descriptive title for the insight.")
     content: str = Field(..., min_length=1, max_length=2000, description="Neutral, descriptive summary. No financial advice.")
     severity: Literal["positive", "negative", "neutral", "warning"] = Field(default="neutral", description="Severity level of the insight.")
+    source_quality: Literal["high", "medium", "low"] = "medium"
+    last_updated_at: datetime | None = None
+    evidence: List[str] = Field(default_factory=list, max_length=5)
 
 class InsightResponse(BaseModel):
     id: str

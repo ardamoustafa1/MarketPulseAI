@@ -12,6 +12,11 @@ export type HealthPayload = {
   };
 };
 
+export type IncidentCenterPayload = {
+  open_incident_count: number;
+  incidents: Array<{ type: string; severity: string; value: number }>;
+};
+
 export type NorthStarPayload = {
   total_users: number;
   activated_users: number;
@@ -131,12 +136,27 @@ function getApiBaseUrl(): string {
   return 'http://localhost:8000';
 }
 
+function readCsrfToken(): string {
+  const fromSession = sessionStorage.getItem('admin_csrf_token');
+  if (fromSession) return fromSession;
+  const cookiePart = document.cookie
+    .split('; ')
+    .find((entry) => entry.startsWith('mp_csrf_token='));
+  const token = cookiePart ? decodeURIComponent(cookiePart.split('=')[1] ?? '') : '';
+  if (token) sessionStorage.setItem('admin_csrf_token', token);
+  return token;
+}
+
+function authHeaders(): HeadersInit {
+  const csrf = readCsrfToken();
+  return csrf ? { 'x-csrf-token': csrf } : {};
+}
+
 async function getJson<T>(path: string): Promise<T> {
-  const accessToken = localStorage.getItem('admin_access_token');
-  const headers: HeadersInit = accessToken
-    ? { Authorization: `Bearer ${accessToken}` }
-    : {};
-  const response = await fetch(`${getApiBaseUrl()}${path}`, { headers });
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+    headers: authHeaders(),
+    credentials: 'include',
+  });
   if (!response.ok) {
     throw new Error(`Admin API request failed: ${response.status}`);
   }
@@ -144,11 +164,15 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 export async function fetchReadiness(): Promise<ReadinessPayload> {
-  return getJson<ReadinessPayload>('/api/v1/health/readiness');
+  return getJson<ReadinessPayload>('/api/v1/health/readiness/details');
 }
 
 export async function fetchHealth(): Promise<HealthPayload> {
   return getJson<HealthPayload>('/api/v1/health/');
+}
+
+export async function fetchIncidents(): Promise<IncidentCenterPayload> {
+  return getJson<IncidentCenterPayload>('/api/v1/health/incidents');
 }
 
 export async function fetchNorthStar(): Promise<NorthStarPayload> {
@@ -187,13 +211,13 @@ export async function updateAdminUser(
   userId: string,
   payload: { role?: string; is_active?: boolean; subscription_tier?: string }
 ): Promise<UserItem> {
-  const accessToken = localStorage.getItem('admin_access_token');
   const response = await fetch(`${getApiBaseUrl()}/api/v1/admin/users/${userId}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...authHeaders(),
     },
+    credentials: 'include',
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
@@ -217,13 +241,13 @@ export async function createManagedAsset(payload: {
   is_active?: boolean;
   image_url?: string | null;
 }): Promise<AdminManagedAsset> {
-  const accessToken = localStorage.getItem('admin_access_token');
   const response = await fetch(`${getApiBaseUrl()}/api/v1/admin/assets`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...authHeaders(),
     },
+    credentials: 'include',
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
@@ -236,13 +260,13 @@ export async function updateManagedAsset(
   assetId: string,
   payload: { name?: string; is_active?: boolean; image_url?: string | null }
 ): Promise<AdminManagedAsset> {
-  const accessToken = localStorage.getItem('admin_access_token');
   const response = await fetch(`${getApiBaseUrl()}/api/v1/admin/assets/${assetId}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...authHeaders(),
     },
+    credentials: 'include',
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
@@ -259,16 +283,16 @@ export async function deleteAdminTransaction(
   transactionId: string,
   stepUp?: { token: string; totp: string }
 ): Promise<void> {
-  const accessToken = localStorage.getItem('admin_access_token');
   const stepUpToken = stepUp?.token ?? localStorage.getItem('admin_step_up_token');
   const stepUpTotp = stepUp?.totp ?? '';
   const response = await fetch(`${getApiBaseUrl()}/api/v1/admin/transactions/${transactionId}`, {
     method: 'DELETE',
     headers: {
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...authHeaders(),
       ...(stepUpToken ? { 'x-admin-step-up': stepUpToken } : {}),
       ...(stepUpTotp ? { 'x-admin-step-up-totp': stepUpTotp } : {}),
     },
+    credentials: 'include',
   });
   if (!response.ok) {
     throw new Error(`Admin API request failed: ${response.status}`);

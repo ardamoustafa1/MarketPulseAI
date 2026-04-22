@@ -1,4 +1,5 @@
 from fastapi import HTTPException, Request, status
+import ipaddress
 from app.core.config import settings
 from app.db.redis import get_redis_client
 
@@ -19,9 +20,17 @@ async def enforce_rate_limit(
 
 
 def get_client_ip(request: Request) -> str:
+    peer_ip = request.client.host if request.client else 'unknown'
+    peer_trusted = False
+    if settings.TRUSTED_PROXY_CIDRS:
+        try:
+            peer_obj = ipaddress.ip_address(peer_ip)
+            peer_trusted = any(peer_obj in ipaddress.ip_network(cidr, strict=False) for cidr in settings.TRUSTED_PROXY_CIDRS)
+        except ValueError:
+            peer_trusted = False
     if settings.TRUST_PROXY_HEADERS:
         forwarded = request.headers.get('x-forwarded-for')
-        if forwarded:
+        if forwarded and (not settings.TRUSTED_PROXY_CIDRS or peer_trusted):
             parts = [item.strip() for item in forwarded.split(',') if item.strip()]
             if parts:
                 hops = max(1, settings.TRUSTED_PROXY_HOPS)
@@ -29,10 +38,9 @@ def get_client_ip(request: Request) -> str:
                     return parts[-hops]
                 return parts[0]
         real_ip = request.headers.get('x-real-ip')
-        if real_ip:
+        if real_ip and (not settings.TRUSTED_PROXY_CIDRS or peer_trusted):
             return real_ip.strip()
-    client = request.client
-    return client.host if client else 'unknown'
+    return peer_ip
 
 
 async def enforce_auth_rate_limit(request: Request, action: str) -> None:

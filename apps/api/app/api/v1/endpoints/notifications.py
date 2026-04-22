@@ -80,11 +80,32 @@ def weekly_summary(
         .filter(AuditLog.user_id == current_user.id, AuditLog.action.like("insight.%"), AuditLog.created_at >= seven_days_ago)
         .count()
     )
+    risk_events = (
+        db.query(AuditLog)
+        .filter(
+            AuditLog.user_id == current_user.id,
+            AuditLog.action.in_(["alerts.triggered", "strategy.coach_action.applied"]),
+            AuditLog.created_at >= seven_days_ago,
+        )
+        .count()
+    )
+    next_action = "Hedef sapmalarini kontrol et"
+    if tx_count == 0:
+        next_action = "Ilk islemini ekle ve benchmarki baslat"
+    elif alert_count == 0:
+        next_action = "En az bir volatilite alarmi olustur"
+    elif risk_events > 5:
+        next_action = "Risk raporunu acip dagilimi dengele"
     return {
         "period_days": 7,
         "transactions": tx_count,
         "alert_events": alert_count,
         "insight_events": insight_count,
+        "next_action": next_action,
+        "adaptive_alert": {
+            "trigger": "goal_deviation_or_volatility",
+            "recommended_frequency": "daily" if risk_events > 3 else "weekly",
+        },
         "headline": f"Bu hafta {tx_count} islem, {alert_count} alarm olayi ve {insight_count} icgoru olustu.",
     }
 

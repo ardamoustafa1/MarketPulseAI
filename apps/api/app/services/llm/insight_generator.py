@@ -2,6 +2,7 @@ import json
 import logging
 import uuid
 from collections import defaultdict
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
@@ -84,6 +85,9 @@ async def _build_cards(db: Session, user: User, include_portfolio: bool, include
                         f"({summary.total_unrealized_pnl_percent:.2f}%)."
                     ),
                     severity="positive" if summary.total_unrealized_pnl >= 0 else "warning",
+                    source_quality="high",
+                    last_updated_at=datetime.utcnow(),
+                    evidence=["portfolio_positions", "cached_prices"],
                 )
             )
 
@@ -95,6 +99,9 @@ async def _build_cards(db: Session, user: User, include_portfolio: bool, include
                         title="Top Allocation",
                         content=f"{top.symbol} is your largest allocation at {top.percentage:.2f}%.",
                         severity="neutral",
+                        source_quality="high",
+                        last_updated_at=datetime.utcnow(),
+                        evidence=["allocation_breakdown"],
                     )
                 )
 
@@ -127,6 +134,9 @@ async def _build_cards(db: Session, user: User, include_portfolio: bool, include
                                 f"{abs(top_mover.change_24h):.2f}% in 24h)."
                             ),
                             severity="positive" if top_mover.change_24h >= 0 else "warning",
+                            source_quality="medium",
+                            last_updated_at=datetime.utcnow(),
+                            evidence=["watchlist_price_change_24h"],
                         )
                     )
                 else:
@@ -136,6 +146,9 @@ async def _build_cards(db: Session, user: User, include_portfolio: bool, include
                             title="Watchlist Coverage",
                             content=f"Watchlist contains {len(watchlist_symbols)} tracked assets.",
                             severity="neutral",
+                            source_quality="medium",
+                            last_updated_at=datetime.utcnow(),
+                            evidence=["watchlist_assets_count"],
                         )
                     )
 
@@ -146,6 +159,9 @@ async def _build_cards(db: Session, user: User, include_portfolio: bool, include
                 title="No Insight Data Yet",
                 content="Add transactions or watchlist assets to generate personalized analytics.",
                 severity="neutral",
+                source_quality="low",
+                last_updated_at=datetime.utcnow(),
+                evidence=["insufficient_user_data"],
             )
         )
 

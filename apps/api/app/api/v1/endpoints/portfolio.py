@@ -22,6 +22,25 @@ from app.core.rate_limit import enforce_rate_limit, get_client_ip
 
 router = APIRouter()
 BENCHMARK_CACHE_TTL_SECONDS = 120
+SUMMARY_CACHE_TTL_SECONDS = 60
+
+
+async def _invalidate_portfolio_caches(user_id: UUID, portfolio_id: UUID) -> None:
+    redis = get_redis_client()
+    await redis.delete(f"portfolio:summary:{user_id}:{portfolio_id}")
+    await redis.delete(f"portfolio:benchmark:{user_id}:{portfolio_id}")
+
+
+def _portfolio_cache_version(db: Session, portfolio_id: UUID) -> str:
+    latest_tx = (
+        db.query(Transaction.created_at)
+        .filter(Transaction.portfolio_id == portfolio_id)
+        .order_by(Transaction.created_at.desc())
+        .first()
+    )
+    if not latest_tx or not latest_tx[0]:
+        return "empty"
+    return latest_tx[0].isoformat()
 
 
 class CreateBucketBody(BaseModel):
@@ -136,7 +155,21 @@ async def read_portfolio(
     current_user: User = Depends(get_current_user),
 ):
     portfolio = resolve_portfolio(db, current_user.id, portfolio_id)
-    return await _build_summary_for_portfolio(db, portfolio)
+    cache_key = f"portfolio:summary:{current_user.id}:{portfolio.id}"
+    cache_version = _portfolio_cache_version(db, portfolio.id)
+    redis = get_redis_client()
+    cached = await redis.get(cache_key)
+    if cached:
+        parsed = json.loads(cached)
+        if parsed.get("version") == cache_version:
+            return PortfolioSummary.model_validate(parsed.get("summary", {}))
+    summary = await _build_summary_for_portfolio(db, portfolio)
+    await redis.set(
+        cache_key,
+        json.dumps({"version": cache_version, "summary": summary.model_dump(mode="json")}),
+        ex=SUMMARY_CACHE_TTL_SECONDS,
+    )
+    return summary
 
 
 @router.get("/fifo", response_model=FifoSummaryResponse)

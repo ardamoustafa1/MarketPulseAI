@@ -14,7 +14,7 @@ class LoginPayload(BaseModel):
     password: constr(min_length=8, max_length=128)
 
 class RefreshTokenRequest(BaseModel):
-    refresh_token: constr(min_length=20, max_length=4096)
+    refresh_token: constr(min_length=20, max_length=4096) | None = None
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr

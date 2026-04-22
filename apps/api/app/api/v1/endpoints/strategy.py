@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+import re
 from typing import Any, Optional
 from uuid import UUID, uuid4
 
@@ -23,6 +24,7 @@ from app.services.portfolio.access import resolve_portfolio
 from app.api.v1.endpoints.portfolio import _build_summary_for_portfolio
 
 router = APIRouter()
+EVENT_NAME_REGEX = re.compile(r"^[a-z0-9]+(?:[._-][a-z0-9]+){0,9}$")
 
 
 class StrategyAction(BaseModel):
@@ -41,6 +43,7 @@ class CoachLoopResponse(BaseModel):
     daily_summary: str
     weekly_summary: str
     actions: list[StrategyAction]
+    ranking_model: str = "behavior_risk_v1"
 
 
 class GoalItem(BaseModel):
@@ -65,6 +68,8 @@ class PublicSnapshotCreateResponse(BaseModel):
     share_token: str
     share_url: str
     expires_at: datetime
+    compare_badge: str
+    challenge_link: str
 
 
 class AnalyticsEventIn(BaseModel):
@@ -75,6 +80,27 @@ class AnalyticsEventIn(BaseModel):
 class PublicSnapshotRevokeResponse(BaseModel):
     status: str
     share_token: str
+
+
+class PublicSnapshotRotateResponse(BaseModel):
+    revoked_tokens: int
+    new_share_token: str
+    new_share_url: str
+    expires_at: datetime
+
+
+class WhatIfRequest(BaseModel):
+    target_allocations: dict[str, Decimal] = Field(default_factory=dict)
+    rebalance_budget: Decimal = Decimal("0")
+
+
+class WhatIfResponse(BaseModel):
+    current_concentration_score: Decimal
+    projected_concentration_score: Decimal
+    current_volatility_score: Decimal
+    projected_volatility_score: Decimal
+    rebalance_cost_estimate: Decimal
+    expected_impact_summary: str
 
 
 def _fetch_latest_goals(db: Session, user_id: UUID) -> list[GoalItem]:
@@ -101,6 +127,50 @@ def _fetch_latest_goals(db: Session, user_id: UUID) -> list[GoalItem]:
     return parsed
 
 
+def _estimate_risk_scores(summary: Any) -> tuple[Decimal, Decimal]:
+    positions = summary.positions or []
+    if not positions:
+        return Decimal("0"), Decimal("0")
+    pnl_values = [abs(Decimal(str(p.unrealized_pnl_percent))) for p in positions]
+    volatility = (sum(pnl_values) / Decimal(len(pnl_values))).quantize(Decimal("0.01"))
+    max_alloc = max((Decimal(str(a.percentage)) for a in summary.allocation), default=Decimal("0"))
+    concentration = max_alloc.quantize(Decimal("0.01"))
+    return volatility, concentration
+
+
+def _rank_actions_for_user(
+    db: Session,
+    user_id: UUID,
+    actions: list[StrategyAction],
+    volatility: Decimal,
+    concentration: Decimal,
+) -> list[StrategyAction]:
+    if not actions:
+        return actions
+    seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
+    recent_events = (
+        db.query(AuditLog.action, AuditLog.created_at)
+        .filter(AuditLog.user_id == user_id, AuditLog.created_at >= seven_days_ago)
+        .all()
+    )
+    event_set = {row[0] for row in recent_events if row and row[0]}
+
+    def score(action: StrategyAction) -> tuple[Decimal, Decimal]:
+        s = Decimal(str(action.confidence_score))
+        target = str(action.metadata.get("target", "")).lower()
+        if target == "risk":
+            s += Decimal("0.15") if volatility >= Decimal("12") or concentration >= Decimal("45") else Decimal("0.03")
+        if target == "alerts" and "alerts.create" not in event_set:
+            s += Decimal("0.08")
+        if target == "addtransaction" and "analytics.mobile.strategy_coach_action_applied" not in event_set:
+            s += Decimal("0.06")
+        if target == "goals" and "strategy.goals.updated" not in event_set:
+            s += Decimal("0.07")
+        return (s, Decimal(str(action.confidence_score)))
+
+    return sorted(actions, key=score, reverse=True)
+
+
 @router.get("/coach-loop", response_model=CoachLoopResponse)
 async def coach_loop(
     portfolio_id: Optional[UUID] = Query(None),
@@ -115,6 +185,7 @@ async def coach_loop(
         .count()
     )
     goals = _fetch_latest_goals(db, current_user.id)
+    volatility, concentration = _estimate_risk_scores(summary)
     actions: list[StrategyAction] = []
 
     if summary.total_current_value <= 0:
@@ -175,6 +246,8 @@ async def coach_loop(
             )
         )
 
+    actions = _rank_actions_for_user(db, current_user.id, actions, volatility=volatility, concentration=concentration)
+
     daily_summary = (
         f"Bugun toplam portfoy degeri {summary.total_current_value} ve gerceklesmemis getiri "
         f"{summary.total_unrealized_pnl_percent}% seviyesinde."
@@ -219,9 +292,10 @@ def ingest_analytics_event(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    safe_name = "".join(ch for ch in payload.name.strip().lower() if ch.isalnum() or ch in {"_", "-", "."})[:120]
-    if not safe_name:
+    candidate = payload.name.strip().lower()
+    if len(candidate) > 80 or not EVENT_NAME_REGEX.match(candidate):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid event name.")
+    safe_name = candidate
     AuditService(db).log(
         action=f"analytics.mobile.{safe_name}",
         entity_table="users",
@@ -321,6 +395,8 @@ def create_public_snapshot(
         share_token=token,
         share_url=f"/api/v1/strategy/public-snapshot/{token}",
         expires_at=expires_at,
+        compare_badge="marketpulse_challenger",
+        challenge_link=f"/app/challenge/{token}",
     )
 
 
@@ -377,6 +453,80 @@ def revoke_public_snapshot(
     )
     db.commit()
     return PublicSnapshotRevokeResponse(status="revoked", share_token=share_token)
+
+
+@router.post("/public-snapshot/rotate", response_model=PublicSnapshotRotateResponse)
+def rotate_public_snapshot(
+    portfolio_id: Optional[UUID] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    portfolio = resolve_portfolio(db, current_user.id, portfolio_id)
+    now = datetime.now(timezone.utc)
+    active_rows = (
+        db.query(PublicPortfolioSnapshot)
+        .filter(
+            PublicPortfolioSnapshot.user_id == current_user.id,
+            PublicPortfolioSnapshot.portfolio_id == portfolio.id,
+            PublicPortfolioSnapshot.revoked_at.is_(None),
+            PublicPortfolioSnapshot.expires_at >= now,
+        )
+        .all()
+    )
+    for row in active_rows:
+        row.revoked_at = now
+        db.add(row)
+    token = str(uuid4())
+    expires_at = now + timedelta(hours=settings.PUBLIC_SNAPSHOT_EXPIRE_HOURS)
+    snapshot = PublicPortfolioSnapshot(
+        share_token=token,
+        user_id=current_user.id,
+        portfolio_id=portfolio.id,
+        expires_at=expires_at,
+    )
+    db.add(snapshot)
+    db.commit()
+    return PublicSnapshotRotateResponse(
+        revoked_tokens=len(active_rows),
+        new_share_token=token,
+        new_share_url=f"/api/v1/strategy/public-snapshot/{token}",
+        expires_at=expires_at,
+    )
+
+
+@router.post("/what-if", response_model=WhatIfResponse)
+async def what_if_simulation(
+    payload: WhatIfRequest,
+    portfolio_id: Optional[UUID] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    portfolio = resolve_portfolio(db, current_user.id, portfolio_id)
+    summary = await _build_summary_for_portfolio(db, portfolio)
+    current_volatility, current_concentration = _estimate_risk_scores(summary)
+    target_values = [Decimal(str(v)) for v in payload.target_allocations.values() if Decimal(str(v)) >= 0]
+    if not target_values:
+        projected_concentration = current_concentration
+        projected_volatility = current_volatility
+    else:
+        total = sum(target_values)
+        max_target = (max(target_values) / total * Decimal("100")).quantize(Decimal("0.01")) if total > 0 else Decimal("0")
+        projected_concentration = max_target
+        concentration_delta = (current_concentration - projected_concentration) / Decimal("4")
+        projected_volatility = max(Decimal("0"), (current_volatility - concentration_delta)).quantize(Decimal("0.01"))
+    rebalance_cost = (payload.rebalance_budget * Decimal("0.0025")).quantize(Decimal("0.01"))
+    impact = (
+        f"Konsantrasyonun {current_concentration}% -> {projected_concentration}% araligina inebilir. "
+        f"Oynaklik skoru {current_volatility} -> {projected_volatility} projekte edildi."
+    )
+    return WhatIfResponse(
+        current_concentration_score=current_concentration,
+        projected_concentration_score=projected_concentration,
+        current_volatility_score=current_volatility,
+        projected_volatility_score=projected_volatility,
+        rebalance_cost_estimate=rebalance_cost,
+        expected_impact_summary=impact,
+    )
 
 
 @router.get("/north-star")
