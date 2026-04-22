@@ -24,7 +24,12 @@ export function OperationsPage() {
   const [actionMessage, setActionMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [stepUpOpen, setStepUpOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [stepUpTokenInput, setStepUpTokenInput] = useState('');
+  const [stepUpTotpInput, setStepUpTotpInput] = useState('');
+  const [rememberStepUpToken, setRememberStepUpToken] = useState(true);
+  const [stepUpError, setStepUpError] = useState('');
 
   const loadData = async () => {
     const [adminActions, readiness, txRows, timelineRows] = await Promise.all([
@@ -92,6 +97,31 @@ export function OperationsPage() {
       setActionMessage('Viewer role is read-only.');
       return;
     }
+    const savedToken = localStorage.getItem('admin_step_up_token') ?? '';
+    setStepUpTokenInput(savedToken);
+    setStepUpTotpInput('');
+    setStepUpError('');
+    setStepUpOpen(true);
+  };
+
+  const handleStepUpConfirm = () => {
+    const token = stepUpTokenInput.trim();
+    const totp = stepUpTotpInput.trim();
+    if (!token) {
+      setStepUpError('Step-up token zorunlu.');
+      return;
+    }
+    if (!/^\d{6,8}$/.test(totp)) {
+      setStepUpError('TOTP kodu 6-8 haneli sayi olmali.');
+      return;
+    }
+    if (rememberStepUpToken) {
+      localStorage.setItem('admin_step_up_token', token);
+    } else {
+      localStorage.removeItem('admin_step_up_token');
+    }
+    setStepUpError('');
+    setStepUpOpen(false);
     setConfirmDeleteOpen(true);
   };
 
@@ -105,10 +135,14 @@ export function OperationsPage() {
     setTransactions((prev) => prev.filter((tx) => tx.id !== selectedTransactionId));
     setActionMessage('Deleting transaction...');
     try {
-      await deleteAdminTransaction(selectedTransactionId);
+      await deleteAdminTransaction(selectedTransactionId, {
+        token: stepUpTokenInput.trim(),
+        totp: stepUpTotpInput.trim(),
+      });
       await loadData();
       setActionMessage('Transaction deleted.');
       setConfirmDeleteOpen(false);
+      setStepUpTotpInput('');
     } catch (error) {
       setTransactions(previous);
       setActionMessage(`Delete failed: ${String(error)}`);
@@ -119,6 +153,53 @@ export function OperationsPage() {
 
   return (
     <div className="stack">
+      <ConfirmDialog
+        open={stepUpOpen}
+        title="Step-Up Verification"
+        message="Kritik silme islemi icin step-up token ve TOTP kodu gir."
+        confirmLabel="Devam et"
+        cancelLabel="Iptal"
+        onConfirm={handleStepUpConfirm}
+        onCancel={() => {
+          setStepUpOpen(false);
+          setStepUpError('');
+        }}
+      >
+        <div className="stepup-form-wrap">
+          <label>
+            Step-Up Token
+            <input
+              type="password"
+              value={stepUpTokenInput}
+              onChange={(event) => setStepUpTokenInput(event.target.value)}
+              autoComplete="off"
+              placeholder="x-admin-step-up degeri"
+            />
+          </label>
+          <label>
+            TOTP (6-8 hane)
+            <input
+              type="password"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={8}
+              value={stepUpTotpInput}
+              onChange={(event) => setStepUpTotpInput(event.target.value.replace(/\D/g, ''))}
+              autoComplete="one-time-code"
+              placeholder="123456"
+            />
+          </label>
+          <label className="stepup-remember">
+            <input
+              type="checkbox"
+              checked={rememberStepUpToken}
+              onChange={(event) => setRememberStepUpToken(event.target.checked)}
+            />
+            Step-up token bu tarayicida hatirlansin
+          </label>
+          {stepUpError ? <p className="stepup-error">{stepUpError}</p> : null}
+        </div>
+      </ConfirmDialog>
       <ConfirmDialog
         open={confirmDeleteOpen}
         title="Confirm Transaction Deletion"

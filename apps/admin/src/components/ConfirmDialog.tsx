@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from 'react';
+import type { ReactNode } from 'react';
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -8,6 +9,7 @@ type ConfirmDialogProps = {
   cancelLabel?: string;
   isProcessing?: boolean;
   closeOnBackdrop?: boolean;
+  children?: ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -20,6 +22,7 @@ export function ConfirmDialog({
   cancelLabel = 'Cancel',
   isProcessing = false,
   closeOnBackdrop = true,
+  children,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -87,6 +90,7 @@ export function ConfirmDialog({
       <div className="confirm-dialog panel" ref={dialogRef}>
         <h3 id={titleId}>{title}</h3>
         <p id={descriptionId}>{message}</p>
+        {children ? <div className="confirm-body">{children}</div> : null}
         <div className="confirm-actions" onClick={(event) => event.stopPropagation()}>
           <button
             type="button"

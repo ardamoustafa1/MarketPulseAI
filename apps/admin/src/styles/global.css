@@ -503,11 +503,42 @@ th {
   color: #a5b9d3;
 }
 
+.confirm-body {
+  margin-top: 0.85rem;
+}
+
 .confirm-actions {
   margin-top: 1rem;
   display: flex;
   justify-content: flex-end;
   gap: 0.6rem;
+}
+
+.stepup-form-wrap {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.stepup-remember {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.8rem;
+  color: #9fb3ce;
+}
+
+.stepup-remember input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.stepup-error {
+  margin-top: 0.2rem;
+  color: #ff95a6;
+  font-size: 0.82rem;
 }
 
 .login-screen {

@@ -255,10 +255,13 @@ export async function fetchAdminTransactions(limit = 200): Promise<AdminTransact
   return getJson<AdminTransactionItem[]>(`/api/v1/admin/transactions?limit=${limit}`);
 }
 
-export async function deleteAdminTransaction(transactionId: string): Promise<void> {
+export async function deleteAdminTransaction(
+  transactionId: string,
+  stepUp?: { token: string; totp: string }
+): Promise<void> {
   const accessToken = localStorage.getItem('admin_access_token');
-  const stepUpToken = localStorage.getItem('admin_step_up_token');
-  const stepUpTotp = localStorage.getItem('admin_step_up_totp');
+  const stepUpToken = stepUp?.token ?? localStorage.getItem('admin_step_up_token');
+  const stepUpTotp = stepUp?.totp ?? '';
   const response = await fetch(`${getApiBaseUrl()}/api/v1/admin/transactions/${transactionId}`, {
     method: 'DELETE',
     headers: {
