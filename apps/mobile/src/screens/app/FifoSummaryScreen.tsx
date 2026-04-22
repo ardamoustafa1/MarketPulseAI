@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { useTranslation } from 'react-i18next';
 import { apiClient } from '../../api/client';
 import { Box } from '../../components/ui/Box';
 import { Text } from '../../components/ui/Text';
+import { GuidedStateCard } from '../../components/ui/GuidedStateCard';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
 import { colors, spacing } from '../../theme';
 import { formatCurrency } from '../../utils/formatters';
@@ -19,13 +19,14 @@ type Row = {
 
 export const FifoSummaryScreen = ({ navigation }: { navigation: { goBack: () => void } }) => {
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
   const activePortfolioId = usePortfolioStore((s) => s.activePortfolioId);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const { data } = await apiClient.get<{ rows: Row[] }>('/api/v1/portfolio/fifo', {
         params: activePortfolioId ? { portfolio_id: activePortfolioId } : {},
@@ -33,6 +34,7 @@ export const FifoSummaryScreen = ({ navigation }: { navigation: { goBack: () => 
       setRows(data?.rows ?? []);
     } catch {
       setRows([]);
+      setError('FIFO ozeti yuklenemedi. Baglantini kontrol edip tekrar dene.');
     } finally {
       setLoading(false);
     }
@@ -49,27 +51,37 @@ export const FifoSummaryScreen = ({ navigation }: { navigation: { goBack: () => 
           <ArrowLeft color={colors.text.primary} size={22} />
         </Pressable>
         <Text variant="h2" weight="600" style={{ marginLeft: spacing.md }}>
-          {t('common:fifoSummary')}
+          FIFO Ozeti
         </Text>
       </Box>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + 24 }}>
         <Text variant="caption" color={colors.text.muted} style={{ marginBottom: spacing.lg }}>
-          FIFO sell matching (indicative). Consult a tax professional for filings.
+          FIFO satis esleme ozeti (bilgilendirme amacli). Beyan oncesi mali musavir onayi al.
         </Text>
+        {error ? (
+          <Box style={{ marginBottom: spacing.md, padding: spacing.sm, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,92,92,0.2)', backgroundColor: 'rgba(255,92,92,0.1)' }}>
+            <Text variant="caption" color={colors.sentiment.bear_red}>{error}</Text>
+          </Box>
+        ) : null}
         {loading ? (
-          <Text color={colors.text.secondary}>…</Text>
+          <Text color={colors.text.secondary}>FIFO ozeti hazirlaniyor...</Text>
         ) : rows.length === 0 ? (
-          <Text color={colors.text.secondary}>No FIFO data.</Text>
+          <GuidedStateCard
+            title="FIFO verisi bulunamadi"
+            description="FIFO ozeti icin secili portfoyde islem gecmisi olmasi gerekir. Once islem ekleyip tekrar dene."
+            ctaLabel="Islem ekrana git"
+            onPress={() => navigation.goBack()}
+          />
         ) : (
           rows.map((r) => (
             <Box key={r.symbol} style={styles.card}>
               <Text variant="h3" weight="700" style={{ marginBottom: spacing.sm }}>
                 {r.symbol}
               </Text>
-              <Text variant="body">Realized (FIFO): {formatCurrency(r.fifo_realized_pnl)}</Text>
+              <Text variant="body">Gerceklesen (FIFO): {formatCurrency(r.fifo_realized_pnl)}</Text>
               <Text variant="caption" color={colors.text.secondary} style={{ marginTop: 4 }}>
-                Remaining qty {r.remaining_quantity} · Cost basis {formatCurrency(r.remaining_cost_basis_fifo)}
+                {`Kalan miktar ${r.remaining_quantity} · Maliyet bazi ${formatCurrency(r.remaining_cost_basis_fifo)}`}
               </Text>
             </Box>
           ))

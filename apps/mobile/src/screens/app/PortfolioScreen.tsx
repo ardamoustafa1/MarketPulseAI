@@ -11,8 +11,9 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { SummaryWidget } from '../../components/portfolio/SummaryWidget';
 import { AllocationChart } from '../../components/portfolio/AllocationChart';
 import { PositionRow } from '../../components/portfolio/PositionRow';
+import { GuidedStateCard } from '../../components/ui/GuidedStateCard';
 import { colors, radius, spacing } from '../../theme';
-import { HelpCircle, ArrowUpRight, PlusCircle } from 'lucide-react-native';
+import { HelpCircle, PlusCircle } from 'lucide-react-native';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
 import { formatCurrencyByLocale, formatNumberByLocale } from '../../utils/localeFormat';
 
@@ -97,41 +98,13 @@ export const PortfolioScreen = ({ navigation }: any) => {
   );
 
   const renderEmptyState = () => (
-    <PremiumCard delay={200} style={{ paddingVertical: spacing.xxl, alignItems: 'center', marginTop: spacing.xl }}>
-      <Box
-        center
-        style={{
-          width: 80,
-          height: 80,
-          borderRadius: 40,
-          backgroundColor: 'rgba(255,255,255,0.02)',
-          borderWidth: 1,
-          borderColor: 'rgba(255,255,255,0.05)',
-          marginBottom: spacing.lg,
-        }}
-      >
-        <HelpCircle color={colors.text.muted} size={32} />
-      </Box>
-      <Text variant="h2" weight="600" style={{ marginBottom: spacing.sm, letterSpacing: -0.5 }}>
-        Zero Assets Registered
-      </Text>
-      <Text
-        variant="body"
-        color={colors.text.secondary}
-        align="center"
-        style={{ marginBottom: spacing.xl, paddingHorizontal: spacing.md, lineHeight: 24 }}
-      >
-        Your portfolio timeline begins right here. Record your first transaction to unlock dynamic PnL tracking and AI insights.
-      </Text>
-      <Pressable onPress={handleAddTx} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
-        <Box bg={colors.text.primary} padding={spacing.md} radius={radius.pill} row align="center">
-          <Text color={colors.background.base} weight="600" style={{ marginRight: spacing.xs }}>
-            Manually Add Tx
-          </Text>
-          <ArrowUpRight color={colors.background.base} size={18} />
-        </Box>
-      </Pressable>
-    </PremiumCard>
+    <GuidedStateCard
+      title="Henuz varlik kaydin yok"
+      description="Ilk isleminden sonra getiri, maliyet ve AI icgorusu otomatik hesaplanir. Baslamak icin ilk islemini ekle."
+      ctaLabel="Ilk islemi ekle"
+      onPress={handleAddTx}
+      icon={<HelpCircle color={colors.text.muted} size={32} />}
+    />
   );
 
   const renderErrorState = () => (
@@ -165,10 +138,10 @@ export const PortfolioScreen = ({ navigation }: any) => {
       <View style={styles.blurHeaderWrap}>
         <BlurView intensity={80} tint="dark" style={[styles.blurHeader, { paddingTop: insets.top + 8 }]}>
           <Box row justify="space-between" align="center" style={styles.headerContent}>
-            <Text variant="h3" weight="700" style={{ letterSpacing: -0.5 }}>My Vault</Text>
+            <Text variant="h3" weight="700" style={{ letterSpacing: -0.5 }}>Portfoyum</Text>
             <Pressable onPress={handleAddTx} hitSlop={15} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}> 
               <Box row align="center" style={styles.addBtn}>
-                <Text variant="caption" weight="600" color={colors.accent.premium_gold} style={{ marginRight: 6 }}>Add</Text>
+                <Text variant="caption" weight="600" color={colors.accent.premium_gold} style={{ marginRight: 6 }}>Ekle</Text>
                 <PlusCircle color={colors.accent.premium_gold} size={18} />
               </Box>
             </Pressable>
@@ -219,7 +192,7 @@ export const PortfolioScreen = ({ navigation }: any) => {
         {summary && summary.valuationComplete === false ? (
           <Box style={{ marginBottom: spacing.md, padding: spacing.sm, borderRadius: radius.md, borderWidth: 1, borderColor: 'rgba(255,184,0,0.28)', backgroundColor: 'rgba(255,184,0,0.08)' }}>
             <Text variant="caption" color={colors.text.secondary}>
-              Valuation is partial: {summary.missingPricePositions ?? 0} missing price, {summary.stalePricePositions ?? 0} stale price position(s).
+              {`Degerleme kismen tamamlandi: ${summary.missingPricePositions ?? 0} fiyat eksik, ${summary.stalePricePositions ?? 0} fiyat gecikmeli.`}
             </Text>
           </Box>
         ) : null}
@@ -243,7 +216,7 @@ export const PortfolioScreen = ({ navigation }: any) => {
             {allocationData.length > 0 ? <AllocationChart data={allocationData} /> : null}
 
             <Box row justify="space-between" align="flex-end" style={{ marginBottom: spacing.md }}>
-              <Text variant="h2" weight="600" style={{ letterSpacing: -0.5 }}>Your Assets</Text>
+              <Text variant="h2" weight="600" style={{ letterSpacing: -0.5 }}>Varliklarin</Text>
             </Box>
 
             <Box style={{ marginBottom: spacing.xl }}>

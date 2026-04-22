@@ -22,6 +22,7 @@ import {
   AlertTriangle,
 } from 'lucide-react-native';
 import { useInsightStore, InsightCard } from '../../store/useInsightStore';
+import { formatDateTimeByLocale } from '../../utils/localeFormat';
 
 const CATEGORY_CONFIG: Record<string, { icon: any; color: string; label: string }> = {
   portfolio: {
@@ -49,7 +50,7 @@ const SEVERITY_COLORS: Record<string, string> = {
 };
 
 // ── Single Insight Card ──
-const InsightCardItem = ({ card, index }: { card: InsightCard; index: number }) => {
+const InsightCardItem = ({ card, index, navigation }: { card: InsightCard; index: number; navigation: any }) => {
   const config = CATEGORY_CONFIG[card.category] || CATEGORY_CONFIG.market;
   const IconComponent = config.icon;
   const severityColor = SEVERITY_COLORS[card.severity] || SEVERITY_COLORS.neutral;
@@ -86,6 +87,27 @@ const InsightCardItem = ({ card, index }: { card: InsightCard; index: number }) 
         <Text variant="body" color={colors.text.secondary} style={{ lineHeight: 22 }}>
           {card.content}
         </Text>
+
+        <Box row style={{ marginTop: spacing.md }}>
+          <Pressable
+            onPress={() =>
+              navigation.navigate(
+                card.category === 'portfolio' ? 'Portfolio' : card.category === 'watchlist' ? 'Watchlist' : 'Markets'
+              )
+            }
+            style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+          >
+            <Box style={styles.actionChip}>
+              <Text variant="caption" weight="700" color={colors.accent.primary_blue}>
+                {card.category === 'portfolio'
+                  ? 'Portfoyde uygula'
+                  : card.category === 'watchlist'
+                    ? 'Izleme listesinde uygula'
+                    : 'Piyasada kontrol et'}
+              </Text>
+            </Box>
+          </Pressable>
+        </Box>
       </PremiumCard>
     </Animated.View>
   );
@@ -131,7 +153,7 @@ export const InsightsScreen = ({ navigation }: any) => {
 
             <Box row align="center">
               <Sparkles color={colors.accent.premium_gold} size={18} style={{ marginRight: spacing.xs }} />
-              <Text variant="h3" weight="700" style={{ letterSpacing: -0.3 }}>AI Insights</Text>
+              <Text variant="h3" weight="700" style={{ letterSpacing: -0.3 }}>AI Icgoruler</Text>
             </Box>
 
             {/* Generate Button */}
@@ -172,10 +194,10 @@ export const InsightsScreen = ({ navigation }: any) => {
                   </Box>
                 </Animated.View>
                 <Text variant="h1" weight="700" style={{ fontSize: 28, letterSpacing: -1, marginTop: spacing.md, marginBottom: spacing.xs }}>
-                  Your Market Brief
+                  Piyasa Ozeti
                 </Text>
                 <Text variant="body" color={colors.text.secondary} align="center" style={{ paddingHorizontal: spacing.xl, lineHeight: 22 }}>
-                  Neutral, data-driven observations about your portfolio, watchlist, and the broader market.
+                  Portfoyun, izleme listen ve genel piyasa icin veri odakli ozet ve sonraki adim onerileri.
                 </Text>
               </Box>
             </LinearGradient>
@@ -187,8 +209,10 @@ export const InsightsScreen = ({ navigation }: any) => {
           <Pressable onPress={clearError}>
             <Box row align="center" style={{ marginHorizontal: spacing.lg, marginBottom: spacing.md, padding: spacing.md, backgroundColor: 'rgba(255,92,92,0.08)', borderRadius: radius.lg, borderWidth: 1, borderColor: 'rgba(255,92,92,0.15)' }}>
               <AlertTriangle color={colors.sentiment.bear_red} size={18} style={{ marginRight: spacing.sm }} />
-              <Text variant="body" color={colors.sentiment.bear_red} style={{ flex: 1 }}>{error}</Text>
-              <Text variant="caption" color={colors.text.muted}>Dismiss</Text>
+              <Text variant="body" color={colors.sentiment.bear_red} style={{ flex: 1 }}>
+                {`${error} Yeniden denemek icin bildirimi kapatip tekrar uret.`}
+              </Text>
+              <Text variant="caption" color={colors.text.muted}>Kapat</Text>
             </Box>
           </Pressable>
         )}
@@ -197,16 +221,16 @@ export const InsightsScreen = ({ navigation }: any) => {
         {isLoading || isGenerating ? renderSkeletons() : (
           <Box padding={spacing.lg} style={{ paddingTop: 0 }}>
             {latestInsight?.cards.map((card, index) => (
-              <InsightCardItem key={card.id} card={card} index={index} />
+              <InsightCardItem key={card.id} card={card} index={index} navigation={navigation} />
             ))}
 
             {(!latestInsight || latestInsight.cards.length === 0) && !error && (
               <Animated.View entering={FadeInDown.duration(500).springify()}>
                 <Box center style={{ marginTop: spacing.xxl }}>
                   <Info color={colors.text.muted} size={32} style={{ marginBottom: spacing.md }} />
-                  <Text variant="h3" color={colors.text.secondary}>No insights generated yet.</Text>
+                  <Text variant="h3" color={colors.text.secondary}>Henuz icgoru uretilmedi.</Text>
                   <Text variant="body" color={colors.text.muted} align="center" style={{ marginTop: spacing.sm }}>
-                    Tap the refresh icon above to generate your first AI brief.
+                    Yukaridaki yenile ikonuna dokunarak ilk AI ozetini olustur.
                   </Text>
                 </Box>
               </Animated.View>
@@ -219,7 +243,7 @@ export const InsightsScreen = ({ navigation }: any) => {
           <Animated.View entering={FadeInUp.delay(600).springify()}>
             <Box center style={{ marginTop: spacing.md, marginBottom: spacing.lg }}>
               <Text variant="caption" color={colors.text.muted}>
-                Generated {new Date(latestInsight.created_at).toLocaleString()}
+                {`Uretim zamani ${formatDateTimeByLocale(new Date(latestInsight.created_at)).date} ${formatDateTimeByLocale(new Date(latestInsight.created_at)).time}`}
               </Text>
             </Box>
           </Animated.View>
@@ -232,7 +256,7 @@ export const InsightsScreen = ({ navigation }: any) => {
           <Box row align="center" style={{ paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}>
             <ShieldAlert color={colors.text.muted} size={14} style={{ marginRight: spacing.sm }} />
             <Text variant="caption" color={colors.text.muted} style={{ flex: 1, lineHeight: 16 }}>
-              {latestInsight?.disclaimer || 'AI-generated summary for informational purposes only. Not financial advice.'}
+              {latestInsight?.disclaimer || 'AI ozetleri bilgilendirme amaclidir; yatirim tavsiyesi degildir.'}
             </Text>
           </Box>
         </BlurView>
@@ -299,6 +323,14 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 14,
     borderWidth: 1,
+  },
+  actionChip: {
+    borderWidth: 1,
+    borderColor: 'rgba(129, 166, 213, 0.35)',
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(143, 199, 255, 0.08)',
   },
   disclaimerWrap: {
     position: 'absolute',

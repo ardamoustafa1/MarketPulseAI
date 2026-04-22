@@ -75,7 +75,7 @@ export const LoginScreen = ({ navigation }: any) => {
 
   return (
     <Box flex={1} bg={colors.background.base} padding={spacing.lg} justify="center">
-      <Text variant="h2" style={{ marginBottom: spacing.xl }}>Welcome Back</Text>
+      <Text variant="h2" style={{ marginBottom: spacing.xl }}>Tekrar hos geldin</Text>
 
       <Box bg={colors.background.surface} padding={spacing.md} radius={radius.md} style={{ marginBottom: spacing.md }}>
         <Text variant="caption" color={colors.text.secondary} style={{ marginBottom: spacing.xs }}>Email</Text>
@@ -118,7 +118,7 @@ export const LoginScreen = ({ navigation }: any) => {
           {isSubmitting ? (
             <ActivityIndicator color={colors.accent.primary_blue} />
           ) : (
-            <Text variant="h3" color={colors.accent.primary_blue}>Enter</Text>
+            <Text variant="h3" color={colors.accent.primary_blue}>Giris yap</Text>
           )}
         </Box>
       </Pressable>
@@ -136,7 +136,7 @@ export const LoginScreen = ({ navigation }: any) => {
       ) : null}
 
       <Pressable onPress={() => navigation.goBack()} style={{ marginTop: spacing.xl }}>
-        <Text align="center" color={colors.text.muted}>Back</Text>
+        <Text align="center" color={colors.text.muted}>Geri</Text>
       </Pressable>
     </Box>
   );

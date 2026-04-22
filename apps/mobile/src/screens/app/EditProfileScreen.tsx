@@ -20,11 +20,11 @@ export const EditProfileScreen = ({ navigation }: { navigation: { goBack: () => 
   const handleSave = async () => {
     setError(null);
     if (password.length > 0 && password.length < 12) {
-      setError('Password must be at least 12 characters.');
+      setError('Sifre en az 12 karakter olmali. Guclu bir sifre ile tekrar dene.');
       return;
     }
     if (password.length > 0 && password !== confirm) {
-      setError('Passwords do not match.');
+      setError('Sifreler eslesmiyor. Onay alanini kontrol et.');
       return;
     }
     setSaving(true);
@@ -42,7 +42,7 @@ export const EditProfileScreen = ({ navigation }: { navigation: { goBack: () => 
         typeof e === 'object' && e !== null && 'response' in e
           ? (e as { response?: { data?: { detail?: string } } }).response?.data?.detail
           : null;
-      setError(typeof msg === 'string' ? msg : 'Could not save profile.');
+      setError(typeof msg === 'string' ? msg : 'Profil kaydedilemedi. Bilgileri kontrol edip tekrar dene.');
     } finally {
       setSaving(false);
     }
@@ -65,7 +65,7 @@ export const EditProfileScreen = ({ navigation }: { navigation: { goBack: () => 
           <ArrowLeft color={colors.text.primary} size={22} />
         </Pressable>
         <Text variant="h3" weight="700">
-          Edit profile
+          Profili Duzenle
         </Text>
       </Box>
 
@@ -78,56 +78,56 @@ export const EditProfileScreen = ({ navigation }: { navigation: { goBack: () => 
         </Text>
 
         <Text variant="caption" color={colors.text.secondary} style={{ marginBottom: spacing.xs }}>
-          First name
+          Ad
         </Text>
         <Box bg={colors.background.surface} padding={spacing.md} radius={radius.md} style={{ marginBottom: spacing.md }}>
           <TextInput
             value={firstName}
             onChangeText={setFirstName}
             autoCapitalize="words"
-            placeholder="First name"
+            placeholder="Ad"
             placeholderTextColor={colors.text.muted}
             style={{ color: colors.text.primary, fontSize: 16 }}
           />
         </Box>
 
         <Text variant="caption" color={colors.text.secondary} style={{ marginBottom: spacing.xs }}>
-          Last name
+          Soyad
         </Text>
         <Box bg={colors.background.surface} padding={spacing.md} radius={radius.md} style={{ marginBottom: spacing.md }}>
           <TextInput
             value={lastName}
             onChangeText={setLastName}
             autoCapitalize="words"
-            placeholder="Last name"
+            placeholder="Soyad"
             placeholderTextColor={colors.text.muted}
             style={{ color: colors.text.primary, fontSize: 16 }}
           />
         </Box>
 
         <Text variant="caption" color={colors.text.secondary} style={{ marginBottom: spacing.xs }}>
-          New password (optional, min 12 chars)
+          Yeni sifre (opsiyonel, min 12 karakter)
         </Text>
         <Box bg={colors.background.surface} padding={spacing.md} radius={radius.md} style={{ marginBottom: spacing.md }}>
           <TextInput
             value={password}
             onChangeText={setPassword}
             secureTextEntry
-            placeholder="Leave blank to keep current"
+            placeholder="Mevcut sifreyi korumak icin bos birak"
             placeholderTextColor={colors.text.muted}
             style={{ color: colors.text.primary, fontSize: 16 }}
           />
         </Box>
 
         <Text variant="caption" color={colors.text.secondary} style={{ marginBottom: spacing.xs }}>
-          Confirm new password
+          Yeni sifreyi onayla
         </Text>
         <Box bg={colors.background.surface} padding={spacing.md} radius={radius.md} style={{ marginBottom: spacing.md }}>
           <TextInput
             value={confirm}
             onChangeText={setConfirm}
             secureTextEntry
-            placeholder="Confirm"
+            placeholder="Onayla"
             placeholderTextColor={colors.text.muted}
             style={{ color: colors.text.primary, fontSize: 16 }}
           />
@@ -142,7 +142,7 @@ export const EditProfileScreen = ({ navigation }: { navigation: { goBack: () => 
         <Pressable onPress={handleSave} disabled={saving} style={({ pressed }) => [{ opacity: pressed || saving ? 0.7 : 1 }]}>
           <Box bg={colors.text.primary} padding={spacing.md} radius={radius.md} center>
             <Text color={colors.background.base} weight="700">
-              {saving ? 'Saving…' : 'Save changes'}
+              {saving ? 'Kaydediliyor…' : 'Degisiklikleri kaydet'}
             </Text>
           </Box>
         </Pressable>

@@ -42,7 +42,12 @@ jobs:
       - name: Install backend dependencies
         run: pip install -r requirements.txt
       - name: Run backend tests
-        run: python -m pytest
+        run: python -m pytest --cov=app --cov-report=term-missing --cov-report=xml
+      - name: Upload backend coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-xml
+          path: apps/api/coverage.xml
 
   api-readiness-smoke:
     runs-on: ubuntu-latest
@@ -83,6 +88,23 @@ jobs:
         run: npm run build --workspace=apps/admin
       - name: Run mobile tests
         run: npm run test --workspace=apps/mobile -- --runInBand
+
+  release-notes-check:
+    runs-on: ubuntu-latest
+    needs: [security-scans, backend-tests, frontend-build]
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure release notes changed
+        run: |
+          git fetch origin "${{ github.base_ref || 'main' }}" --depth=1
+          BASE_REF="origin/${{ github.base_ref || 'main' }}"
+          if git diff --name-only "$BASE_REF"...HEAD | grep -qE '^docs/releases/'; then
+            echo "Release notes present."
+          else
+            echo "Missing release notes under docs/releases/. Add a release note file."
+            exit 1
+          fi
 
   docker-build:
     runs-on: ubuntu-latest

@@ -39,7 +39,13 @@ export const useInsightStore = create<InsightState>((set) => ({
       const response = await apiClient.get('/api/v1/insights');
       set({ latestInsight: response.data, isLoading: false });
     } catch (error: any) {
-      set({ error: error?.response?.data?.detail || error.message || 'Failed to load insights', isLoading: false });
+      set({
+        error:
+          error?.response?.data?.detail ||
+          error.message ||
+          'Icgoruler yuklenemedi. Baglantiyi kontrol edip tekrar dene.',
+        isLoading: false,
+      });
     }
   },
 
@@ -53,7 +59,13 @@ export const useInsightStore = create<InsightState>((set) => ({
       set({ latestInsight: response.data, isGenerating: false });
     } catch (error: any) {
       const detail = error?.response?.data?.detail;
-      set({ error: detail || error.message || 'Failed to generate insights', isGenerating: false });
+      set({
+        error:
+          detail ||
+          error.message ||
+          'Icgoru uretimi basarisiz. Birkac saniye sonra yeniden dene.',
+        isGenerating: false,
+      });
     }
   },
 

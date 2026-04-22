@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, RefreshCw } from 'lucide-react-native';
-import { useTranslation } from 'react-i18next';
 import { DualNormalizedChart } from '../../components/charts/DualNormalizedChart';
 import { Box } from '../../components/ui/Box';
+import { GuidedStateCard } from '../../components/ui/GuidedStateCard';
 import { Input } from '../../components/ui/Input';
 import { Text } from '../../components/ui/Text';
 import { fetchCompare } from '../../api/charts';
@@ -14,7 +14,6 @@ const RANGE_KEYS = ['1W', '1M', '1Y'] as const;
 
 export const CompareAssetsScreen = ({ navigation }: { navigation: { goBack: () => void } }) => {
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
   const [a, setA] = useState('BTC');
   const [b, setB] = useState('ETH');
   const [range, setRange] = useState<(typeof RANGE_KEYS)[number]>('1M');
@@ -33,7 +32,7 @@ export const CompareAssetsScreen = ({ navigation }: { navigation: { goBack: () =
       setSeriesA(s0);
       setSeriesB(s1);
     } catch (e: any) {
-      setErr(e?.response?.data?.detail || e?.message || 'Failed to load compare');
+      setErr(e?.response?.data?.detail || e?.message || 'Karsilastirma yuklenemedi. Sembolleri kontrol edip tekrar dene.');
       setSeriesA([]);
       setSeriesB([]);
     } finally {
@@ -51,13 +50,13 @@ export const CompareAssetsScreen = ({ navigation }: { navigation: { goBack: () =
         <Pressable
           onPress={() => navigation.goBack()}
           accessibilityRole="button"
-          accessibilityLabel={t('common:compare')}
+          accessibilityLabel="Varlik karsilastir"
           style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.7 : 1 }]}
         >
           <ArrowLeft color={colors.text.primary} size={22} />
         </Pressable>
         <Text variant="h2" weight="600">
-          {t('compare:title')}
+          Varlik Karsilastirma
         </Text>
         <Pressable onPress={() => void load()} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
           <RefreshCw color={colors.text.secondary} size={22} />
@@ -66,19 +65,19 @@ export const CompareAssetsScreen = ({ navigation }: { navigation: { goBack: () =
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + 24 }}>
         <Text variant="body" color={colors.text.secondary} style={{ marginBottom: spacing.lg }}>
-          {t('compare:subtitle')}
+          Iki varligin ayni donemdeki goreli performansini tek grafikte izle.
         </Text>
 
         <Box row style={{ marginBottom: spacing.md }}>
           <Box flex={1} style={{ marginRight: spacing.sm }}>
             <Text variant="caption" color={colors.text.muted} style={{ marginBottom: 4 }}>
-              {t('compare:symbolA')}
+              Varlik A
             </Text>
             <Input value={a} onChangeText={setA} autoCapitalize="characters" placeholder="BTC" />
           </Box>
           <Box flex={1}>
             <Text variant="caption" color={colors.text.muted} style={{ marginBottom: 4 }}>
-              {t('compare:symbolB')}
+              Varlik B
             </Text>
             <Input value={b} onChangeText={setB} autoCapitalize="characters" placeholder="ETH" />
           </Box>
@@ -110,8 +109,15 @@ export const CompareAssetsScreen = ({ navigation }: { navigation: { goBack: () =
 
         {loading ? (
           <Text variant="body" color={colors.text.secondary}>
-            …
+            Karsilastirma verisi yukleniyor...
           </Text>
+        ) : seriesA.length === 0 || seriesB.length === 0 ? (
+          <GuidedStateCard
+            title="Karsilastirma verisi bulunamadi"
+            description="Secilen semboller icin bu zaman araliginda yeterli veri yok. Farkli sembol veya aralik deneyin."
+            ctaLabel="1M araligina don"
+            onPress={() => setRange('1M')}
+          />
         ) : (
           <DualNormalizedChart seriesA={seriesA} seriesB={seriesB} />
         )}

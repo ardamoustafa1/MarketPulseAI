@@ -1,0 +1,26 @@
+changelog:
+  categories:
+    - title: Security
+      labels:
+        - security
+    - title: Platform
+      labels:
+        - platform
+        - infra
+    - title: API
+      labels:
+        - api
+        - backend
+    - title: Admin
+      labels:
+        - admin
+        - frontend
+    - title: Mobile
+      labels:
+        - mobile
+    - title: Documentation
+      labels:
+        - docs
+    - title: Other changes
+      labels:
+        - "*"

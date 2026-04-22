@@ -17,6 +17,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { useTransactionForm } from '../../hooks/useTransactionForm';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
 import { colors, radius, spacing } from '../../theme';
+import { formatDateTimeByLocale } from '../../utils/localeFormat';
 import {
   ArrowLeft,
   ArrowDownRight,
@@ -97,9 +98,9 @@ export const AddTransactionScreen = ({ navigation }: any) => {
   // ── Dismiss / Reset Warnings ──
   const handleBack = useCallback(() => {
     if (isDirty) {
-      Alert.alert('Discard changes?', 'You have unsaved changes. Are you sure you want to go back?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Discard', style: 'destructive', onPress: () => navigation?.goBack() }
+      Alert.alert('Degisiklikler kaydedilmedi', 'Formda kaydedilmemis alanlar var. Cikmak istiyor musun?', [
+        { text: 'Vazgec', style: 'cancel' },
+        { text: 'Cik', style: 'destructive', onPress: () => navigation?.goBack() }
       ]);
     } else {
       navigation?.goBack();
@@ -108,9 +109,9 @@ export const AddTransactionScreen = ({ navigation }: any) => {
 
   const handleReset = useCallback(() => {
     if (isDirty) {
-      Alert.alert('Reset form?', 'Are you sure you want to clear all fields?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Reset', style: 'destructive', onPress: reset }
+      Alert.alert('Formu sifirla', 'Tum alanlar temizlenecek. Emin misin?', [
+        { text: 'Vazgec', style: 'cancel' },
+        { text: 'Sifirla', style: 'destructive', onPress: reset }
       ]);
     }
   }, [isDirty, reset]);
@@ -145,17 +146,17 @@ export const AddTransactionScreen = ({ navigation }: any) => {
             </Box>
           </Pressable>
           <Box center>
-            <Text variant="h3" weight="700" style={{ letterSpacing: -0.3 }}>Add Transaction</Text>
+            <Text variant="h3" weight="700" style={{ letterSpacing: -0.3 }}>Islem Ekle</Text>
             {isDirty && (
               <Animated.View entering={FadeIn.duration(300)}>
                 <Text variant="caption" color={colors.accent.premium_gold} style={{ fontSize: 10, marginTop: 2 }}>
-                  Unsaved changes
+                  Kaydedilmemis degisiklik
                 </Text>
               </Animated.View>
             )}
           </Box>
           <Pressable hitSlop={20} onPress={handleReset} style={({ pressed }) => [{ opacity: pressed ? 0.6 : isDirty ? 1 : 0.3 }]} disabled={!isDirty}>
-            <Text variant="caption" weight="600" color={colors.text.muted}>Reset</Text>
+            <Text variant="caption" weight="600" color={colors.text.muted}>Sifirla</Text>
           </Pressable>
         </Box>
 
@@ -232,7 +233,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
                       </Box>
                     </>
                   ) : (
-                    <Text variant="body" color={colors.text.muted}>Tap to select asset...</Text>
+                    <Text variant="body" color={colors.text.muted}>Varlik secmek icin dokun...</Text>
                   )}
                 </Box>
                 <ChevronDown color={colors.text.muted} size={20} />
@@ -316,13 +317,9 @@ export const AddTransactionScreen = ({ navigation }: any) => {
                 <Box row align="center">
                   <Calendar color={colors.text.secondary} size={18} style={{ marginRight: spacing.sm }} />
                   <Box>
-                    <Text variant="body" weight="500">
-                      {form.date.toLocaleDateString('en-US', {
-                        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-                      })}
-                    </Text>
+                    <Text variant="body" weight="500">{formatDateTimeByLocale(form.date).date}</Text>
                     <Text variant="caption" color={colors.text.muted} style={{ fontSize: 11, marginTop: 1 }}>
-                      {form.date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                      {formatDateTimeByLocale(form.date).time}
                     </Text>
                   </Box>
                 </Box>
@@ -337,7 +334,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
             <Box style={[styles.inputContainer, getVisibleError('note') ? styles.inputError : null]}>
               <TextInput
                 style={[styles.textInput, { minHeight: 72, textAlignVertical: 'top', paddingTop: Platform.OS === 'ios' ? 12 : 8 }]}
-                placeholder="e.g. DCA weekly buy, limit order filled..."
+                placeholder="or. haftalik alim, limit emir gerceklesti..."
                 placeholderTextColor={colors.text.muted}
                 multiline
                 maxLength={500}
@@ -386,7 +383,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
               <Box row align="center" style={styles.errorSummary}>
                 <AlertCircle color={colors.sentiment.bear_red} size={16} />
                 <Text variant="caption" color={colors.sentiment.bear_red} weight="500" style={{ marginLeft: spacing.xs }}>
-                  Please fix the highlighted fields above
+                  Isleme devam etmek icin isaretli alanlari duzelt.
                 </Text>
               </Box>
             </Animated.View>
@@ -401,7 +398,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
                 style={styles.reviewBtn}
               >
                 <Text variant="h3" weight="700" color={colors.background.base} style={{ fontSize: 17, letterSpacing: -0.2 }}>
-                  Review Transaction
+                  Islemi Onizle
                 </Text>
               </LinearGradient>
             </Pressable>

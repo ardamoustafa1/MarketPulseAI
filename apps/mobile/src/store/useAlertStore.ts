@@ -42,7 +42,13 @@ export const useAlertStore = create<AlertState>((set, get) => ({
       const { data } = await apiClient.get<Alert[]>('/api/v1/alerts');
       set({ alerts: data, isLoading: false });
     } catch (error: any) {
-      set({ error: error?.message || 'Failed to fetch alerts', isLoading: false });
+      set({
+        error:
+          error?.response?.data?.detail ||
+          error?.message ||
+          'Alarmlar yuklenemedi. Baglantiyi kontrol edip tekrar dene.',
+        isLoading: false,
+      });
     }
   },
 
@@ -52,7 +58,13 @@ export const useAlertStore = create<AlertState>((set, get) => ({
       const { data } = await apiClient.get<AlertEvent[]>('/api/v1/alerts/history');
       set({ history: data, isLoading: false });
     } catch (error: any) {
-      set({ error: error?.message || 'Failed to fetch history', isLoading: false });
+      set({
+        error:
+          error?.response?.data?.detail ||
+          error?.message ||
+          'Alarm gecmisi yuklenemedi. Biraz sonra tekrar dene.',
+        isLoading: false,
+      });
     }
   },
 
@@ -63,7 +75,13 @@ export const useAlertStore = create<AlertState>((set, get) => ({
       await get().fetchAlerts();
       return true;
     } catch (error: any) {
-      set({ error: error?.message || 'Failed to create alert', isLoading: false });
+      set({
+        error:
+          error?.response?.data?.detail ||
+          error?.message ||
+          'Alarm olusturulamadi. Degerleri kontrol edip yeniden dene.',
+        isLoading: false,
+      });
       return false;
     }
   },
@@ -75,7 +93,13 @@ export const useAlertStore = create<AlertState>((set, get) => ({
         alerts: state.alerts.map(a => a.id === id ? { ...a, is_active } : a)
       }));
       return true;
-    } catch (error) {
+    } catch (error: any) {
+      set({
+        error:
+          error?.response?.data?.detail ||
+          error?.message ||
+          'Alarm durumu guncellenemedi. Tekrar dene.',
+      });
       return false;
     }
   },
@@ -87,7 +111,13 @@ export const useAlertStore = create<AlertState>((set, get) => ({
         alerts: state.alerts.filter(a => a.id !== id)
       }));
       return true;
-    } catch (error) {
+    } catch (error: any) {
+      set({
+        error:
+          error?.response?.data?.detail ||
+          error?.message ||
+          'Alarm silinemedi. Tekrar dene.',
+      });
       return false;
     }
   }

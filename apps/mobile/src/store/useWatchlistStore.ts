@@ -54,7 +54,13 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
         set({ favorites: {}, isLoading: false, error: null });
         return;
       }
-      set({ error: error?.response?.data?.detail || error.message || 'Failed to load watchlist', isLoading: false });
+      set({
+        error:
+          error?.response?.data?.detail ||
+          error.message ||
+          'Izleme listesi yuklenemedi. Baglantiyi kontrol edip yeniden dene.',
+        isLoading: false,
+      });
     }
   },
 
@@ -79,11 +85,14 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
         await apiClient.delete(`/api/v1/watchlist/${encodeURIComponent(symbol)}`);
       } catch (e: any) {
         if (e?.response?.status === 401) {
-          set({ favorites: currentFavs, error: 'Login required to manage favorites.' });
+          set({ favorites: currentFavs, error: 'Favorileri yonetmek icin tekrar giris yap.' });
           return;
         }
         // Rollback
-        set({ favorites: currentFavs, error: e?.response?.data?.detail || 'Failed to remove from watchlist' });
+        set({
+          favorites: currentFavs,
+          error: e?.response?.data?.detail || 'Varlik kaldirilamadi. Tekrar deneyip yeniden senkronize et.',
+        });
       }
     } else {
       set({ favorites: { ...currentFavs, [symbol]: { id: '', ...asset, favorite: true } as WatchlistAsset } });
@@ -92,11 +101,14 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
         await apiClient.post(`/api/v1/watchlist/${encodeURIComponent(symbol)}`);
       } catch (e: any) {
         if (e?.response?.status === 401) {
-          set({ favorites: currentFavs, error: 'Login required to manage favorites.' });
+          set({ favorites: currentFavs, error: 'Favorileri yonetmek icin tekrar giris yap.' });
           return;
         }
         // Rollback
-        set({ favorites: currentFavs, error: e?.response?.data?.detail || 'Failed to add to watchlist' });
+        set({
+          favorites: currentFavs,
+          error: e?.response?.data?.detail || 'Varlik eklenemedi. Tekrar deneyip yeniden senkronize et.',
+        });
       }
     }
 

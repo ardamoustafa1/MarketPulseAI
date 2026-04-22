@@ -2,6 +2,11 @@
 
 This is a production-grade monorepo for MarketPulse AI, a premium portfolio and market tracking application.
 
+![CI](https://img.shields.io/github/actions/workflow/status/ardamoustafa1/MarketPulseAI/ci-cd.yml?branch=main&label=CI)
+![Security](https://img.shields.io/badge/security-gitleaks%20%2B%20semgrep%20%2B%20audit-blue)
+![Coverage](https://img.shields.io/badge/coverage-backend%20xml-informational)
+![Release Notes](https://img.shields.io/badge/release%20notes-required-success)
+
 ## 🧱 Architecture
 
 - `apps/mobile`: React Native (Expo) app.
@@ -15,6 +20,19 @@ This is a production-grade monorepo for MarketPulse AI, a premium portfolio and 
 ## 🚀 Getting Started
 
 Ensure you have Node.js, `yarn` or `npm`, and Python 3.11+ installed.
+
+### One-command local setup (recommended)
+
+```bash
+npm run setup:local
+```
+
+This command will:
+- install dependencies,
+- start local infra and services,
+- apply migrations,
+- seed real demo data,
+- generate API types.
 
 1. **Install Dependencies:**
    ```bash
@@ -55,6 +73,16 @@ Ensure you have Node.js, `yarn` or `npm`, and Python 3.11+ installed.
   - Postgres: `localhost:5432`
   - Redis: `localhost:6379`
 
+## 🎬 Live Demo (local)
+
+```bash
+npm run demo:live
+```
+
+Demo credentials:
+- `admin@marketpulse.ai / Admin123!`
+- `demo@marketpulse.ai / Demo12345!`
+
 ## 📦 Deployment Docs
 
 - Deployment overview: `docs/DEPLOYMENT_README.md`
@@ -62,6 +90,10 @@ Ensure you have Node.js, `yarn` or `npm`, and Python 3.11+ installed.
 - Operations runbook: `docs/RUNBOOK.md`
 - Security checklist: `docs/SECURITY_CHECKLIST.md`
 - App Store release checklist: `docs/APP_STORE_RELEASE_CHECKLIST.md`
+- ADR index: `docs/adr/README.md`
+- Priority action plan: `docs/PRIORITY_ACTION_PLAN.md`
+- Case study: `docs/CASE_STUDY_MARKETPULSE.md`
+- Release notes discipline: `docs/releases/README.md`
 
 ## ✅ Post-Deploy Smoke
 
@@ -97,4 +129,3 @@ For an actionable hardening checklist, see `docs/SECURITY_CHECKLIST.md`.
 - Revoke live sessions by revoking refresh tokens (global or user scoped):
   - `API_URL=http://localhost:8000 ADMIN_TOKEN=<admin_jwt> bash infra/scripts/security_incident_response.sh`
   - `API_URL=http://localhost:8000 ADMIN_TOKEN=<admin_jwt> bash infra/scripts/security_incident_response.sh <user_id>`
-# MarketPulseAI
