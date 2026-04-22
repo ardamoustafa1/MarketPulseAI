@@ -127,5 +127,5 @@ For an actionable hardening checklist, see `docs/SECURITY_CHECKLIST.md`.
 - Rotate secrets immediately:
   - `bash infra/scripts/rotate_secrets.sh`
 - Revoke live sessions by revoking refresh tokens (global or user scoped):
-  - `API_URL=http://localhost:8000 ADMIN_TOKEN=<admin_jwt> bash infra/scripts/security_incident_response.sh`
-  - `API_URL=http://localhost:8000 ADMIN_TOKEN=<admin_jwt> bash infra/scripts/security_incident_response.sh <user_id>`
+  - `API_URL=http://localhost:8000 ADMIN_TOKEN=<admin_jwt> ADMIN_STEP_UP_TOKEN=<step_up_token> ADMIN_STEP_UP_TOTP=<6_digit_code> bash infra/scripts/security_incident_response.sh`
+  - `API_URL=http://localhost:8000 ADMIN_TOKEN=<admin_jwt> ADMIN_STEP_UP_TOKEN=<step_up_token> ADMIN_STEP_UP_TOTP=<6_digit_code> bash infra/scripts/security_incident_response.sh <user_id>`

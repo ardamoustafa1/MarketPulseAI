@@ -25,6 +25,12 @@ def test_expected_api_routes_are_mounted():
         '/api/v1/health/slo',
         '/api/v1/billing/entitlements',
         '/api/v1/alerts/suggestions',
+        '/api/v1/notifications/weekly-summary',
+        '/api/v1/strategy/coach-loop',
+        '/api/v1/strategy/goals',
+        '/api/v1/strategy/risk-report',
+        '/api/v1/strategy/public-snapshot/create',
+        '/api/v1/strategy/north-star',
         '/api/v1/admin/',
     }
 

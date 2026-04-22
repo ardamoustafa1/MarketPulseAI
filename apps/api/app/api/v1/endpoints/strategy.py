@@ -29,6 +29,9 @@ class StrategyAction(BaseModel):
     description: str
     cta: str
     status: str
+    reason: str
+    expected_impact: str
+    confidence_score: Decimal
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -114,6 +117,9 @@ async def coach_loop(
                 description="Portfoy takibi ve AI karar dongusunu baslatmak icin ilk islemi ekle.",
                 cta="Islem ekle",
                 status="pending",
+                reason="Portfoyde maliyet bazli veri yok; tum ileri analizler ilk isleme bagli.",
+                expected_impact="Ilk 24 saatte aktivasyon tamamlama olasiligi artar.",
+                confidence_score=Decimal("0.93"),
                 metadata={"target": "AddTransaction"},
             )
         )
@@ -125,6 +131,9 @@ async def coach_loop(
                 description="Fiyat hareketlerini kacirmamak icin en az bir alarm ekle.",
                 cta="Alarm kur",
                 status="pending",
+                reason="Kullanicinin geri donus trigger'i yok; fiyat oynakligi bosa gidiyor.",
+                expected_impact="7 gunluk geri donus oraninda artis beklenir.",
+                confidence_score=Decimal("0.88"),
                 metadata={"target": "Alerts"},
             )
         )
@@ -136,6 +145,9 @@ async def coach_loop(
                 description="Neden yatirim yaptigini hedefleyerek ilerleme takibini ac.",
                 cta="Hedef belirle",
                 status="pending",
+                reason="Hedefsiz portfoyde karar kalitesi ve sadakat dusuyor.",
+                expected_impact="Haftalik aksiyon tamamlama oranini artirir.",
+                confidence_score=Decimal("0.84"),
                 metadata={"target": "Goals"},
             )
         )
@@ -148,6 +160,9 @@ async def coach_loop(
                 description="Dagilim ve oynaklik sinyallerine gore pozisyonlarini dengele.",
                 cta="Risk raporunu ac",
                 status="ready",
+                reason="Portfoy artik optimize edilebilir olgunlukta.",
+                expected_impact="Drawdown ve konsantrasyon riski azaltilir.",
+                confidence_score=Decimal("0.79"),
                 metadata={"target": "Risk"},
             )
         )

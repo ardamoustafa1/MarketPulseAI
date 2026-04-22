@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     AUTH_RATE_LIMIT_WINDOW_SECONDS: int = 60
     WS_CONNECT_RATE_LIMIT_MAX_REQUESTS: int = 30
     WS_CONNECT_RATE_LIMIT_WINDOW_SECONDS: int = 60
+    ADMIN_STEP_UP_TOKEN: str = "change-me-admin-step-up"
+    ADMIN_STEP_UP_TOTP_SECRET: str = "JBSWY3DPEHPK3PXP"
     
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]

@@ -2,15 +2,15 @@
 set -euo pipefail
 
 # Usage:
-# API_URL=http://localhost:8000 ADMIN_TOKEN=... bash infra/scripts/security_incident_response.sh [user_id]
+# API_URL=http://localhost:8000 ADMIN_TOKEN=... ADMIN_STEP_UP_TOKEN=... ADMIN_STEP_UP_TOTP=123456 bash infra/scripts/security_incident_response.sh [user_id]
 #
 # Steps:
 # 1) Generate new secrets to rotate
 # 2) Revoke refresh tokens globally or for a user
 
-if [[ -z "${API_URL:-}" || -z "${ADMIN_TOKEN:-}" ]]; then
-  echo "API_URL and ADMIN_TOKEN are required."
-  echo "Example: API_URL=http://localhost:8000 ADMIN_TOKEN=... bash infra/scripts/security_incident_response.sh"
+if [[ -z "${API_URL:-}" || -z "${ADMIN_TOKEN:-}" || -z "${ADMIN_STEP_UP_TOKEN:-}" || -z "${ADMIN_STEP_UP_TOTP:-}" ]]; then
+  echo "API_URL, ADMIN_TOKEN, ADMIN_STEP_UP_TOKEN and ADMIN_STEP_UP_TOTP are required."
+  echo "Example: API_URL=http://localhost:8000 ADMIN_TOKEN=... ADMIN_STEP_UP_TOKEN=... ADMIN_STEP_UP_TOTP=123456 bash infra/scripts/security_incident_response.sh"
   exit 1
 fi
 
@@ -29,6 +29,8 @@ echo "[2/2] Revoking refresh tokens..."
 curl -sS -X POST "${API_URL}/api/v1/admin/security/revoke-refresh-tokens" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  -H "x-admin-step-up: ${ADMIN_STEP_UP_TOKEN}" \
+  -H "x-admin-step-up-totp: ${ADMIN_STEP_UP_TOTP}" \
   -d "$PAYLOAD"
 
 echo

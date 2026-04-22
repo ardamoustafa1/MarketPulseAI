@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.api.deps import get_current_admin, get_db
@@ -13,8 +13,37 @@ from app.models.audit import AdminAction
 from app.models.portfolio import Portfolio, Transaction
 from app.models.user import User, RefreshToken
 from app.services.audit_service import AuditService
+from app.core.config import settings
+from app.core.security import verify_totp_code
 
 router = APIRouter()
+
+
+def _require_step_up(request: Request) -> None:
+    provided = request.headers.get("x-admin-step-up", "")
+    provided_totp = request.headers.get("x-admin-step-up-totp", "")
+    expected = settings.ADMIN_STEP_UP_TOKEN.strip()
+    totp_secret = settings.ADMIN_STEP_UP_TOTP_SECRET.strip()
+    if not expected or expected == "change-me-admin-step-up":
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Admin step-up token is not configured.",
+        )
+    if not totp_secret:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Admin step-up TOTP secret is not configured.",
+        )
+    if provided != expected:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid admin step-up token.",
+        )
+    if not verify_totp_code(totp_secret, provided_totp, window=1):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid admin step-up TOTP code.",
+        )
 
 class AdminActionListItem(BaseModel):
     id: str
@@ -341,9 +370,11 @@ def read_admin_transactions(
 @router.delete("/transactions/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_admin_transaction(
     transaction_id: str,
+    request: Request,
     db: Session = Depends(get_db),
     current_admin: User = Depends(get_current_admin),
 ):
+    _require_step_up(request)
     try:
         parsed_id = UUID(transaction_id)
     except ValueError:
@@ -482,9 +513,11 @@ def read_admin_insights(
 @router.post("/security/revoke-refresh-tokens")
 def revoke_refresh_tokens(
     payload: RevokeRefreshTokensRequest,
+    request: Request,
     db: Session = Depends(get_db),
     current_admin: User = Depends(get_current_admin),
 ):
+    _require_step_up(request)
     target_user_id = None
     if payload.user_id:
         try:

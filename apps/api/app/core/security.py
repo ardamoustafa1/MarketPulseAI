@@ -1,5 +1,8 @@
 import re
 import hmac
+import base64
+import hashlib
+import struct
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from typing import Any, Union
@@ -96,3 +99,34 @@ def verify_payload_signature(payload: bytes, secret: str, signature: str | None)
 def validate_secret_strength() -> None:
     if settings.ENVIRONMENT != "development" and len(settings.SECRET_KEY) < 32:
         raise RuntimeError("SECRET_KEY must be at least 32 characters in non-development environments.")
+
+
+def verify_totp_code(secret: str, code: str, at_time: int | None = None, period: int = 30, window: int = 1) -> bool:
+    """
+    RFC6238 compatible TOTP verification using HMAC-SHA1.
+    Accepts +/- `window` steps for clock drift tolerance.
+    """
+    normalized_secret = (secret or "").strip().replace(" ", "").upper()
+    if not normalized_secret or not code or not code.isdigit():
+        return False
+    try:
+        key = base64.b32decode(normalized_secret, casefold=True)
+    except Exception:
+        return False
+
+    now = int(at_time or datetime.now(timezone.utc).timestamp())
+    counter = now // period
+    width = len(code)
+
+    for offset in range(-window, window + 1):
+        c = counter + offset
+        if c < 0:
+            continue
+        msg = struct.pack(">Q", c)
+        digest = hmac.new(key, msg, hashlib.sha1).digest()
+        i = digest[-1] & 0x0F
+        binary = ((digest[i] & 0x7F) << 24) | ((digest[i + 1] & 0xFF) << 16) | ((digest[i + 2] & 0xFF) << 8) | (digest[i + 3] & 0xFF)
+        otp = str(binary % (10 ** width)).zfill(width)
+        if hmac.compare_digest(otp, code):
+            return True
+    return False

@@ -7,7 +7,7 @@ import { Text } from '../../components/ui/Text';
 import { PremiumCard } from '../../components/ui/PremiumCard';
 import { colors, radius, spacing } from '../../theme';
 import { apiClient } from '../../api/client';
-import { logEvent, logScreen } from '../../monitoring/analytics';
+import { flushAnalyticsQueue, logEvent, logScreen } from '../../monitoring/analytics';
 
 type CoachAction = {
   id: string;
@@ -15,6 +15,9 @@ type CoachAction = {
   description: string;
   cta: string;
   status: string;
+  reason: string;
+  expected_impact: string;
+  confidence_score: string;
   metadata?: Record<string, unknown>;
 };
 
@@ -59,20 +62,15 @@ export const StrategyHubScreen = ({ navigation }: any) => {
 
   useEffect(() => {
     logScreen('StrategyHub', { source: 'home_dashboard' });
-    void apiClient.post('/api/v1/strategy/events', {
-      name: 'strategy_hub_opened',
-      params: { source: 'home_dashboard' },
-    }).catch(() => {});
+    logEvent('strategy_hub_opened', { source: 'home_dashboard' });
+    void flushAnalyticsQueue();
     void load();
   }, [load]);
 
   const applyCoachAction = async (actionId: string) => {
     try {
       logEvent('strategy_coach_action_applied', { actionId });
-      await apiClient.post('/api/v1/strategy/events', {
-        name: 'strategy_coach_action_applied',
-        params: { action_id: actionId },
-      });
+      await flushAnalyticsQueue();
       await apiClient.post(`/api/v1/strategy/coach-actions/${actionId}`, {});
       await load();
     } catch {
@@ -91,10 +89,7 @@ export const StrategyHubScreen = ({ navigation }: any) => {
     ];
     try {
       logEvent('strategy_goal_saved', { title: goalTitle.trim() });
-      await apiClient.post('/api/v1/strategy/events', {
-        name: 'strategy_goal_saved',
-        params: { title: goalTitle.trim() },
-      });
+      await flushAnalyticsQueue();
       await apiClient.post('/api/v1/strategy/goals', { goals: nextGoals });
       setGoalTitle('');
       setGoalTarget('');
@@ -109,10 +104,7 @@ export const StrategyHubScreen = ({ navigation }: any) => {
   const createShareSnapshot = async () => {
     try {
       logEvent('strategy_snapshot_created');
-      await apiClient.post('/api/v1/strategy/events', {
-        name: 'strategy_snapshot_created',
-        params: {},
-      });
+      await flushAnalyticsQueue();
       const { data } = await apiClient.post('/api/v1/strategy/public-snapshot/create');
       setShareLink(data?.share_url ?? '');
     } catch {
@@ -150,6 +142,12 @@ export const StrategyHubScreen = ({ navigation }: any) => {
               <Box key={a.id} style={{ marginBottom: spacing.sm, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' }}>
                 <Text variant="body" weight="600">{a.title}</Text>
                 <Text variant="caption" color={colors.text.secondary} style={{ marginTop: 2 }}>{a.description}</Text>
+                <Text variant="caption" color={colors.text.muted} style={{ marginTop: 2 }}>
+                  {`Neden: ${a.reason}`}
+                </Text>
+                <Text variant="caption" color={colors.text.muted} style={{ marginTop: 2 }}>
+                  {`Beklenen etki: ${a.expected_impact} · Guven: ${a.confidence_score}`}
+                </Text>
                 <Pressable onPress={() => applyCoachAction(a.id)} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, marginTop: spacing.xs }]}>
                   <Text variant="caption" color={colors.accent.primary_blue} weight="700">{a.cta}</Text>
                 </Pressable>

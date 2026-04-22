@@ -257,9 +257,15 @@ export async function fetchAdminTransactions(limit = 200): Promise<AdminTransact
 
 export async function deleteAdminTransaction(transactionId: string): Promise<void> {
   const accessToken = localStorage.getItem('admin_access_token');
+  const stepUpToken = localStorage.getItem('admin_step_up_token');
+  const stepUpTotp = localStorage.getItem('admin_step_up_totp');
   const response = await fetch(`${getApiBaseUrl()}/api/v1/admin/transactions/${transactionId}`, {
     method: 'DELETE',
-    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    headers: {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...(stepUpToken ? { 'x-admin-step-up': stepUpToken } : {}),
+      ...(stepUpTotp ? { 'x-admin-step-up-totp': stepUpTotp } : {}),
+    },
   });
   if (!response.ok) {
     throw new Error(`Admin API request failed: ${response.status}`);
