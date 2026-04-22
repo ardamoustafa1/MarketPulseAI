@@ -18,6 +18,7 @@ import { EditProfileScreen } from '../screens/app/EditProfileScreen';
 import { CompareAssetsScreen } from '../screens/app/CompareAssetsScreen';
 import { MarketNewsScreen } from '../screens/app/MarketNewsScreen';
 import { FifoSummaryScreen } from '../screens/app/FifoSummaryScreen';
+import { StrategyHubScreen } from '../screens/app/StrategyHubScreen';
 
 import { colors } from '../theme/tokens';
 
@@ -165,6 +166,14 @@ export const AppTabNavigator = () => {
       <Stack.Screen
         name="FifoSummary"
         component={FifoSummaryScreen}
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="StrategyHub"
+        component={StrategyHubScreen}
         options={{
           presentation: 'card',
           animation: 'slide_from_right',

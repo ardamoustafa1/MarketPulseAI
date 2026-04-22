@@ -85,18 +85,18 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
 
   const nextBestAction = useMemo(() => {
     if (!hasPortfolio) {
-      return { label: 'Ilk islemi ekle', target: 'AddTransaction' };
+      return { label: 'Ilk islemi ekle', target: 'AddTransaction' as const };
     }
     if (favoritesCount === 0) {
-      return { label: 'Izleme listene varlik ekle', target: 'Watchlist' };
+      return { label: 'Izleme listene varlik ekle', target: 'Watchlist' as const };
     }
     if (activeAlertsCount === 0) {
-      return { label: 'Ilk fiyati alarmini kur', target: 'Alerts' };
+      return { label: 'Ilk fiyati alarmini kur', target: 'Alerts' as const };
     }
     if (!hasInsight) {
-      return { label: 'Ilk AI icgorunu uret', target: 'Insights' };
+      return { label: 'Ilk AI icgorunu uret', target: 'Insights' as const };
     }
-    return { label: 'Portfoyu optimize et', target: 'Portfolio' };
+    return { label: 'Yatirim kocu panelini ac', target: 'StrategyHub' as const };
   }, [hasPortfolio, favoritesCount, activeAlertsCount, hasInsight]);
 
   const renderSkeletons = () => (
@@ -256,6 +256,21 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
             <Box row align="center">
               <CheckCircle2 color={colors.sentiment.bull_green} size={16} style={{ marginRight: spacing.xs }} />
               <Text variant="caption" color={colors.text.secondary}>{benchmarkText}</Text>
+            </Box>
+          </PremiumCard>
+
+          <PremiumCard delay={280} style={{ marginBottom: spacing.md }}>
+            <Box row justify="space-between" align="center">
+              <Box flex={1}>
+                <Text variant="caption" color={colors.text.muted}>Kisisel yatirim kocu akisi</Text>
+                <Text variant="h3" weight="700" style={{ marginTop: 4 }}>Insight -> Action -> Outcome</Text>
+              </Box>
+              <Pressable onPress={() => navigation.navigate('StrategyHub')} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+                <Box row align="center" bg={colors.text.primary} padding={spacing.sm} radius={radius.pill}>
+                  <Text color={colors.background.base} weight="600" style={{ marginRight: spacing.xs }}>Ac</Text>
+                  <ArrowUpRight color={colors.background.base} size={16} />
+                </Box>
+              </Pressable>
             </Box>
           </PremiumCard>
 

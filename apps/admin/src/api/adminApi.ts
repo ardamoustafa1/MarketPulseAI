@@ -12,6 +12,24 @@ export type HealthPayload = {
   };
 };
 
+export type NorthStarPayload = {
+  total_users: number;
+  activated_users: number;
+  activation_rate_percent: number;
+  retention_proxy_percent: number;
+  weekly_active_ratio_percent: number;
+  push_reachable_users: number;
+  coach_hub_open_users_7d: number;
+  coach_action_users_7d: number;
+  coach_action_conversion_percent_7d: number;
+  cohort_retention: Array<{
+    cohort: string;
+    users: number;
+    retention_7d_percent: number;
+    retention_30d_percent: number;
+  }>;
+};
+
 export type PriceItem = {
   symbol: string;
   source?: string;
@@ -131,6 +149,10 @@ export async function fetchReadiness(): Promise<ReadinessPayload> {
 
 export async function fetchHealth(): Promise<HealthPayload> {
   return getJson<HealthPayload>('/api/v1/health/');
+}
+
+export async function fetchNorthStar(): Promise<NorthStarPayload> {
+  return getJson<NorthStarPayload>('/api/v1/strategy/north-star');
 }
 
 export async function fetchAssets(): Promise<AssetItem[]> {

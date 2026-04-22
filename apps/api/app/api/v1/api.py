@@ -18,6 +18,7 @@ from app.api.v1.endpoints import (
     users,
     watchlist,
     websocket,
+    strategy,
 )
 
 api_router = APIRouter()
@@ -40,3 +41,4 @@ api_router.include_router(audit_logs.router, prefix="/audit-logs", tags=["Audit 
 api_router.include_router(billing.router, prefix="/billing", tags=["Billing"])
 api_router.include_router(health.router, prefix="/health", tags=["Health"])
 api_router.include_router(admin.router, prefix="/admin", tags=["Admin"])
+api_router.include_router(strategy.router, prefix="/strategy", tags=["Product Strategy"])

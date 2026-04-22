@@ -540,6 +540,119 @@ th {
   color: #ff95a6;
 }
 
+.cohort-spark-wrap {
+  border: 1px solid rgba(129, 166, 213, 0.24);
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+  margin-bottom: 0.9rem;
+  background: linear-gradient(180deg, rgba(14, 22, 36, 0.72), rgba(12, 18, 30, 0.62));
+}
+
+.cohort-spark-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: #9db2cf;
+  font-size: 0.78rem;
+  margin-bottom: 0.45rem;
+}
+
+.cohort-spark-svg {
+  width: 100%;
+  height: 54px;
+  display: block;
+}
+
+.sparkline {
+  fill: none;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sparkline-7d {
+  stroke: #8fc7ff;
+}
+
+.sparkline-30d {
+  stroke: #73dbac;
+}
+
+.sparkline-guide {
+  stroke: rgba(143, 199, 255, 0.14);
+  stroke-width: 1;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.sparkline-guide.visible {
+  opacity: 1;
+}
+
+.cohort-spark-legend {
+  margin-top: 0.35rem;
+  display: flex;
+  gap: 1rem;
+  color: #9fb3ce;
+  font-size: 0.76rem;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.dot-7d {
+  background: #8fc7ff;
+}
+
+.dot-30d {
+  background: #73dbac;
+}
+
+.cohort-tooltip {
+  margin-top: 0.5rem;
+  display: inline-flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.35rem 0.55rem;
+  border-radius: 10px;
+  border: 1px solid rgba(129, 166, 213, 0.28);
+  background: rgba(14, 22, 36, 0.7);
+  color: #bad0ea;
+  font-size: 0.76rem;
+}
+
+.cohort-tooltip strong {
+  color: #eef5ff;
+  letter-spacing: 0.01em;
+}
+
+.cohort-tooltip-placeholder {
+  margin-top: 0.5rem;
+  color: #8fa7c5;
+  font-size: 0.75rem;
+}
+
+.cohort-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.cohort-header-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 @keyframes shimmer {
   0% {
     background-position: 200% 0;
