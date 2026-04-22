@@ -37,10 +37,10 @@ export const LoginScreen = ({ navigation }: any) => {
     }
 
     if (axiosError.response?.status === 401) {
-      return 'Email or password is incorrect.';
+      return 'Email veya sifre hatali. Sifreni kontrol edip tekrar dene.';
     }
 
-    return axiosError.message || 'Login failed.';
+    return axiosError.message || 'Giris basarisiz. Baglantini kontrol edip yeniden dene.';
   };
 
   const handleLogin = async () => {
@@ -125,13 +125,13 @@ export const LoginScreen = ({ navigation }: any) => {
 
       {!isSubmitting && email.trim().length > 0 && !isEmailValid ? (
         <Text color={colors.sentiment.bear_red} style={{ marginTop: spacing.sm }}>
-          Please enter a valid email address.
+          Gecerli bir email girerek devam et.
         </Text>
       ) : null}
 
       {!isSubmitting && password.length > 0 && password.length < 8 ? (
         <Text color={colors.sentiment.bear_red} style={{ marginTop: spacing.sm }}>
-          Password must be at least 8 characters.
+          Sifre en az 8 karakter olmali, sonra tekrar dene.
         </Text>
       ) : null}
 

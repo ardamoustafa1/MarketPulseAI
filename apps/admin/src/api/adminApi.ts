@@ -3,6 +3,15 @@ export type ReadinessPayload = {
   checks?: Record<string, boolean>;
 };
 
+export type HealthPayload = {
+  status: string;
+  metrics?: {
+    total_requests?: number;
+    error_rate_percent?: number;
+    p95_latency_ms?: number;
+  };
+};
+
 export type PriceItem = {
   symbol: string;
   source?: string;
@@ -118,6 +127,10 @@ async function getJson<T>(path: string): Promise<T> {
 
 export async function fetchReadiness(): Promise<ReadinessPayload> {
   return getJson<ReadinessPayload>('/api/v1/health/readiness');
+}
+
+export async function fetchHealth(): Promise<HealthPayload> {
+  return getJson<HealthPayload>('/api/v1/health/');
 }
 
 export async function fetchAssets(): Promise<AssetItem[]> {

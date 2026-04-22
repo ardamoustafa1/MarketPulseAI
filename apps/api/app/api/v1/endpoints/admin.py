@@ -11,7 +11,7 @@ from app.models.alert import AiInsight
 from app.models.asset import Asset, AssetTypeEnum
 from app.models.audit import AdminAction
 from app.models.portfolio import Portfolio, Transaction
-from app.models.user import User
+from app.models.user import User, RefreshToken
 from app.services.audit_service import AuditService
 
 router = APIRouter()
@@ -96,6 +96,10 @@ class AdminAuditTimelineItem(BaseModel):
     target: str
     details: dict[str, Any] | None = None
     created_at: datetime
+
+class RevokeRefreshTokensRequest(BaseModel):
+    user_id: str | None = None
+    reason: str = "security_incident"
 
 
 @router.get("/")
@@ -473,3 +477,36 @@ def read_admin_insights(
         )
         for insight, user_email in rows
     ]
+
+
+@router.post("/security/revoke-refresh-tokens")
+def revoke_refresh_tokens(
+    payload: RevokeRefreshTokensRequest,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    target_user_id = None
+    if payload.user_id:
+        try:
+            target_user_id = UUID(payload.user_id)
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
+
+    query = db.query(RefreshToken).filter(RefreshToken.revoked == False)
+    if target_user_id:
+        query = query.filter(RefreshToken.user_id == target_user_id)
+
+    rows = query.all()
+    for token_row in rows:
+        token_row.revoked = True
+        db.add(token_row)
+    db.commit()
+
+    AuditService(db).log(
+        action="admin.security.revoke_refresh_tokens",
+        entity_table="refresh_tokens",
+        entity_id=str(target_user_id) if target_user_id else "all",
+        details={"count": len(rows), "reason": payload.reason},
+        actor=current_admin,
+    )
+    return {"revoked_count": len(rows), "scope": "user" if target_user_id else "all"}

@@ -15,6 +15,7 @@ import { Box } from '../../components/ui/Box';
 import { Text } from '../../components/ui/Text';
 import { colors, radius, spacing } from '../../theme';
 import { useMarketDataStore } from '../../store/useMarketDataStore';
+import { formatNumberByLocale } from '../../utils/localeFormat';
 
 type AssetOption = {
   symbol: string;
@@ -360,9 +361,7 @@ export const ConverterScreen = () => {
     if (result === null) {
       return;
     }
-    const value = `${amountInput} ${fromSymbol} = ${result.toLocaleString('en-US', {
-      maximumFractionDigits: 8,
-    })} ${toSymbol}`;
+    const value = `${amountInput} ${fromSymbol} = ${formatNumberByLocale(result, 8)} ${toSymbol}`;
     await Clipboard.setStringAsync(value);
     Alert.alert('Copied', value);
   };
@@ -457,7 +456,7 @@ export const ConverterScreen = () => {
             </Box>
           </Box>
           <Text variant="h1" weight="700" style={{ fontSize: 34, marginTop: 4 }}>
-            {result === null ? '--' : `${result.toLocaleString('en-US', { maximumFractionDigits: 8 })} ${toSymbol}`}
+            {result === null ? '--' : `${formatNumberByLocale(result, 8)} ${toSymbol}`}
           </Text>
         </Box>
 

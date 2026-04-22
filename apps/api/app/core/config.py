@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import field_validator
 from typing import List
+from urllib.parse import urlparse
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "MarketPulse AI"
@@ -142,6 +143,24 @@ class Settings(BaseSettings):
         if role not in allowed:
             raise ValueError(f"APP_ROLE must be one of {sorted(allowed)}")
         return role
+
+    @field_validator("BACKEND_CORS_ORIGINS")
+    @classmethod
+    def validate_cors_by_environment(cls, value, info):
+        env = info.data.get("ENVIRONMENT", "development")
+        for origin in value:
+            parsed = urlparse(origin)
+            if not parsed.scheme or not parsed.netloc:
+                raise ValueError(f"Invalid CORS origin: {origin}")
+            if env in {"staging", "production"} and parsed.scheme != "https":
+                raise ValueError(
+                    f"CORS origin must use https in {env}: {origin}"
+                )
+            if env in {"development", "test"} and parsed.hostname not in {"localhost", "127.0.0.1"}:
+                raise ValueError(
+                    f"CORS origin must be localhost/127.0.0.1 in {env}: {origin}"
+                )
+        return value
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 

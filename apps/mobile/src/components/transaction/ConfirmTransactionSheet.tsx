@@ -10,6 +10,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { TransactionFormData, computeTotal } from '../../utils/transactionValidation';
 import { colors, radius, spacing } from '../../theme';
 import { Check, X, ArrowDownRight, ArrowUpRight, AlertTriangle, Shield } from 'lucide-react-native';
+import { formatDateTimeByLocale, formatNumberByLocale } from '../../utils/localeFormat';
 
 interface ConfirmSheetProps {
   visible: boolean;
@@ -34,17 +35,9 @@ export const ConfirmTransactionSheet: React.FC<ConfirmSheetProps> = ({
     onConfirm();
   };
 
-  const dateStr = data.date.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-
-  const timeStr = data.date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const localizedDate = formatDateTimeByLocale(data.date);
+  const dateStr = localizedDate.date;
+  const timeStr = localizedDate.time;
 
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
@@ -87,7 +80,7 @@ export const ConfirmTransactionSheet: React.FC<ConfirmSheetProps> = ({
                 value={isBuy ? 'Buy' : 'Sell'}
                 valueColor={isBuy ? colors.sentiment.bull_green : colors.sentiment.bear_red}
               />
-              <DetailLine label="Quantity" value={parseFloat(data.quantity).toLocaleString('en-US', { maximumFractionDigits: 8 })} />
+              <DetailLine label="Quantity" value={formatNumberByLocale(data.quantity, 8)} />
               <DetailLine label="Unit Price" value={formatCurrency(data.unitPrice)} />
               <DetailLine label="Subtotal" value={formatCurrency(subtotal)} />
               {feeAmount > 0 && (

@@ -11,6 +11,12 @@ export const OnboardingScreen = ({ navigation }: any) => {
       <Text variant="body" align="center" color={colors.text.secondary} style={{ marginBottom: spacing.xl }}>
         Next generation portfolio tracking with AI insights. No noise, just data.
       </Text>
+
+      <Box bg={colors.background.surface} padding={spacing.md} radius={radius.md} style={{ marginBottom: spacing.md }}>
+        <Text variant="caption" color={colors.text.secondary}>1) Hesabini ac</Text>
+        <Text variant="caption" color={colors.text.secondary}>2) Ilk islemini gir</Text>
+        <Text variant="caption" color={colors.text.secondary}>3) Canli fiyat + AI icgorulerini takip et</Text>
+      </Box>
       
       <Pressable onPress={() => navigation.navigate('Login')}>
         <Box bg={colors.background.elevated} padding={spacing.md} radius={radius.md} center margin={spacing.sm}>

@@ -6,6 +6,8 @@ class Token(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int
+    refresh_expires_in_days: int
+    refresh_rotation: bool = True
 
 class LoginPayload(BaseModel):
     email: EmailStr

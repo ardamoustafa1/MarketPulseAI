@@ -46,6 +46,10 @@ async def websocket_endpoint(
         return
 
     auth_header = websocket.headers.get("authorization", "")
+    # Explicitly reject query-string token transport to avoid URL leakage.
+    if websocket.query_params.get("token"):
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
     token = auth_header[7:] if auth_header.lower().startswith("bearer ") else ""
     user_id = await get_ws_user(token)
     if not user_id:

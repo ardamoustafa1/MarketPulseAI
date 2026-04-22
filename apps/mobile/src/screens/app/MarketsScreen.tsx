@@ -13,6 +13,7 @@ import { useMarketDataStore, type AssetCategory, type MarketQuote } from '../../
 import { useWatchlistStore } from '../../store/useWatchlistStore';
 import { colors, spacing } from '../../theme';
 import { formatQuoteSourceLabel, formatQuoteTime } from '../../utils/quoteLabels';
+import { formatCurrencyByLocale } from '../../utils/localeFormat';
 
 const CATEGORIES: Array<{ id: 'favorites' | AssetCategory; label: string }> = [
   { id: 'favorites', label: 'Favorites' },
@@ -234,12 +235,7 @@ export const MarketsScreen = ({ navigation }: any) => {
     }
 
     const currencyCode = displayCurrency === 'TRY' ? 'TRY' : displayCurrency;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currencyCode,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(converted);
+    return formatCurrencyByLocale(converted, currencyCode, 2);
   };
 
   return (
@@ -342,10 +338,10 @@ export const MarketsScreen = ({ navigation }: any) => {
           >
             <AlertTriangle color={colors.sentiment.bear_red} size={16} style={{ marginRight: spacing.sm }} />
             <Text variant="caption" color={colors.sentiment.bear_red} style={{ flex: 1 }}>
-              {mergedError}
+              {`${mergedError} Veri akisini yenilemek icin bu bildirime dokun.`}
             </Text>
             <Text variant="caption" color={colors.text.muted}>
-              Dismiss
+              Temizle
             </Text>
           </Box>
         </Pressable>
@@ -361,7 +357,7 @@ export const MarketsScreen = ({ navigation }: any) => {
                 <Box center style={{ marginTop: spacing.xxl }}>
                   <Info color={colors.text.muted} size={32} style={{ marginBottom: spacing.md }} />
                   <Text variant="h3" color={colors.text.secondary}>
-                    No results found.
+                    Sonuc bulunamadi. Aramayi degistir veya kategori sec.
                   </Text>
                 </Box>
               ) : (

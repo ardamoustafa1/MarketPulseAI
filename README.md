@@ -79,6 +79,8 @@ bash infra/scripts/post_deploy_smoke.sh https://api.<your-domain>
   - `JWT_AUDIENCE`
 - Auth and websocket endpoints are rate-limited with Redis; keep Redis available in all deployed environments.
 - Refresh tokens are stored hashed in DB and rotated on refresh. Never log or persist raw refresh tokens in client logs.
+- Access token TTL is short-lived (`ACCESS_TOKEN_EXPIRE_MINUTES=15` by default). Use refresh flow for session continuity.
+- Refresh policy is strict rotation: every successful refresh revokes the previous refresh token and issues a new pair.
 - Error responses are intentionally sanitized in production paths; avoid adding stack traces to API responses.
 - Admin operations are role-protected and auditable. Review audit logs regularly for suspicious actions.
 - Dependency hygiene:
@@ -87,4 +89,12 @@ bash infra/scripts/post_deploy_smoke.sh https://api.<your-domain>
   - Patch high/critical CVEs before release.
 
 For an actionable hardening checklist, see `docs/SECURITY_CHECKLIST.md`.
+
+## 🚨 Secret Leak Incident Response
+
+- Rotate secrets immediately:
+  - `bash infra/scripts/rotate_secrets.sh`
+- Revoke live sessions by revoking refresh tokens (global or user scoped):
+  - `API_URL=http://localhost:8000 ADMIN_TOKEN=<admin_jwt> bash infra/scripts/security_incident_response.sh`
+  - `API_URL=http://localhost:8000 ADMIN_TOKEN=<admin_jwt> bash infra/scripts/security_incident_response.sh <user_id>`
 # MarketPulseAI

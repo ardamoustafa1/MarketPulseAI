@@ -14,29 +14,12 @@ import { PositionRow } from '../../components/portfolio/PositionRow';
 import { colors, radius, spacing } from '../../theme';
 import { HelpCircle, ArrowUpRight, PlusCircle } from 'lucide-react-native';
 import { usePortfolioStore } from '../../store/usePortfolioStore';
+import { formatCurrencyByLocale, formatNumberByLocale } from '../../utils/localeFormat';
 
 const ALLOCATION_COLORS = ['#F7931A', '#627EEA', '#14F195', '#26A17B', '#C8A97E', '#4A5C82'];
 
-const formatCurrency = (value: string) => {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) {
-    return '$0.00';
-  }
-  return numeric.toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-};
-
-const formatCompactNumber = (value: string) => {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) {
-    return '0';
-  }
-  return numeric.toLocaleString('en-US', { maximumFractionDigits: 4 });
-};
+const formatCurrency = (value: string) => formatCurrencyByLocale(value, 'USD');
+const formatCompactNumber = (value: string) => formatNumberByLocale(value, 4);
 
 export const PortfolioScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
@@ -154,10 +137,10 @@ export const PortfolioScreen = ({ navigation }: any) => {
   const renderErrorState = () => (
     <PremiumCard delay={150} style={{ paddingVertical: spacing.xl, alignItems: 'center', marginTop: spacing.xl }}>
       <Text variant="h3" weight="600" style={{ marginBottom: spacing.sm }}>
-        Failed to load portfolio
+        Portfolio verisi yuklenemedi
       </Text>
       <Text variant="body" color={colors.text.secondary} align="center" style={{ marginBottom: spacing.lg, paddingHorizontal: spacing.md }}>
-        {error ?? 'An unexpected error occurred while loading your portfolio.'}
+        {error ?? 'Portfoyu yuklemek icin baglantini kontrol et ve tekrar dene.'}
       </Text>
       <Pressable
         onPress={() => {
@@ -167,7 +150,7 @@ export const PortfolioScreen = ({ navigation }: any) => {
         style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
       >
         <Box bg={colors.text.primary} padding={spacing.md} radius={radius.pill}>
-          <Text color={colors.background.base} weight="600">Retry</Text>
+          <Text color={colors.background.base} weight="600">Tekrar dene</Text>
         </Box>
       </Pressable>
     </PremiumCard>
