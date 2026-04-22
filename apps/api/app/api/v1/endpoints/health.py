@@ -4,6 +4,7 @@ from app.core.config import settings
 from app.services.price.scheduler import aggregated_provider
 from app.db.session import engine
 from app.db.redis import get_redis_client
+from app.observability.metrics import slo, snapshot
 
 router = APIRouter()
 
@@ -55,4 +56,17 @@ async def health_check():
             "binance": binance_healthy,
             "yahoo": yahoo_healthy,
         },
+        "metrics": snapshot(),
+        "slo_5m": slo(window_seconds=300),
     }
+
+
+@router.get("/metrics")
+async def metrics_snapshot():
+    return snapshot()
+
+
+@router.get("/slo")
+async def slo_snapshot(window_seconds: int = 300):
+    window = max(60, min(window_seconds, 3600))
+    return slo(window_seconds=window)

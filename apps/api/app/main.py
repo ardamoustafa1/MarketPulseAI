@@ -13,6 +13,7 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 from app.core.config import settings
 from app.core.security import validate_secret_strength
 from app.api.v1.api import api_router
+from app.observability.metrics import record_request
 from app.services.price.scheduler import global_price_scheduler
 from app.services.alert.evaluator import global_alert_evaluator
 from app.api.deps import get_ws_manager
@@ -93,6 +94,12 @@ async def security_headers_middleware(request: Request, call_next):
         response.status_code,
         elapsed_ms,
         request_id,
+    )
+    record_request(
+        path=request.url.path,
+        method=request.method,
+        status_code=response.status_code,
+        latency_ms=elapsed_ms,
     )
     if settings.SENTRY_DSN:
         with sentry_sdk.configure_scope() as scope:

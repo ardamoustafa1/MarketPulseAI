@@ -21,3 +21,10 @@ class BillingWebhookEvent(BaseModel):
     event: Literal["subscription.created", "subscription.updated", "subscription.canceled"]
     user_email: EmailStr
     subscription_tier: SubscriptionTier | None = None
+
+
+class EntitlementResponse(BaseModel):
+    user_id: str
+    subscription_tier: SubscriptionTier
+    max_alerts: int
+    insight_cooldown_seconds: int

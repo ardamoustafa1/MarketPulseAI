@@ -471,6 +471,45 @@ th {
   gap: var(--space-3);
 }
 
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-2);
+  align-items: end;
+  margin-bottom: var(--space-2);
+}
+
+.inline-message {
+  color: #a8d0ff;
+  font-size: 0.86rem;
+}
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 7, 13, 0.7);
+  display: grid;
+  place-items: center;
+  z-index: 999;
+  padding: 1rem;
+}
+
+.confirm-dialog {
+  width: min(440px, 100%);
+}
+
+.confirm-dialog p {
+  margin-top: 0.5rem;
+  color: #a5b9d3;
+}
+
+.confirm-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
 .login-screen {
   min-height: 100vh;
   display: grid;

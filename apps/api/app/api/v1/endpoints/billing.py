@@ -7,9 +7,12 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_admin, get_current_user, get_db
 from app.core.config import settings
 from app.core.security import verify_payload_signature
+from app.core.plan_limits import insight_cooldown_for_user, max_alerts_for_user
+from app.models.audit import AuditLog
 from app.models.user import User
 from app.schemas.billing import (
     BillingWebhookEvent,
+    EntitlementResponse,
     SubscriptionStatusResponse,
     SubscriptionUpdateRequest,
 )
@@ -56,6 +59,19 @@ def update_subscription_status(
     )
 
 
+@router.get("/entitlements", response_model=EntitlementResponse)
+def read_entitlements(
+    current_user: User = Depends(get_current_user),
+):
+    tier = (current_user.subscription_tier or "free")
+    return EntitlementResponse(
+        user_id=str(current_user.id),
+        subscription_tier=tier,  # type: ignore[arg-type]
+        max_alerts=max_alerts_for_user(tier),
+        insight_cooldown_seconds=int(insight_cooldown_for_user(tier).total_seconds()),
+    )
+
+
 @router.post("/webhook")
 async def billing_webhook(
     request: Request,
@@ -95,6 +111,34 @@ async def billing_webhook(
         actor=None,
     )
     return {"status": "ok"}
+
+
+@router.get("/events")
+def list_billing_events(
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    _ = current_admin
+    safe_limit = max(1, min(limit, 500))
+    rows = (
+        db.query(AuditLog)
+        .filter(AuditLog.action.like("billing.%"))
+        .order_by(AuditLog.created_at.desc())
+        .limit(safe_limit)
+        .all()
+    )
+    return [
+        {
+            "id": str(row.id),
+            "action": row.action,
+            "entity_table": row.entity_table,
+            "entity_id": row.entity_id,
+            "details": row.details or {},
+            "created_at": row.created_at,
+        }
+        for row in rows
+    ]
 
 
 @router.patch("/users/{user_id}/subscription", response_model=SubscriptionStatusResponse)

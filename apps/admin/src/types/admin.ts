@@ -70,6 +70,15 @@ export type AdminActionRecord = {
   scope: string;
 };
 
+export type TransactionRecord = {
+  id: string;
+  symbol: string;
+  type: string;
+  quantity: string;
+  price: string;
+  date: string;
+};
+
 export type NavItem = {
   to: string;
   label: string;

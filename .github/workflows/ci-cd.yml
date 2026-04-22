@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Run gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
       - name: Install security tools
         run: pip install pip-audit
       - name: Run Python dependency vulnerability scan

@@ -58,6 +58,40 @@ export type InsightAdminItem = {
   created_at: string;
 };
 
+export type AdminTimelineItem = {
+  id: string;
+  source: string;
+  actor?: string | null;
+  action: string;
+  target: string;
+  details?: Record<string, unknown> | null;
+  created_at: string;
+};
+
+export type AdminManagedAsset = {
+  id: string;
+  symbol: string;
+  name: string;
+  type: string;
+  is_active: boolean;
+  image_url?: string | null;
+  created_at: string;
+};
+
+export type AdminTransactionItem = {
+  id: string;
+  user_id: string;
+  user_email: string;
+  portfolio_id: string;
+  asset_id: string;
+  asset_symbol: string;
+  tx_type: string;
+  quantity: string;
+  price?: string | null;
+  transaction_date: string;
+  created_at: string;
+};
+
 function getApiBaseUrl(): string {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
@@ -112,4 +146,87 @@ export async function fetchAdminActions(limit = 100): Promise<AdminActionItem[]>
 
 export async function fetchAdminInsights(limit = 100): Promise<InsightAdminItem[]> {
   return getJson<InsightAdminItem[]>(`/api/v1/admin/insights?limit=${limit}`);
+}
+
+export async function updateAdminUser(
+  userId: string,
+  payload: { role?: string; is_active?: boolean; subscription_tier?: string }
+): Promise<UserItem> {
+  const accessToken = localStorage.getItem('admin_access_token');
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/admin/users/${userId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(`Admin API request failed: ${response.status}`);
+  }
+  return (await response.json()) as UserItem;
+}
+
+export async function fetchAdminAuditTimeline(limit = 250): Promise<AdminTimelineItem[]> {
+  return getJson<AdminTimelineItem[]>(`/api/v1/admin/audit-timeline?limit=${limit}`);
+}
+
+export async function fetchManagedAssets(limit = 500): Promise<AdminManagedAsset[]> {
+  return getJson<AdminManagedAsset[]>(`/api/v1/admin/assets?limit=${limit}`);
+}
+
+export async function createManagedAsset(payload: {
+  symbol: string;
+  name: string;
+  type: 'crypto' | 'fiat' | 'metal';
+  is_active?: boolean;
+  image_url?: string | null;
+}): Promise<AdminManagedAsset> {
+  const accessToken = localStorage.getItem('admin_access_token');
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/admin/assets`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(`Admin API request failed: ${response.status}`);
+  }
+  return (await response.json()) as AdminManagedAsset;
+}
+
+export async function updateManagedAsset(
+  assetId: string,
+  payload: { name?: string; is_active?: boolean; image_url?: string | null }
+): Promise<AdminManagedAsset> {
+  const accessToken = localStorage.getItem('admin_access_token');
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/admin/assets/${assetId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(`Admin API request failed: ${response.status}`);
+  }
+  return (await response.json()) as AdminManagedAsset;
+}
+
+export async function fetchAdminTransactions(limit = 200): Promise<AdminTransactionItem[]> {
+  return getJson<AdminTransactionItem[]>(`/api/v1/admin/transactions?limit=${limit}`);
+}
+
+export async function deleteAdminTransaction(transactionId: string): Promise<void> {
+  const accessToken = localStorage.getItem('admin_access_token');
+  const response = await fetch(`${getApiBaseUrl()}/api/v1/admin/transactions/${transactionId}`, {
+    method: 'DELETE',
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+  });
+  if (!response.ok) {
+    throw new Error(`Admin API request failed: ${response.status}`);
+  }
 }
