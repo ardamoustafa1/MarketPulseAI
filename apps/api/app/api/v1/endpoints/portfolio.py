@@ -24,6 +24,13 @@ class CreateBucketBody(BaseModel):
     name: str
 
 
+class BenchmarkResponse(BaseModel):
+    user_return_pct: Decimal
+    market_median_return_pct: Decimal
+    percentile_rank: int
+    cohort_size: int
+
+
 async def _build_summary_for_portfolio(db: Session, portfolio: Portfolio) -> PortfolioSummary:
     rows = (
         db.query(Transaction, Asset.symbol)
@@ -174,3 +181,48 @@ def fifo_summary(
         )
 
     return FifoSummaryResponse(portfolio_id=str(portfolio.id), rows=out)
+
+
+@router.get("/benchmark", response_model=BenchmarkResponse)
+async def portfolio_benchmark(
+    portfolio_id: Optional[UUID] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    portfolio = resolve_portfolio(db, current_user.id, portfolio_id)
+    my_summary = await _build_summary_for_portfolio(db, portfolio)
+    if my_summary.total_cost_basis == 0:
+        raise HTTPException(status_code=400, detail="Benchmark requires non-zero cost basis.")
+    user_return = ((my_summary.total_current_value - my_summary.total_cost_basis) / my_summary.total_cost_basis) * Decimal("100")
+
+    portfolios = (
+        db.query(Portfolio)
+        .filter(Portfolio.deleted_at.is_(None))
+        .limit(200)
+        .all()
+    )
+    returns: list[Decimal] = []
+    for p in portfolios:
+        summary = await _build_summary_for_portfolio(db, p)
+        if summary.total_cost_basis == 0:
+            continue
+        pct = ((summary.total_current_value - summary.total_cost_basis) / summary.total_cost_basis) * Decimal("100")
+        returns.append(pct)
+    if not returns:
+        return BenchmarkResponse(
+            user_return_pct=user_return.quantize(Decimal("0.01")),
+            market_median_return_pct=Decimal("0.00"),
+            percentile_rank=50,
+            cohort_size=1,
+        )
+    sorted_returns = sorted(returns)
+    mid = len(sorted_returns) // 2
+    median = sorted_returns[mid]
+    below_or_equal = sum(1 for r in sorted_returns if r <= user_return)
+    percentile = int((below_or_equal / len(sorted_returns)) * 100)
+    return BenchmarkResponse(
+        user_return_pct=user_return.quantize(Decimal("0.01")),
+        market_median_return_pct=median.quantize(Decimal("0.01")),
+        percentile_rank=max(1, min(99, percentile)),
+        cohort_size=len(sorted_returns),
+    )

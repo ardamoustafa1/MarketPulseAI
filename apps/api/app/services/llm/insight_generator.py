@@ -166,6 +166,17 @@ def _safe_category(value: str) -> str:
     return value if value in allowed else "market"
 
 
+def _quality_score(cards: list[InsightCard], model_used: str) -> float:
+    if not cards:
+        return 0.0
+    base = 0.55 if model_used == "deterministic" else 0.72
+    severity_bonus = sum(0.02 for c in cards if c.severity in {"positive", "warning", "negative"})
+    diversity_bonus = min(0.08, len({c.category for c in cards}) * 0.03)
+    length_bonus = min(0.1, sum(min(1.0, len(c.content) / 400) for c in cards) / len(cards) * 0.1)
+    score = base + severity_bonus + diversity_bonus + length_bonus
+    return float(max(0.0, min(1.0, round(score, 3))))
+
+
 async def _refine_cards_with_openai(cards: list[InsightCard]) -> tuple[list[InsightCard], str]:
     if not settings.LLM_API_KEY:
         return cards, "deterministic"
@@ -258,9 +269,12 @@ async def generate_insights_for_user(
     db.commit()
     db.refresh(insight_record)
 
+    quality_score = _quality_score(cards, model_used)
     return InsightResponse(
         id=str(insight_record.id),
         created_at=insight_record.created_at,
+        model_used=model_used,
+        quality_score=quality_score,
         cards=cards,
     )
 
@@ -289,8 +303,11 @@ async def get_latest_insight(db: Session, user: User) -> InsightResponse:
             cards=[],
         )
 
+    model_used = record.insight_type or "deterministic"
     return InsightResponse(
         id=str(record.id),
         created_at=record.created_at,
+        model_used=model_used,
+        quality_score=_quality_score(cards, model_used),
         cards=cards,
     )

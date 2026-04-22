@@ -15,6 +15,7 @@ from app.models.asset import Asset
 from app.models.portfolio import Portfolio, Transaction, TransactionTypeEnum
 from app.models.user import User
 from app.services.portfolio.access import resolve_portfolio
+from app.services.jobs.queue import enqueue_job, get_job_result, register_job_handler
 
 router = APIRouter()
 
@@ -43,6 +44,20 @@ class TransactionResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(json_encoders={Decimal: str})
+
+
+class TaxReportSummary(BaseModel):
+    country: str
+    template: str
+    transaction_count: int
+    total_buy_notional: Decimal
+    total_sell_notional: Decimal
+    net_notional: Decimal
+
+
+class TaxReportAsyncRequest(BaseModel):
+    country: str = "TR"
+    portfolio_id: Optional[UUID] = None
 
 
 def _resolve_asset(db: Session, payload: TransactionCreateRequest) -> Asset:
@@ -75,6 +90,49 @@ def _to_response(tx: Transaction, symbol: str) -> TransactionResponse:
         transaction_date=tx.transaction_date,
         created_at=tx.created_at,
     )
+
+
+def _build_tax_report(rows, country: str) -> tuple[str, TaxReportSummary]:
+    normalized_country = country.upper()
+    template_map = {
+        "TR": "TR_GIB_CRYPTO_TEMPLATE_V1",
+        "US": "US_IRS_D8949_TEMPLATE_V1",
+        "DE": "DE_PRIVATE_SALES_TEMPLATE_V1",
+    }
+    template = template_map.get(normalized_country, "GENERIC_TAX_TEMPLATE_V1")
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(["template", template])
+    writer.writerow(["country", normalized_country])
+    writer.writerow(["id", "asset_symbol", "type", "quantity", "price", "notional", "transaction_date_utc"])
+    total_buy = Decimal("0")
+    total_sell = Decimal("0")
+    for tx, symbol in rows:
+        notional = (tx.quantity * (tx.price or Decimal("0"))).quantize(Decimal("0.00000001"))
+        if tx.type == TransactionTypeEnum.buy:
+            total_buy += notional
+        elif tx.type == TransactionTypeEnum.sell:
+            total_sell += notional
+        writer.writerow(
+            [
+                str(tx.id),
+                symbol,
+                tx.type.value,
+                str(tx.quantity),
+                str(tx.price or "0"),
+                str(notional),
+                tx.transaction_date.isoformat(),
+            ]
+        )
+    summary = TaxReportSummary(
+        country=normalized_country,
+        template=template,
+        transaction_count=len(rows),
+        total_buy_notional=total_buy,
+        total_sell_notional=total_sell,
+        net_notional=total_sell - total_buy,
+    )
+    return buffer.getvalue(), summary
 
 
 @router.get("", response_model=list[TransactionResponse])
@@ -155,6 +213,75 @@ def export_transactions_csv(
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@router.get("/export/tax-report")
+def export_tax_report(
+    country: str = Query("TR"),
+    portfolio_id: Optional[UUID] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    portfolio = resolve_portfolio(db, current_user.id, portfolio_id)
+    rows = (
+        db.query(Transaction, Asset.symbol)
+        .join(Asset, Asset.id == Transaction.asset_id)
+        .filter(Transaction.portfolio_id == portfolio.id)
+        .order_by(Transaction.transaction_date.asc(), Transaction.created_at.asc())
+        .all()
+    )
+    csv_data, summary = _build_tax_report(rows, country=country)
+    filename = f"marketpulse-tax-report-{country.upper()}-{portfolio.id}.csv"
+    return StreamingResponse(
+        iter([csv_data]),
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-Report-Template": summary.template,
+        },
+    )
+
+
+@router.post("/report-jobs")
+async def create_tax_report_job(
+    payload: TaxReportAsyncRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    portfolio = resolve_portfolio(db, current_user.id, payload.portfolio_id)
+    job_id = await enqueue_job(
+        "tax_report",
+        {
+            "user_id": str(current_user.id),
+            "portfolio_id": str(portfolio.id),
+            "country": payload.country.upper(),
+        },
+    )
+    return {"job_id": job_id, "status": "queued"}
+
+
+@router.get("/report-jobs/{job_id}")
+async def read_tax_report_job(
+    job_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    _ = current_user
+    result = await get_job_result(job_id)
+    if not result:
+        return {"status": "pending"}
+    return result
+
+
+async def _tax_report_job_handler(payload: dict) -> dict:
+    # Job worker stores summary metadata and expects on-demand CSV retrieval via synchronous endpoint.
+    return {
+        "country": payload.get("country", "TR"),
+        "portfolio_id": payload.get("portfolio_id"),
+        "generated": True,
+    }
+
+
+register_job_handler("tax_report", _tax_report_job_handler)
 
 
 @router.post("", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)

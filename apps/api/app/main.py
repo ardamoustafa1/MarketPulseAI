@@ -16,6 +16,7 @@ from app.api.v1.api import api_router
 from app.observability.metrics import record_request
 from app.services.price.scheduler import global_price_scheduler
 from app.services.alert.evaluator import global_alert_evaluator
+from app.services.jobs.queue import global_job_worker
 from app.api.deps import get_ws_manager
 from app.services.websocket.redis_listener import RedisWebSocketBridge
 from app.db.session import engine
@@ -48,6 +49,7 @@ async def lifespan(app: FastAPI):
     start_scheduler = settings.PRICE_SCHEDULER_ENABLED and app_role in {"all", "worker"}
     start_ws_bridge = app_role in {"all", "api"}
     start_alerts = app_role in {"all", "worker"}
+    start_jobs = app_role in {"all", "worker"}
     # Startup actions
     if start_scheduler:
         await global_price_scheduler.start()
@@ -55,12 +57,16 @@ async def lifespan(app: FastAPI):
         global_redis_ws_bridge.start()
     if start_alerts:
         global_alert_evaluator.start()
+    if start_jobs:
+        await global_job_worker.start()
     yield
     # Shutdown actions
     if start_scheduler:
         await global_price_scheduler.stop()
     if start_alerts:
         global_alert_evaluator.stop()
+    if start_jobs:
+        await global_job_worker.stop()
     if start_ws_bridge:
         await global_redis_ws_bridge.stop()
     

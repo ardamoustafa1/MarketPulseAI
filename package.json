@@ -10,10 +10,14 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "generate:api-types:admin": "openapi-typescript http://localhost:8000/api/v1/openapi.json -o apps/admin/src/api/generated.ts",
+    "generate:api-types:mobile": "openapi-typescript http://localhost:8000/api/v1/openapi.json -o apps/mobile/src/api/generated.ts",
+    "generate:api-types": "npm run generate:api-types:admin && npm run generate:api-types:mobile"
   },
   "devDependencies": {
     "expo": "54.0.33",
+    "openapi-typescript": "^7.10.1",
     "prettier": "^3.0.0",
     "turbo": "^1.11.0"
   },

@@ -34,3 +34,10 @@ class AlertEventResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+class AlertSuggestion(BaseModel):
+    asset_symbol: str
+    condition: ConditionEnum
+    suggested_target_price: Decimal
+    rationale: str

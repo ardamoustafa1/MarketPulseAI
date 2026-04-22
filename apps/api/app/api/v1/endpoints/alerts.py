@@ -5,7 +5,10 @@ from app.api.deps import get_current_user, get_db
 from app.core.plan_limits import max_alerts_for_user
 from app.models.user import User
 from app.models.alert import Alert, AlertEvent
-from app.schemas.alert import AlertCreate, AlertUpdate, AlertResponse, AlertEventResponse
+from app.models.asset import Asset
+from app.models.portfolio import Portfolio, Transaction, TransactionTypeEnum
+from app.schemas.alert import AlertCreate, AlertUpdate, AlertResponse, AlertEventResponse, AlertSuggestion
+from app.services.price.cache import get_all_cached_prices
 import uuid
 
 router = APIRouter()
@@ -82,3 +85,62 @@ def delete_alert(
     db.delete(alert)
     db.commit()
     return None
+
+
+@router.get("/suggestions", response_model=List[AlertSuggestion])
+async def get_alert_suggestions(
+    limit: int = 5,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    safe_limit = max(1, min(limit, 20))
+    default_portfolio = (
+        db.query(Portfolio)
+        .filter(Portfolio.user_id == current_user.id, Portfolio.is_default == True, Portfolio.deleted_at.is_(None))
+        .first()
+    )
+    if not default_portfolio:
+        return []
+    symbols = [
+        row[0]
+        for row in (
+            db.query(Asset.symbol)
+            .join(Transaction, Transaction.asset_id == Asset.id)
+            .filter(
+                Transaction.portfolio_id == default_portfolio.id,
+                Transaction.type.in_([TransactionTypeEnum.buy, TransactionTypeEnum.sell]),
+            )
+            .distinct()
+            .limit(50)
+            .all()
+        )
+    ]
+    prices = await get_all_cached_prices(symbols)
+    suggestions: List[AlertSuggestion] = []
+    for symbol in symbols[:safe_limit]:
+        price = prices.get(symbol)
+        if not price or price.change_24h is None:
+            continue
+        baseline = price.price
+        pct = abs(price.change_24h)
+        if pct >= 4:
+            condition = "pct_down"
+            multiplier = 0.97
+            rationale = "High 24h volatility detected; downside protection alert suggested."
+        elif pct >= 2:
+            condition = "pct_up"
+            multiplier = 1.03
+            rationale = "Moderate momentum detected; breakout alert suggested."
+        else:
+            condition = "gt"
+            multiplier = 1.02
+            rationale = "Stable asset; conservative upside alert suggested."
+        suggestions.append(
+            AlertSuggestion(
+                asset_symbol=symbol,
+                condition=condition,  # type: ignore[arg-type]
+                suggested_target_price=(baseline * multiplier).quantize(baseline),
+                rationale=rationale,
+            )
+        )
+    return suggestions

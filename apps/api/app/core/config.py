@@ -125,6 +125,24 @@ class Settings(BaseSettings):
             return [item.strip().upper() for item in value.split(",") if item.strip()]
         return value
 
+    @field_validator("ENVIRONMENT", mode="before")
+    @classmethod
+    def normalize_environment(cls, value):
+        env = str(value).strip().lower()
+        allowed = {"development", "staging", "production", "test"}
+        if env not in allowed:
+            raise ValueError(f"ENVIRONMENT must be one of {sorted(allowed)}")
+        return env
+
+    @field_validator("APP_ROLE", mode="before")
+    @classmethod
+    def normalize_app_role(cls, value):
+        role = str(value).strip().lower()
+        allowed = {"all", "api", "worker"}
+        if role not in allowed:
+            raise ValueError(f"APP_ROLE must be one of {sorted(allowed)}")
+        return role
+
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 settings = Settings()
