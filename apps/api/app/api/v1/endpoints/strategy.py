@@ -13,9 +13,11 @@ from app.api.deps import get_current_admin, get_current_user, get_db
 from app.models.alert import Alert
 from app.models.audit import AuditLog
 from app.models.asset import Asset
+from app.models.billing import PublicPortfolioSnapshot
 from app.models.portfolio import Portfolio, Transaction, TransactionTypeEnum
 from app.models.push_device import PushDevice
 from app.models.user import User
+from app.core.config import settings
 from app.services.audit_service import AuditService
 from app.services.portfolio.access import resolve_portfolio
 from app.api.v1.endpoints.portfolio import _build_summary_for_portfolio
@@ -62,11 +64,17 @@ class RiskReportResponse(BaseModel):
 class PublicSnapshotCreateResponse(BaseModel):
     share_token: str
     share_url: str
+    expires_at: datetime
 
 
 class AnalyticsEventIn(BaseModel):
     name: str
     params: dict[str, Any] = Field(default_factory=dict)
+
+
+class PublicSnapshotRevokeResponse(BaseModel):
+    status: str
+    share_token: str
 
 
 def _fetch_latest_goals(db: Session, user_id: UUID) -> list[GoalItem]:
@@ -193,6 +201,7 @@ def apply_coach_action(
         details=details,
         actor=current_user,
     )
+    db.commit()
     return {"status": "ok", "action_id": action_id}
 
 
@@ -210,7 +219,9 @@ def ingest_analytics_event(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    safe_name = payload.name.strip().lower()[:120]
+    safe_name = "".join(ch for ch in payload.name.strip().lower() if ch.isalnum() or ch in {"_", "-", "."})[:120]
+    if not safe_name:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid event name.")
     AuditService(db).log(
         action=f"analytics.mobile.{safe_name}",
         entity_table="users",
@@ -218,6 +229,7 @@ def ingest_analytics_event(
         details={"name": safe_name, "params": payload.params},
         actor=current_user,
     )
+    db.commit()
     return {"status": "accepted"}
 
 
@@ -234,6 +246,7 @@ def upsert_goals(
         details={"goals": [g.model_dump(mode="json") for g in payload.goals]},
         actor=current_user,
     )
+    db.commit()
     return payload
 
 
@@ -287,6 +300,15 @@ def create_public_snapshot(
 ):
     portfolio = resolve_portfolio(db, current_user.id, portfolio_id)
     token = str(uuid4())
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=settings.PUBLIC_SNAPSHOT_EXPIRE_HOURS)
+    snapshot = PublicPortfolioSnapshot(
+        share_token=token,
+        user_id=current_user.id,
+        portfolio_id=portfolio.id,
+        expires_at=expires_at,
+        revoked_at=None,
+    )
+    db.add(snapshot)
     AuditService(db).log(
         action="strategy.public_snapshot.created",
         entity_table="portfolios",
@@ -294,38 +316,67 @@ def create_public_snapshot(
         details={"share_token": token, "user_id": str(current_user.id)},
         actor=current_user,
     )
+    db.commit()
     return PublicSnapshotCreateResponse(
         share_token=token,
         share_url=f"/api/v1/strategy/public-snapshot/{token}",
+        expires_at=expires_at,
     )
 
 
 @router.get("/public-snapshot/{share_token}")
 async def read_public_snapshot(share_token: str, db: Session = Depends(get_db)):
-    row = (
-        db.query(AuditLog)
-        .filter(
-            AuditLog.action == "strategy.public_snapshot.created",
-            AuditLog.details["share_token"].as_string() == share_token,
-        )
-        .order_by(AuditLog.created_at.desc())
+    snapshot = (
+        db.query(PublicPortfolioSnapshot)
+        .filter(PublicPortfolioSnapshot.share_token == share_token)
         .first()
     )
-    if not row or not isinstance(row.details, dict):
+    now = datetime.now(timezone.utc)
+    if not snapshot or snapshot.revoked_at is not None or snapshot.expires_at < now:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Snapshot not found.")
 
-    portfolio_id = row.entity_id
-    portfolio = db.query(Portfolio).filter(Portfolio.id == portfolio_id, Portfolio.deleted_at.is_(None)).first()
+    portfolio = db.query(Portfolio).filter(Portfolio.id == snapshot.portfolio_id, Portfolio.deleted_at.is_(None)).first()
     if not portfolio:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found.")
     summary = await _build_summary_for_portfolio(db, portfolio)
     return {
         "portfolio_name": portfolio.name,
-        "snapshot_created_at": row.created_at,
+        "snapshot_created_at": snapshot.created_at,
+        "snapshot_expires_at": snapshot.expires_at,
         "total_current_value": summary.total_current_value,
         "total_unrealized_pnl_percent": summary.total_unrealized_pnl_percent,
         "allocation": [a.model_dump(mode="json") for a in summary.allocation],
     }
+
+
+@router.post("/public-snapshot/{share_token}/revoke", response_model=PublicSnapshotRevokeResponse)
+def revoke_public_snapshot(
+    share_token: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    snapshot = (
+        db.query(PublicPortfolioSnapshot)
+        .filter(
+            PublicPortfolioSnapshot.share_token == share_token,
+            PublicPortfolioSnapshot.user_id == current_user.id,
+            PublicPortfolioSnapshot.revoked_at.is_(None),
+        )
+        .first()
+    )
+    if not snapshot:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Snapshot not found.")
+    snapshot.revoked_at = datetime.now(timezone.utc)
+    db.add(snapshot)
+    AuditService(db).log(
+        action="strategy.public_snapshot.revoked",
+        entity_table="public_portfolio_snapshots",
+        entity_id=str(snapshot.id),
+        details={"share_token": share_token},
+        actor=current_user,
+    )
+    db.commit()
+    return PublicSnapshotRevokeResponse(status="revoked", share_token=share_token)
 
 
 @router.get("/north-star")

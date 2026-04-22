@@ -35,12 +35,17 @@ async def enqueue_job(job_type: str, payload: dict[str, Any]) -> str:
     return job_id
 
 
-async def get_job_result(job_id: str) -> dict[str, Any] | None:
+async def get_job_result(job_id: str, owner_user_id: str | None = None) -> dict[str, Any] | None:
     redis = get_redis_client()
     raw = await redis.get(f"{JOB_RESULT_PREFIX}{job_id}")
     if not raw:
         return None
-    return json.loads(raw)
+    parsed = json.loads(raw)
+    if owner_user_id:
+        result_owner = str(parsed.get("owner_user_id", ""))
+        if result_owner and result_owner != owner_user_id:
+            return None
+    return parsed
 
 
 class RedisJobWorker:
@@ -82,6 +87,8 @@ class RedisJobWorker:
                 else:
                     output = await handler(payload)
                     result = {"status": "completed", "output": output}
+                if isinstance(payload, dict) and payload.get("user_id"):
+                    result["owner_user_id"] = str(payload["user_id"])
             except Exception as exc:
                 logger.exception("Job processing failed: %s", exc)
                 job_id = envelope.get("id", "unknown") if "envelope" in locals() else "unknown"

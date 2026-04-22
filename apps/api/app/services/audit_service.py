@@ -21,4 +21,4 @@ class AuditService:
             details=details or {},
         )
         self.db.add(entry)
-        self.db.commit()
+        self.db.flush()

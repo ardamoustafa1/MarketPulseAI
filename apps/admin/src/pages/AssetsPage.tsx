@@ -130,11 +130,12 @@ export function AssetsPage() {
   };
 
   const runConfirmedToggleAsset = async () => {
-    setIsToggling(true);
     const selected = managedAssets.find((item) => item.id === selectedAssetId);
     if (!selected) {
+      setAssetMessage('No asset selected.');
       return;
     }
+    setIsToggling(true);
     const previous = [...managedAssets];
     setManagedAssets((prev) =>
       prev.map((item) =>

@@ -126,11 +126,12 @@ export function OperationsPage() {
   };
 
   const runConfirmedDeleteTransaction = async () => {
-    setIsDeleting(true);
     const selected = transactions.find((tx) => tx.id === selectedTransactionId);
     if (!selected) {
+      setActionMessage('No transaction selected.');
       return;
     }
+    setIsDeleting(true);
     const previous = [...transactions];
     setTransactions((prev) => prev.filter((tx) => tx.id !== selectedTransactionId));
     setActionMessage('Deleting transaction...');

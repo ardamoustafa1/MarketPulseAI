@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     
     # Security
-    SECRET_KEY: str = "super-secret-jwt-key"
+    SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     JWT_ISSUER: str = "marketpulse-api"
     JWT_AUDIENCE: str = "marketpulse-clients"
@@ -20,8 +20,11 @@ class Settings(BaseSettings):
     AUTH_RATE_LIMIT_WINDOW_SECONDS: int = 60
     WS_CONNECT_RATE_LIMIT_MAX_REQUESTS: int = 30
     WS_CONNECT_RATE_LIMIT_WINDOW_SECONDS: int = 60
-    ADMIN_STEP_UP_TOKEN: str = "change-me-admin-step-up"
-    ADMIN_STEP_UP_TOTP_SECRET: str = "JBSWY3DPEHPK3PXP"
+    TRUST_PROXY_HEADERS: bool = False
+    TRUSTED_PROXY_HOPS: int = 1
+    ADMIN_STEP_UP_TOKEN: str = ""
+    ADMIN_STEP_UP_TOTP_SECRET: str = ""
+    PUBLIC_SNAPSHOT_EXPIRE_HOURS: int = 168
     
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
@@ -29,10 +32,12 @@ class Settings(BaseSettings):
     # DB & Redis
     DATABASE_URL: str = "postgresql://user:pass@localhost:5432/db"
     REDIS_URL: str = "redis://localhost:6379/0"
+    DB_POOL_SIZE: int = 10
+    DB_MAX_OVERFLOW: int = 20
     SENTRY_DSN: str | None = None
     SENTRY_RELEASE: str | None = None
     SENTRY_TRACES_SAMPLE_RATE: float = 0.1
-    BILLING_WEBHOOK_SECRET: str = "change-me-webhook-secret"
+    BILLING_WEBHOOK_SECRET: str = ""
     LLM_PROVIDER: str = "none"
     LLM_API_KEY: str | None = None
     LLM_MODEL: str = "gpt-4o-mini"

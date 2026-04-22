@@ -3,6 +3,10 @@ name: MarketPulse CI-CD
 on:
   push:
     branches: ["main"]
+
+permissions:
+  contents: read
+  packages: write
   pull_request:
     branches: ["main"]
 
@@ -86,6 +90,8 @@ jobs:
         run: npm ci
       - name: Build admin app
         run: npm run build --workspace=apps/admin
+      - name: Run admin tests
+        run: npm run test --workspace=apps/admin
       - name: Run mobile tests
         run: npm run test --workspace=apps/mobile -- --runInBand
 
@@ -122,12 +128,26 @@ jobs:
           echo "- marketpulse-api:${{ github.sha }}"
           echo "- marketpulse-admin:${{ github.sha }}"
 
-  deploy-placeholder:
+  publish-images:
     runs-on: ubuntu-latest
     needs: docker-build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - name: Deployment placeholder
+      - uses: actions/checkout@v4
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build and push API image
         run: |
-          echo "Add cloud-specific deploy commands here (ECS/Kubernetes/Fly/Render)."
-          echo "Use secrets for registry credentials and cloud auth tokens."
+          IMAGE="ghcr.io/${{ github.repository_owner }}/marketpulse-api:${{ github.sha }}"
+          docker build -t "$IMAGE" apps/api
+          docker push "$IMAGE"
+      - name: Build and push Admin image
+        run: |
+          IMAGE="ghcr.io/${{ github.repository_owner }}/marketpulse-admin:${{ github.sha }}"
+          docker build -t "$IMAGE" -f apps/admin/Dockerfile .
+          docker push "$IMAGE"
+      - name: Output published image tags
+        run: |
+          echo "Published:"
+          echo "ghcr.io/${{ github.repository_owner }}/marketpulse-api:${{ github.sha }}"
+          echo "ghcr.io/${{ github.repository_owner }}/marketpulse-admin:${{ github.sha }}"

@@ -97,8 +97,16 @@ def verify_payload_signature(payload: bytes, secret: str, signature: str | None)
 
 
 def validate_secret_strength() -> None:
-    if settings.ENVIRONMENT != "development" and len(settings.SECRET_KEY) < 32:
+    env = settings.ENVIRONMENT
+    if env != "development" and len(settings.SECRET_KEY) < 32:
         raise RuntimeError("SECRET_KEY must be at least 32 characters in non-development environments.")
+    if env in {"staging", "production"}:
+        if not settings.ADMIN_STEP_UP_TOKEN or settings.ADMIN_STEP_UP_TOKEN == "change-me-admin-step-up":
+            raise RuntimeError("ADMIN_STEP_UP_TOKEN must be configured in staging/production.")
+        if len(settings.ADMIN_STEP_UP_TOTP_SECRET.strip()) < 16:
+            raise RuntimeError("ADMIN_STEP_UP_TOTP_SECRET must be configured in staging/production.")
+        if len(settings.BILLING_WEBHOOK_SECRET.strip()) < 16:
+            raise RuntimeError("BILLING_WEBHOOK_SECRET must be configured in staging/production.")
 
 
 def verify_totp_code(secret: str, code: str, at_time: int | None = None, period: int = 30, window: int = 1) -> bool:

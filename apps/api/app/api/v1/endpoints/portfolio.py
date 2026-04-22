@@ -1,8 +1,9 @@
+import json
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -16,8 +17,11 @@ from app.services.portfolio.access import list_portfolios, resolve_portfolio
 from app.services.portfolio.calculator import PortfolioCalculationEngine, TransactionDTO, TransactionType
 from app.services.portfolio.fifo import fifo_process_symbol
 from app.services.price.cache import get_all_cached_prices
+from app.db.redis import get_redis_client
+from app.core.rate_limit import enforce_rate_limit, get_client_ip
 
 router = APIRouter()
+BENCHMARK_CACHE_TTL_SECONDS = 120
 
 
 class CreateBucketBody(BaseModel):
@@ -185,11 +189,30 @@ def fifo_summary(
 
 @router.get("/benchmark", response_model=BenchmarkResponse)
 async def portfolio_benchmark(
+    request: Request,
     portfolio_id: Optional[UUID] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    ip = get_client_ip(request)
+    await enforce_rate_limit(
+        key=f"ratelimit:portfolio:benchmark:{current_user.id}:{ip}",
+        max_requests=30,
+        window_seconds=60,
+        detail="Too many benchmark requests. Please retry shortly.",
+    )
     portfolio = resolve_portfolio(db, current_user.id, portfolio_id)
+    cache_key = f"portfolio:benchmark:{current_user.id}:{portfolio.id}"
+    redis = get_redis_client()
+    cached = await redis.get(cache_key)
+    if cached:
+        parsed = json.loads(cached)
+        return BenchmarkResponse(
+            user_return_pct=Decimal(str(parsed["user_return_pct"])),
+            market_median_return_pct=Decimal(str(parsed["market_median_return_pct"])),
+            percentile_rank=int(parsed["percentile_rank"]),
+            cohort_size=int(parsed["cohort_size"]),
+        )
     my_summary = await _build_summary_for_portfolio(db, portfolio)
     if my_summary.total_cost_basis == 0:
         raise HTTPException(status_code=400, detail="Benchmark requires non-zero cost basis.")
@@ -209,20 +232,42 @@ async def portfolio_benchmark(
         pct = ((summary.total_current_value - summary.total_cost_basis) / summary.total_cost_basis) * Decimal("100")
         returns.append(pct)
     if not returns:
-        return BenchmarkResponse(
+        response = BenchmarkResponse(
             user_return_pct=user_return.quantize(Decimal("0.01")),
             market_median_return_pct=Decimal("0.00"),
             percentile_rank=50,
             cohort_size=1,
         )
+        await redis.set(
+            cache_key,
+            json.dumps({
+                "user_return_pct": str(response.user_return_pct),
+                "market_median_return_pct": str(response.market_median_return_pct),
+                "percentile_rank": response.percentile_rank,
+                "cohort_size": response.cohort_size,
+            }),
+            ex=BENCHMARK_CACHE_TTL_SECONDS,
+        )
+        return response
     sorted_returns = sorted(returns)
     mid = len(sorted_returns) // 2
     median = sorted_returns[mid]
     below_or_equal = sum(1 for r in sorted_returns if r <= user_return)
     percentile = int((below_or_equal / len(sorted_returns)) * 100)
-    return BenchmarkResponse(
+    response = BenchmarkResponse(
         user_return_pct=user_return.quantize(Decimal("0.01")),
         market_median_return_pct=median.quantize(Decimal("0.01")),
         percentile_rank=max(1, min(99, percentile)),
         cohort_size=len(sorted_returns),
     )
+    await redis.set(
+        cache_key,
+        json.dumps({
+            "user_return_pct": str(response.user_return_pct),
+            "market_median_return_pct": str(response.market_median_return_pct),
+            "percentile_rank": response.percentile_rank,
+            "cohort_size": response.cohort_size,
+        }),
+        ex=BENCHMARK_CACHE_TTL_SECONDS,
+    )
+    return response

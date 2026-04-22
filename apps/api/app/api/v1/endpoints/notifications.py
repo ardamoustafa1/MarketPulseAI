@@ -113,6 +113,7 @@ def run_reengagement_campaign(
         details={"target_count": len(target_ids), "target_user_ids": target_ids[:200]},
         actor=current_admin,
     )
+    db.commit()
     return {
         "campaign": "reengagement",
         "target_count": len(target_ids),

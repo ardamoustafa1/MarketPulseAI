@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 SubscriptionTier = Literal["free", "pro"]
@@ -18,6 +18,7 @@ class SubscriptionUpdateRequest(BaseModel):
 
 
 class BillingWebhookEvent(BaseModel):
+    event_id: str = Field(min_length=8, max_length=128)
     event: Literal["subscription.created", "subscription.updated", "subscription.canceled"]
     user_email: EmailStr
     subscription_tier: SubscriptionTier | None = None

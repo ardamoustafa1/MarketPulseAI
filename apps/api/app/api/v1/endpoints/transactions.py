@@ -8,6 +8,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
@@ -265,8 +266,7 @@ async def read_tax_report_job(
     job_id: str,
     current_user: User = Depends(get_current_user),
 ):
-    _ = current_user
-    result = await get_job_result(job_id)
+    result = await get_job_result(job_id, owner_user_id=str(current_user.id))
     if not result:
         return {"status": "pending"}
     return result
@@ -308,27 +308,25 @@ def create_transaction(
     )
 
     if payload.type == TransactionTypeEnum.sell:
-        total_buys = (
-            db.query(Transaction)
+        buy_total = (
+            db.query(func.coalesce(func.sum(Transaction.quantity), 0))
             .filter(
                 Transaction.portfolio_id == portfolio.id,
                 Transaction.asset_id == asset.id,
                 Transaction.type == TransactionTypeEnum.buy,
             )
-            .all()
+            .scalar()
         )
-        total_sells = (
-            db.query(Transaction)
+        sell_total = (
+            db.query(func.coalesce(func.sum(Transaction.quantity), 0))
             .filter(
                 Transaction.portfolio_id == portfolio.id,
                 Transaction.asset_id == asset.id,
                 Transaction.type == TransactionTypeEnum.sell,
             )
-            .all()
+            .scalar()
         )
-        quantity_held = sum((tx.quantity for tx in total_buys), Decimal("0")) - sum(
-            (tx.quantity for tx in total_sells), Decimal("0")
-        )
+        quantity_held = Decimal(str(buy_total)) - Decimal(str(sell_total))
         if payload.quantity > quantity_held:
             raise HTTPException(
                 status_code=400,

@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
@@ -9,6 +10,7 @@ from app.core.config import settings
 from app.core.security import verify_payload_signature
 from app.core.plan_limits import insight_cooldown_for_user, max_alerts_for_user
 from app.models.audit import AuditLog
+from app.models.billing import BillingWebhookReceipt
 from app.models.user import User
 from app.schemas.billing import (
     BillingWebhookEvent,
@@ -51,6 +53,7 @@ def update_subscription_status(
         details={"from": previous_tier, "to": payload.subscription_tier},
         actor=current_user,
     )
+    db.commit()
 
     return SubscriptionStatusResponse(
         user_id=str(current_user.id),
@@ -85,8 +88,16 @@ async def billing_webhook(
     try:
         payload_dict = json.loads(raw_body.decode("utf-8"))
         payload = BillingWebhookEvent(**payload_dict)
-    except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid webhook payload: {exc}")
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid webhook payload")
+
+    existing = (
+        db.query(BillingWebhookReceipt)
+        .filter(BillingWebhookReceipt.event_id == payload.event_id)
+        .first()
+    )
+    if existing:
+        return {"status": "duplicate_ignored"}
 
     user = db.query(User).filter(User.email == payload.user_email).first()
     if not user:
@@ -100,8 +111,14 @@ async def billing_webhook(
     previous_tier = user.subscription_tier or "free"
     user.subscription_tier = new_tier
     db.add(user)
-    db.commit()
-    db.refresh(user)
+    db.add(
+        BillingWebhookReceipt(
+            event_id=payload.event_id.strip(),
+            event_type=payload.event,
+            user_email=payload.user_email,
+            processed_at=datetime.now(timezone.utc),
+        )
+    )
 
     AuditService(db).log(
         action=f"billing.{payload.event}",
@@ -110,6 +127,8 @@ async def billing_webhook(
         details={"from": previous_tier, "to": new_tier, "user_email": payload.user_email},
         actor=None,
     )
+    db.commit()
+    db.refresh(user)
     return {"status": "ok"}
 
 
@@ -170,6 +189,7 @@ def admin_update_user_subscription(
         details={"from": previous_tier, "to": payload.subscription_tier},
         actor=current_admin,
     )
+    db.commit()
 
     return SubscriptionStatusResponse(
         user_id=str(user.id),

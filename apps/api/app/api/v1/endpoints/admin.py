@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
+import hmac
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
@@ -34,7 +35,7 @@ def _require_step_up(request: Request) -> None:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Admin step-up TOTP secret is not configured.",
         )
-    if provided != expected:
+    if not hmac.compare_digest(provided, expected):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing or invalid admin step-up token.",
@@ -143,6 +144,7 @@ def read_admin(
         details={},
         actor=current_admin,
     )
+    db.commit()
     return {"message": "admin endpoint"}
 
 
@@ -212,6 +214,7 @@ def update_admin_user(
         }},
         actor=current_admin,
     )
+    db.commit()
     return AdminUserListItem(
         id=str(user.id),
         email=user.email,
@@ -275,6 +278,7 @@ def create_admin_asset(
         details={"symbol": asset.symbol},
         actor=current_admin,
     )
+    db.commit()
     return AdminAssetListItem(
         id=str(asset.id),
         symbol=asset.symbol,
@@ -319,6 +323,7 @@ def update_admin_asset(
         details={"before": before, "after": {"name": asset.name, "is_active": asset.is_active, "image_url": asset.image_url}},
         actor=current_admin,
     )
+    db.commit()
     return AdminAssetListItem(
         id=str(asset.id),
         symbol=asset.symbol,
@@ -391,6 +396,7 @@ def delete_admin_transaction(
         details={},
         actor=current_admin,
     )
+    db.commit()
     return None
 
 
@@ -542,4 +548,5 @@ def revoke_refresh_tokens(
         details={"count": len(rows), "reason": payload.reason},
         actor=current_admin,
     )
+    db.commit()
     return {"revoked_count": len(rows), "scope": "user" if target_user_id else "all"}

@@ -30,6 +30,7 @@ def test_expected_api_routes_are_mounted():
         '/api/v1/strategy/goals',
         '/api/v1/strategy/risk-report',
         '/api/v1/strategy/public-snapshot/create',
+        '/api/v1/strategy/public-snapshot/{share_token}/revoke',
         '/api/v1/strategy/north-star',
         '/api/v1/admin/',
     }

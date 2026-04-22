@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth, type AdminRole } from './AuthProvider';
+import { canAccessRoute } from '../utils/routeAccess';
 
 export function ProtectedRoute({
   children,
@@ -17,7 +18,7 @@ export function ProtectedRoute({
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredRoles && role && !requiredRoles.includes(role)) {
+  if (!canAccessRoute(isAuthenticated, role, requiredRoles)) {
     return <Navigate to="/dashboard" replace />;
   }
 

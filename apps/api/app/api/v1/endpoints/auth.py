@@ -31,6 +31,7 @@ async def register(user_in: UserCreate, request: Request, db: Session = Depends(
         details={"email": user.email},
         actor=user,
     )
+    db.commit()
     return AuthResponse(user=user, token=token)
 
 @router.post("/login", response_model=AuthResponse)
@@ -46,6 +47,7 @@ async def login(payload: LoginPayload, request: Request, db: Session = Depends(g
         details={"email": user.email},
         actor=user,
     )
+    db.commit()
     return AuthResponse(user=user, token=token)
 
 @router.post("/refresh", response_model=AuthResponse)
@@ -60,6 +62,7 @@ async def refresh_token(payload: RefreshTokenRequest, request: Request, db: Sess
         details={},
         actor=user,
     )
+    db.commit()
     return AuthResponse(user=user, token=token)
 
 @router.post("/logout")
@@ -79,6 +82,7 @@ def logout(payload: RefreshTokenRequest, db: Session = Depends(get_db), current_
         details={},
         actor=current_user,
     )
+    db.commit()
     return {"message": "Logged out successfully"}
 
 @router.post("/forgot-password")

@@ -152,6 +152,12 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.exception(
+        "unhandled_exception method=%s path=%s error=%s",
+        request.method,
+        request.url.path,
+        type(exc).__name__,
+    )
     return JSONResponse(
         status_code=500,
         content={"message": "An unexpected server error occurred.", "error": "Internal Server Error"},

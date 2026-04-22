@@ -54,8 +54,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const payload = await response.json();
-      const backendRole = payload?.user?.role;
-      const mappedRole: AdminRole = backendRole === 'admin' ? 'super_admin' : 'viewer';
+      const backendRole = String(payload?.user?.role ?? '').toLowerCase();
+      const mappedRole: AdminRole =
+        backendRole === 'super_admin' || backendRole === 'admin'
+          ? 'super_admin'
+          : backendRole === 'ops_admin'
+            ? 'ops_admin'
+            : 'viewer';
       const username = payload?.user?.email ?? email;
       const accessToken = payload?.token?.access_token;
       const refreshToken = payload?.token?.refresh_token;

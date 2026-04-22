@@ -27,6 +27,9 @@ class _FakeDb:
             return _FakeAlertQuery()
         raise AssertionError(f"Unexpected query model: {model}")
 
+    def commit(self):
+        return None
+
 
 @pytest.fixture
 def auth_user():

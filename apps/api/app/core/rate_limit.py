@@ -19,9 +19,18 @@ async def enforce_rate_limit(
 
 
 def get_client_ip(request: Request) -> str:
-    forwarded = request.headers.get('x-forwarded-for')
-    if forwarded:
-        return forwarded.split(',')[0].strip()
+    if settings.TRUST_PROXY_HEADERS:
+        forwarded = request.headers.get('x-forwarded-for')
+        if forwarded:
+            parts = [item.strip() for item in forwarded.split(',') if item.strip()]
+            if parts:
+                hops = max(1, settings.TRUSTED_PROXY_HOPS)
+                if len(parts) >= hops:
+                    return parts[-hops]
+                return parts[0]
+        real_ip = request.headers.get('x-real-ip')
+        if real_ip:
+            return real_ip.strip()
     client = request.client
     return client.host if client else 'unknown'
 
