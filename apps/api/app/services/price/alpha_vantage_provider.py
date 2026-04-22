@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import List
+import logging
 
 import httpx
 
@@ -9,6 +10,7 @@ from app.schemas.price import NormalizedPrice
 from app.services.price.provider_base import BasePriceProvider
 
 METAL_SYMBOLS = {"XAU", "XAG", "XPT", "XPD"}
+logger = logging.getLogger(__name__)
 
 
 def _split_symbol(symbol: str) -> tuple[str, str, str] | None:
@@ -57,7 +59,8 @@ class AlphaVantageProvider(BasePriceProvider):
                     if rate is None:
                         continue
                     price = Decimal(str(rate))
-                except Exception:
+                except Exception as exc:
+                    logger.warning("alpha_vantage fetch failed for %s: %s", normalized, exc)
                     continue
 
                 prices.append(

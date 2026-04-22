@@ -16,6 +16,7 @@
     "seed:local": "cd apps/api && python3 -m app.db.seed",
     "test:e2e": "playwright test --config=tests/e2e/playwright.config.ts",
     "test:perf:k6": "k6 run tests/perf/k6-portfolio-benchmark.js",
+    "infra:validate": "bash infra/scripts/validate_terraform.sh",
     "generate:api-types:admin": "openapi-typescript http://localhost:8000/api/v1/openapi.json -o apps/admin/src/api/generated.ts",
     "generate:api-types:mobile": "openapi-typescript http://localhost:8000/api/v1/openapi.json -o apps/mobile/src/api/generated.ts",
     "generate:api-types": "npm run generate:api-types:admin && npm run generate:api-types:mobile"

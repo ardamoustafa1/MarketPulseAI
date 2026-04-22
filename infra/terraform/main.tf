@@ -37,4 +37,7 @@ module "core" {
   db_username         = var.db_username
   db_instance_class   = var.db_instance_class
   db_allocated_storage = var.db_allocated_storage
+  db_backup_window    = var.db_backup_window
+  db_maintenance_window = var.db_maintenance_window
+  db_performance_insights_enabled = var.db_performance_insights_enabled
 }

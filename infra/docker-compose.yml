@@ -138,7 +138,7 @@ services:
       api:
         condition: service_started
     ports:
-      - "5173:80"
+      - "5173:8080"
 
 volumes:
   pgdata:

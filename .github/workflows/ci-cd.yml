@@ -32,7 +32,7 @@ jobs:
       - name: Install security tools
         run: pip install pip-audit semgrep
       - name: Run SAST scan (Semgrep)
-        run: semgrep --config=auto apps/api --error
+        run: semgrep --config=auto apps/api apps/admin apps/mobile infra --error
       - name: Run Python dependency vulnerability scan
         run: pip-audit -r apps/api/requirements.txt --strict
       - name: Run Node production dependency vulnerability scan

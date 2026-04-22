@@ -88,7 +88,14 @@
 - Database:
   - `enable_rds=true`
   - `db_name`, `db_username`, `db_instance_class`
+  - `db_backup_window`, `db_maintenance_window`
   - RDS master password is managed in Secrets Manager (see `rds_master_user_secret_arn` output)
+  - Optional performance tuning via `db_performance_insights_enabled`
+
+## Local Terraform validation
+
+- Run local checks before pushing infra changes:
+  - `npm run infra:validate`
 
 ## Incident playbook (P1/P0)
 

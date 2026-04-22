@@ -1,12 +1,15 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import List
+import logging
 
 import httpx
 
 from app.core.config import settings
 from app.schemas.price import NormalizedPrice
 from app.services.price.provider_base import BasePriceProvider
+
+logger = logging.getLogger(__name__)
 
 
 def _split_fx_symbol(symbol: str) -> tuple[str, str] | None:
@@ -48,7 +51,8 @@ class FrankfurterProvider(BasePriceProvider):
                     if rate_value is None:
                         continue
                     price = Decimal(str(rate_value))
-                except Exception:
+                except Exception as exc:
+                    logger.warning("frankfurter fetch failed for %s: %s", normalized_symbol, exc)
                     continue
 
                 prices.append(

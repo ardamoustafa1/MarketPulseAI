@@ -2,6 +2,30 @@ resource "aws_s3_bucket" "release_artifacts" {
   bucket = "${var.project_name}-${var.environment}-release-artifacts"
 }
 
+resource "aws_s3_bucket_versioning" "release_artifacts" {
+  bucket = aws_s3_bucket.release_artifacts.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "release_artifacts" {
+  bucket = aws_s3_bucket.release_artifacts.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "release_artifacts" {
+  bucket                  = aws_s3_bucket.release_artifacts.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/marketpulse/${var.environment}/app"
   retention_in_days = 30
@@ -96,6 +120,34 @@ data "aws_iam_policy_document" "ecs_task_assume_role" {
       identifiers = ["ecs-tasks.amazonaws.com"]
     }
   }
+}
+
+data "aws_iam_policy_document" "release_artifacts_tls_only" {
+  statement {
+    sid    = "DenyInsecureTransport"
+    effect = "Deny"
+    actions = [
+      "s3:*"
+    ]
+    resources = [
+      aws_s3_bucket.release_artifacts.arn,
+      "${aws_s3_bucket.release_artifacts.arn}/*"
+    ]
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+      values   = ["false"]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "release_artifacts_tls_only" {
+  bucket = aws_s3_bucket.release_artifacts.id
+  policy = data.aws_iam_policy_document.release_artifacts_tls_only.json
 }
 
 resource "aws_iam_role" "ecs_execution_role" {
@@ -306,6 +358,7 @@ resource "aws_lb_target_group" "admin" {
 }
 
 resource "aws_lb_listener" "http" {
+  count             = var.acm_certificate_arn == "" ? 1 : 0
   load_balancer_arn = aws_lb.app.arn
   port              = 80
   protocol          = "HTTP"
@@ -313,6 +366,22 @@ resource "aws_lb_listener" "http" {
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.admin.arn
+  }
+}
+
+resource "aws_lb_listener" "http_redirect" {
+  count             = var.acm_certificate_arn != "" ? 1 : 0
+  load_balancer_arn = aws_lb.app.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
   }
 }
 
@@ -348,7 +417,8 @@ resource "aws_lb_listener_rule" "api_paths_https" {
 }
 
 resource "aws_lb_listener_rule" "api_paths" {
-  listener_arn = aws_lb_listener.http.arn
+  count        = var.acm_certificate_arn == "" ? 1 : 0
+  listener_arn = aws_lb_listener.http[0].arn
   priority     = 100
 
   action {
@@ -446,8 +516,6 @@ resource "aws_ecs_service" "api" {
     container_port   = var.api_container_port
   }
 
-  depends_on = [aws_lb_listener.http]
-
   deployment_circuit_breaker {
     enable   = true
     rollback = true
@@ -472,8 +540,6 @@ resource "aws_ecs_service" "admin" {
     container_name   = "admin"
     container_port   = var.admin_container_port
   }
-
-  depends_on = [aws_lb_listener.http]
 
   deployment_circuit_breaker {
     enable   = true
@@ -558,6 +624,50 @@ resource "aws_wafv2_web_acl" "alb" {
     }
   }
 
+  rule {
+    name     = "AWSManagedRulesKnownBadInputsRuleSet"
+    priority = 2
+
+    override_action {
+      none {}
+    }
+
+    statement {
+      managed_rule_group_statement {
+        name        = "AWSManagedRulesKnownBadInputsRuleSet"
+        vendor_name = "AWS"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "known-bad-inputs-rules"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  rule {
+    name     = "AWSManagedRulesAmazonIpReputationList"
+    priority = 3
+
+    override_action {
+      none {}
+    }
+
+    statement {
+      managed_rule_group_statement {
+        name        = "AWSManagedRulesAmazonIpReputationList"
+        vendor_name = "AWS"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "ip-reputation-rules"
+      sampled_requests_enabled   = true
+    }
+  }
+
   visibility_config {
     cloudwatch_metrics_enabled = true
     metric_name                = "${var.project_name}-${var.environment}-alb-waf"
@@ -584,6 +694,12 @@ resource "aws_db_instance" "postgres" {
   engine_version            = "15.7"
   instance_class            = var.db_instance_class
   allocated_storage         = var.db_allocated_storage
+  storage_encrypted         = true
+  backup_retention_period   = 7
+  backup_window             = var.db_backup_window
+  maintenance_window        = var.db_maintenance_window
+  copy_tags_to_snapshot     = true
+  performance_insights_enabled = var.db_performance_insights_enabled
   db_name                   = var.db_name
   username                  = var.db_username
   manage_master_user_password = true

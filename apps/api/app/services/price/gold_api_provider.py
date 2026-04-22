@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import List
+import logging
 
 import httpx
 
@@ -9,6 +10,7 @@ from app.schemas.price import NormalizedPrice
 from app.services.price.provider_base import BasePriceProvider
 
 METAL_SYMBOLS = {"XAU", "XAG", "XPT", "XPD"}
+logger = logging.getLogger(__name__)
 
 
 class GoldApiProvider(BasePriceProvider):
@@ -31,7 +33,8 @@ class GoldApiProvider(BasePriceProvider):
                     if price_value is None:
                         continue
                     price = Decimal(str(price_value))
-                except Exception:
+                except Exception as exc:
+                    logger.warning("gold_api fetch failed for %s: %s", symbol, exc)
                     continue
 
                 prices.append(

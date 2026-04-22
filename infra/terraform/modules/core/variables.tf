@@ -16,7 +16,7 @@ variable "aws_region" {
 variable "ecr_image_tag_mutability" {
   description = "Tag mutability policy for ECR repositories"
   type        = string
-  default     = "MUTABLE"
+  default     = "IMMUTABLE"
 }
 
 variable "vpc_cidr" {
@@ -185,4 +185,22 @@ variable "db_allocated_storage" {
   description = "RDS allocated storage in GB"
   type        = number
   default     = 20
+}
+
+variable "db_backup_window" {
+  description = "Preferred daily backup window for RDS (UTC)"
+  type        = string
+  default     = "03:00-04:00"
+}
+
+variable "db_maintenance_window" {
+  description = "Preferred weekly maintenance window for RDS (UTC)"
+  type        = string
+  default     = "sun:04:00-sun:05:00"
+}
+
+variable "db_performance_insights_enabled" {
+  description = "Enable RDS Performance Insights"
+  type        = bool
+  default     = true
 }

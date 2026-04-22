@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import List
+import logging
 
 import httpx
 
@@ -9,6 +10,7 @@ from app.schemas.price import NormalizedPrice
 from app.services.price.provider_base import BasePriceProvider
 
 METAL_SYMBOLS = {"XAU", "XAG", "XPT", "XPD"}
+logger = logging.getLogger(__name__)
 
 
 def _to_twelve_symbol(symbol: str) -> tuple[str, str] | None:
@@ -52,7 +54,8 @@ class TwelveDataProvider(BasePriceProvider):
                     if price_value is None:
                         continue
                     price = Decimal(str(price_value))
-                except Exception:
+                except Exception as exc:
+                    logger.warning("twelve_data fetch failed for %s: %s", normalized_symbol, exc)
                     continue
 
                 prices.append(
