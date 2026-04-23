@@ -5,29 +5,33 @@
 ### Cross-asset investment intelligence, engineered like a product &mdash; not a demo.
 
 <p>
-<em>Mobile-first portfolio &middot; multi-provider pricing &middot; AI insights &middot; admin operations &middot; production-grade CI</em>
+<em>Mobile-first portfolio &middot; multi-provider pricing &middot; AI insights &middot; admin operations &middot; production-grade CI/CD</em>
 </p>
 
 <p>
 <img alt="CI" src="https://img.shields.io/github/actions/workflow/status/ardamoustafa1/MarketPulseAI/ci-cd.yml?branch=main&label=ci%2Fcd&logo=githubactions&logoColor=white" />
 <img alt="Coverage" src="https://img.shields.io/badge/backend%20coverage-%E2%89%A575%25-2ea44f" />
 <img alt="Python" src="https://img.shields.io/badge/python-3.11-3776AB?logo=python&logoColor=white" />
-<img alt="FastAPI" src="https://img.shields.io/badge/fastapi-0.115-009688?logo=fastapi&logoColor=white" />
+<img alt="FastAPI" src="https://img.shields.io/badge/fastapi-0.104-009688?logo=fastapi&logoColor=white" />
 <img alt="Expo" src="https://img.shields.io/badge/expo-54-000020?logo=expo&logoColor=white" />
 <img alt="React Native" src="https://img.shields.io/badge/react%20native-0.81-20232A?logo=react&logoColor=61DAFB" />
 <img alt="Postgres" src="https://img.shields.io/badge/postgres-16-4169E1?logo=postgresql&logoColor=white" />
 <img alt="Redis" src="https://img.shields.io/badge/redis-7-DC382D?logo=redis&logoColor=white" />
-<img alt="Terraform" src="https://img.shields.io/badge/terraform-1.9-7B42BC?logo=terraform&logoColor=white" />
+<img alt="Turborepo" src="https://img.shields.io/badge/turborepo-monorepo-EF4444?logo=turborepo&logoColor=white" />
+<img alt="Terraform" src="https://img.shields.io/badge/terraform-AWS-7B42BC?logo=terraform&logoColor=white" />
+<img alt="Sentry" src="https://img.shields.io/badge/sentry-observability-362D59?logo=sentry&logoColor=white" />
 <img alt="License" src="https://img.shields.io/badge/license-MIT-black" />
 </p>
 
 <p>
-<a href="#-30-second-tour">30-sec tour</a> &middot;
-<a href="#-the-60-numbers">the 60s numbers</a> &middot;
+<a href="#-30-second-tour">tour</a> &middot;
+<a href="#-the-60s-numbers">numbers</a> &middot;
+<a href="#-feature-catalog">features</a> &middot;
 <a href="#-architecture">architecture</a> &middot;
+<a href="#-tech-stack">stack</a> &middot;
 <a href="#-local-boot-in-60-seconds">run locally</a> &middot;
-<a href="#-quality--safety-gates">quality gates</a> &middot;
-<a href="#-recruiter-tear-sheet">recruiter tear sheet</a>
+<a href="#-cicd-pipeline">ci/cd</a> &middot;
+<a href="#-recruiter-tear-sheet">hiring</a>
 </p>
 
 </div>
@@ -36,7 +40,7 @@
 
 ## What this is
 
-MarketPulse AI is a **monorepo fintech product**: a consumer-grade investor mobile app, an operator-grade admin panel, and a hardened FastAPI backend that fuses eight real price providers into a single, reliable cross-asset feed (FX, metals, crypto, equities, commodities). Every slice &mdash; mobile, admin, API, infra, CI &mdash; is wired together the way a funded company would actually ship it: typed contracts, migrations, CI gates, observability, runbooks, and ADRs.
+MarketPulse AI is a **monorepo fintech product**: a consumer-grade investor mobile app, an operator-grade admin panel, and a hardened FastAPI backend that fuses **eight real price providers** into a single, reliable cross-asset feed (FX, metals, crypto, equities, commodities). Every slice &mdash; mobile, admin, API, infra, CI &mdash; is wired together the way a funded company would actually ship it: typed contracts, Alembic migrations, 13-stage CI pipeline, observability, runbooks, and ADRs.
 
 > If you opened this repo expecting a side project, you'll find a system.
 
@@ -46,12 +50,14 @@ MarketPulse AI is a **monorepo fintech product**: a consumer-grade investor mobi
 
 <div align="center">
 
-| Surface | What you see |
+| Surface | What ships |
 |---|---|
-| 📱 **Mobile (Expo)** | portfolio hero with live sparkline, cross-asset AI insights, pro tools, strategy playground, alerts 2.0 |
-| 🧑‍💻 **Admin (React+Vite)** | incident center, asset lifecycle, audit log, user & billing controls |
-| 🧠 **API (FastAPI)** | 31 endpoints, 8-provider pricing aggregator, step-up auth, webhook HMAC, WS pub/sub |
-| ☁️ **Infra** | Docker Compose for local, Terraform modules for AWS (ECS/ALB/ECR/VPC) |
+| 📱 **Mobile (Expo 54 + RN 0.81)** | 49 screens · EN + TR · Reanimated hero chart · biometric lock · push alerts · paper trading · social watchlists |
+| 🧑‍💻 **Admin (React + Vite)** | 7 pages: dashboard, assets, users, logs, health, operations, login &mdash; with step-up for destructive actions |
+| 🧠 **API (FastAPI 0.104)** | 31 endpoints · 84 service modules across 15 packages · 14 pytest files · OpenAPI client generation |
+| 💹 **Pricing core** | 8 providers · aggregator · derived Turkish gold/silver · Redis cache · staleness tags · on-demand refresh |
+| ☁️ **Infra** | Multi-stage Docker · docker-compose local · Terraform modules (AWS ECS/ALB/ECR/VPC) |
+| 🚦 **CI/CD** | 13 GitHub Actions jobs · staged deploy · GHCR image publish · release notes gate |
 
 </div>
 
@@ -64,18 +70,23 @@ MarketPulse AI is a **monorepo fintech product**: a consumer-grade investor mobi
 
 <div align="center">
 
-| Category | Count |
-|---|---|
-| API endpoints (`apps/api/app/api/v1/endpoints`) | **31** |
-| Service modules (`apps/api/app/services`) | **84** files across 15 packages |
-| Price providers wired end-to-end | **8** (Binance, Yahoo, Stooq, Twelve Data, Alpha Vantage, Exchange-Rate-Host, Frankfurter, Gold-API) |
-| Mobile screens (`apps/mobile/src/screens`) | **49** |
-| Mobile TS/TSX modules | **167** |
-| Alembic migrations | **6** schema revisions |
-| i18n locales | **EN + TR** |
-| Lint / type gate | ruff 0.14 (0 warnings) &middot; ESLint 9 flat (0 warnings) &middot; `tsc --noEmit` clean |
-| Backend test coverage floor | **≥ 75%** (enforced in CI with `--cov-fail-under=75`) |
-| CI security scans | gitleaks · semgrep · pip-audit · npm audit |
+| Category | Count | Verified from |
+|---|---|---|
+| API endpoints | **31** | `apps/api/app/api/v1/endpoints/` |
+| API service modules | **84** across 15 packages | `apps/api/app/services/` |
+| Price providers | **8** | `binance · yahoo · stooq · twelve-data · alpha-vantage · exchange-rate-host · frankfurter · gold-api` |
+| Alembic migrations | **6** | `apps/api/alembic/versions/` |
+| Backend tests | **14** | `apps/api/tests/` |
+| Mobile screens | **49** (app) + **4** (auth) | `apps/mobile/src/screens/` |
+| Mobile TS/TSX modules | **167** | `apps/mobile/src/**/*` |
+| Zustand stores | **11** | `apps/mobile/src/store/` |
+| Admin pages | **7** | `apps/admin/src/pages/` |
+| i18n locales | **EN + TR** | `apps/mobile/src/i18n/locales/` |
+| CI/CD jobs | **13** | `.github/workflows/ci-cd.yml` |
+| Ops scripts | **9** | `infra/scripts/` |
+| ADRs | **3** | `docs/adr/` |
+| Lint / type gate | **0 warnings** | ruff 0.14 · ESLint 9 flat · `tsc --noEmit` |
+| Backend coverage floor | **≥ 75%** | `pytest --cov-fail-under=75` |
 
 </div>
 
@@ -84,67 +95,143 @@ MarketPulse AI is a **monorepo fintech product**: a consumer-grade investor mobi
 ## 🧭 Why this repo is different
 
 **1. It behaves like a product, not a portfolio piece.**
-Login → onboarding with KVKK/GDPR consent → biometric lock → live portfolio hero → cross-asset AI insights → add transaction with step-up → push-notified alerts. Every screen has an empty state, a loading skeleton, a stale/live badge, and an error path.
+Login → onboarding with KVKK/GDPR consent → biometric lock → live portfolio hero → cross-asset AI insights → add transaction with step-up → push-notified alerts → shareable recap cards. Every screen has an empty state, a loading skeleton, a stale/live badge, and an error path.
 
 **2. The backend is senior-level, not tutorial-level.**
-JWT + refresh-token rotation with hashing, CSRF for cookie auth, Redis-backed rate limiting (per-path, per-IP, trusted-proxy aware), step-up auth for destructive admin actions, HMAC-verified billing webhook with replay protection on Redis, WebSocket fan-out via Redis pub/sub.
+JWT + refresh-token rotation with hashing, CSRF for cookie auth, Redis-backed rate limiting (per-path, per-IP, trusted-proxy CIDR aware), step-up auth for destructive admin actions, HMAC-verified billing webhook with replay protection on Redis, WebSocket fan-out via Redis pub/sub, audit log with actor + before/after diff.
 
 **3. Pricing is a real system, not a mock.**
-Eight providers, a unified aggregator, a derived-instrument layer that synthesises Turkish gold variants (GRAMALTIN, ÇEYREK, ATA, GÜMÜŞ/TL…) from LBMA + FX bases, a staleness model, an on-demand refresh path that auto-pulls upstream bases when a derived symbol misses, and Redis caching.
+Eight providers, a unified aggregator, a derived-instrument layer that synthesises Turkish gold variants (GRAMALTIN, ÇEYREK, YARIM, TAM, ATA, GÜMÜŞ/TL…) from LBMA + FX bases, a staleness model, an on-demand refresh path that auto-pulls upstream bases when a derived symbol misses, and Redis caching.
 
 **4. It shows up to work every day.**
-CI runs secret scans, SAST, dep-audit on every PR. Backend tests gate with a coverage floor. Terraform is validated. Release notes are required. Runbook + ADRs + case study are version-controlled alongside the code.
+13 CI jobs on every PR/push: secret scans, SAST, dep-audit, ruff, mypy, pytest with ≥75% coverage floor, admin+mobile tests, Playwright e2e, k6 perf, Terraform validate, release-notes gate, Docker build, GHCR publish, staged Terraform deploy with Alembic migrate + smoke + release-gate SLO check.
 
 ---
 
-## ✨ Feature tour
+## ✨ Feature catalog
 
-### For the investor (mobile)
+<details open>
+<summary><strong>📱 Mobile — investor experience (49 app screens)</strong></summary>
 
-<table>
-<tr><td>
+<br>
 
-**Portfolio superpowers**
-- Multi-currency view (TRY / USD / EUR / BTC / gold-gram)
-- Daily hero with animated counter + sentiment-driven sparkline
-- Smart rebalancer, DCA simulator, stress test, FIFO/LIFO tax lots
-- Shared/compare cards &mdash; made for screenshot virality
-
-</td><td>
+**Home & Portfolio**
+- `HomeDashboardScreen` · animated portfolio hero + cross-asset AI feed
+- `PortfolioScreen`, `PortfolioSharedScreen`, `PortfolioDenominationScreen` &mdash; multi-currency (TRY / USD / EUR / BTC / gold-gram)
+- `PortfolioMultiGoalsScreen` · multi-asset savings goals with tempo estimator
+- `PortfolioRebalancerScreen` · target weights, drift, one-tap plan
+- `PortfolioDcaSimulatorScreen` · historical DCA eğrisi, shareable card
+- `PortfolioStressTestScreen` · "if 2008 hit today" scenario engine
+- `PortfolioTaxLotsScreen`, `FifoSummaryScreen` · FIFO/LIFO realised P&L
 
 **Cross-asset AI**
-- "Today's signal" per asset + macro regime detector
-- Live correlation heatmap, ratio radar, macro calendar impact
-- News-to-wallet impact estimation
-- LLM-guarded neutral insights (no financial advice)
+- `IntelligenceHubScreen` · regime detector · correlation heatmap · ratio radar · macro-calendar impact
+- `InsightsScreen` · neutral, LLM-guarded insight cards (no financial advice)
+- `AssetDetailScreen` · per-asset deep card (TA + fundamentals + on-chain when relevant)
 
-</td></tr>
-<tr><td>
+**Markets & Data**
+- `MarketsScreen` · crypto · FX · metals · favourites with stale/derived/live badges
+- `MarketNewsScreen` · RSS-powered news with asset tagging
+- `ConverterScreen` · any-to-any asset converter
+- `WatchlistScreen`, `SharedWatchlistScreen`
 
-**Pro tools**
-- RSI / MACD / Bollinger / Fib
-- Formula-based alerts 2.0 (multi-condition)
-- Inter-exchange spread detector
-- Volatility cone, position slicer, strategy playground
+**Pro Tools**
+- `TechnicalAnalysisScreen` · RSI · MACD · Bollinger · Fibonacci with AI commentary
+- `FormulaAlertsScreen` · multi-condition formula alerts (Alerts 2.0)
+- `SpreadDetectorScreen` · inter-exchange arbitrage radar
+- `VolatilityConeScreen` · realised vs implied volatility
+- `PositionSlicingScreen` · scheduled DCA slicing calculator
+- `StrategyPlaygroundScreen`, `StrategyHubScreen` · backtestable rule-based strategies
+- `TaxReportScreen` · PDF + CSV export
+- `PaperOrdersScreen` · paper trading with stop/limit/OCO
 
-</td><td>
+**Social & Growth**
+- `CommunityListsScreen`, `CommunityListDetailScreen` · curated/community watchlists
+- `CopyStrategyScreen` · follow another user's paper strategy
+- `LeaderboardScreen` · paper-trading season leaderboards by asset class
+- `LiveEventsScreen` · weekly analyst livestream slot
+- `ReferralScreen` · point-based referrals
+- `ShareCardStudioScreen` · export portfolio/compare/wrapped cards as PNG
 
-**Trust & polish**
-- Live source badge on every price (provider · timestamp · status)
-- Biometric lock + TOTP 2FA + "Steel Account" badge
-- Transparency page listing every data source
-- Haptics, reanimated transitions, tabular-nums typography
+**Recap & Education**
+- `WeeklyRecapScreen` · AI-generated Sunday portfolio summary
+- `MonthlyWrappedScreen` · Spotify-Wrapped-style personal report
+- `AcademyScreen`, `AcademyArticleScreen` · short-form financial literacy cards
 
-</td></tr>
-</table>
+**Trust & Account**
+- `TwoFactorScreen` · TOTP setup/verify/disable
+- `TransparencyScreen` · every data source listed with freshness SLA
+- `AlertsScreen`, `AlertHistoryScreen` · push-notified alerts + history
+- `CompareAssetsScreen` · one-tap multi-asset comparison + share
+- `ProfileScreen`, `EditProfileScreen`, `ProToolsHubScreen`, `SocialHubScreen`, `PortfolioPowersHubScreen`
 
-### For the operator (admin)
+**Auth flow**
+- `SplashScreen → OnboardingScreen → LoginScreen/RegisterScreen` with KVKK/GDPR consent steps
+- `onboardingSteps.ts` · declarative step registry
 
-- Incident center with one-click workflows
-- Asset lifecycle (create / enable / image / audit)
-- User & billing management with step-up for destructive actions
-- Full audit log with filters and CSV export
-- Real-time WS health, provider health, rate-limit telemetry
+</details>
+
+<details>
+<summary><strong>🧑‍💻 Admin — operator console (7 pages)</strong></summary>
+
+<br>
+
+| Page | Purpose |
+|---|---|
+| `DashboardPage` | SLO/throughput/active-users overview |
+| `AssetsPage` | asset CRUD + image + enable/disable with audit |
+| `UsersPage` | user search, subscription tier, plan change with step-up |
+| `LogsPage` | append-only audit log with filters, actor, before/after diff |
+| `HealthPage` | liveness + readiness + provider health + rate-limit telemetry |
+| `OperationsPage` | incident center, one-click ops workflows |
+| `LoginPage` | admin auth with step-up challenge path |
+
+Built with **React 18 + Vite + React Router**, tested with **Vitest + Testing Library + jsdom**, e2e-covered with Playwright.
+
+</details>
+
+<details>
+<summary><strong>🧠 Backend — 31 endpoints · 15 service packages</strong></summary>
+
+<br>
+
+**Endpoint groups** (`apps/api/app/api/v1/endpoints/`):
+`auth · two_factor · users · portfolio · portfolio_powers · transactions · watchlist · assets · alerts · charts · prices · market_news · insights · intelligence · deep_card · pro_tools · recap · sharing · social · stats · academy · trust · billing · notifications · audit_logs · analytics · health · admin · websocket`
+
+**Service packages** (`apps/api/app/services/`):
+- **price** · 8 providers · `aggregator` · `cache` · `derived_instruments` · `scheduler`
+- **intelligence** · cross-asset regime + correlation + ratio signals
+- **deep_card** · per-asset-class deep modules
+- **portfolio_powers** · rebalancer · DCA · goals · stress · tax lots (FIFO)
+- **pro_tools** · TA · alerts 2.0 · spread · vol cone · position slicer · tax export · playground
+- **social** · community lists · leaderboard · copy strategy
+- **trust** · steel-account scoring · transparency
+- **llm** · insight generator with neutrality-enforcing prompts
+- **alert** · evaluator loop with event emission
+- **market** · RSS news ingestion
+- **push** · Expo Push client
+- **websocket** · manager · dispatcher · redis listener · connection pool
+- **portfolio** · calculator · FIFO · access checks
+- **auth_service**, **audit_service**, **jobs/queue**
+
+**Data models**: `user · portfolio · asset · alert · audit · billing · portfolio_powers · pro_tools · social · push_device`
+
+**Schemas (Pydantic v2)**: 19 schema files covering every API surface.
+
+</details>
+
+<details>
+<summary><strong>💹 Pricing pipeline</strong></summary>
+
+<br>
+
+- **8 providers**: Binance (crypto), Yahoo + Stooq (equities), Twelve Data + Alpha Vantage (hybrid), Exchange-Rate-Host + Frankfurter (FX), Gold-API (metals).
+- **Aggregator**: priority-aware fan-out, per-provider timeout, merged response with `source` label + `last_updated_at` + `isStale` tag.
+- **Derived instruments**: synthesises `GRAMALTIN · HASALTIN · AYAR22 · AYAR14 · ÇEYREKYENİ/ESKİ · YARIM · TAM · ATA · ATA5 · GREMSE · GÜMÜŞTL · GÜMÜŞONS · PLATİNONS · PALADYUMONS` and more from XAU/XAG/XPT/XPD × USDTRY/EURUSD.
+- **Cache**: Redis write-through with staleness windows.
+- **On-demand refresh**: when a derived metal is requested and its upstream bases are cold, the `/prices` endpoint auto-adds the required bases to the refresh batch so `build_derived_prices` never receives an empty input.
+
+</details>
 
 ---
 
@@ -155,16 +242,18 @@ CI runs secret scans, SAST, dep-audit on every PR. Backend tests gate with a cov
 ```mermaid
 flowchart LR
   subgraph Clients
-    M["📱 Mobile<br/>Expo + RN 0.81"]
-    A["🧑‍💻 Admin<br/>React + Vite"]
+    M["📱 Mobile<br/>Expo 54 + RN 0.81<br/>49 screens · EN/TR"]
+    A["🧑‍💻 Admin<br/>React + Vite<br/>7 pages"]
   end
 
-  subgraph API["FastAPI · 31 endpoints"]
+  subgraph API["FastAPI 0.104 · 31 endpoints · 84 services"]
     AUTH["Auth + 2FA<br/>CSRF · Step-Up"]
     PORT["Portfolio · FIFO<br/>Rebalance · Stress"]
     INT["AI Intelligence<br/>Regime · Correlation"]
-    PRO["Pro Tools<br/>TA · Strategy"]
+    PRO["Pro Tools<br/>TA · Strategy · Spread"]
+    SOC["Social<br/>Lists · Leaderboard"]
     WS["WebSocket<br/>Pub/Sub"]
+    LLM["LLM Insight Gen<br/>neutrality prompts"]
   end
 
   subgraph Data
@@ -184,10 +273,11 @@ flowchart LR
   end
 
   subgraph Ops
-    S[Sentry]
-    CI[GitHub Actions<br/>gitleaks · semgrep · pytest]
+    S[Sentry FE+BE]
+    CI[GitHub Actions<br/>13-job pipeline]
     TF[Terraform]
-    AWS[AWS · ECS · ALB · ECR · VPC]
+    AWS[AWS · ECS · ALB<br/>ECR · VPC · GHCR]
+    PUSH[Expo Push]
   end
 
   M --> API
@@ -196,6 +286,7 @@ flowchart LR
   API --> R
   API --> Pricing
   API --> S
+  API --> PUSH
   CI --> TF --> AWS
 
   classDef p fill:#0b1020,color:#fff,stroke:#4f46e5;
@@ -207,7 +298,7 @@ flowchart LR
 flowchart TB
   Req["GET /prices?symbols=GRAMALTIN,BTC,USDTRY"] --> Cache{Redis cache<br/>hit?}
   Cache -- yes --> Resp
-  Cache -- stale/miss --> Fanout["Aggregator fan-out<br/>with priority + timeout"]
+  Cache -- stale/miss --> Fanout["Aggregator fan-out<br/>priority + timeout"]
   Fanout --> P1[Binance]
   Fanout --> P2[Yahoo]
   Fanout --> P3[Twelve Data]
@@ -216,8 +307,8 @@ flowchart TB
   Fanout --> P6[Frankfurter]
   Fanout --> P7[Gold-API]
   Fanout --> P8[Exchange-Rate-Host]
-  P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 --> Merge["Merge + source-label<br/>+ staleness tag"]
-  Merge --> Derived["Derived instruments<br/>(GRAMALTIN, ÇEYREK, ATA,<br/>GÜMÜŞ/TL...)"]
+  P1 & P2 & P3 & P4 & P5 & P6 & P7 & P8 --> Merge["Merge + source label<br/>+ staleness tag"]
+  Merge --> Derived["Derived instruments<br/>GRAMALTIN · ÇEYREK · ATA<br/>GÜMÜŞTL · HASALTIN …"]
   Derived --> WriteCache[(Redis write-through)]
   WriteCache --> Resp[Response]
 ```
@@ -230,15 +321,19 @@ flowchart TB
 
 | Layer | Stack |
 |---|---|
-| **Mobile** | Expo 54 · React Native 0.81 · Reanimated · Expo Blur/Haptics · Zustand · React Navigation · Axios · i18next (EN/TR) |
-| **Admin** | React 18 · Vite · TypeScript · Playwright |
-| **API** | FastAPI 0.115 · SQLAlchemy 2 · Pydantic v2 · Alembic · httpx · Celery-style worker · WS |
-| **Data** | PostgreSQL 16 · Redis 7 |
-| **Pricing** | 8 providers fused by a priority-aware aggregator with caching and staleness tags |
-| **Infra** | Docker multi-stage · Docker Compose · Terraform (AWS ALB/ECS/ECR/VPC) |
-| **Quality** | ruff 0.14 · mypy · pytest · ESLint 9 (flat) · typescript-eslint · Playwright · k6 |
-| **Observability** | Sentry (FE+BE) · health/readiness probes · structured audit log |
-| **Security** | gitleaks · semgrep · pip-audit · npm audit · HMAC webhooks · TOTP · biometric |
+| **Monorepo** | npm workspaces · **Turborepo** pipelines · shared `@marketpulse/ui` + `@marketpulse/types` packages |
+| **Mobile** | Expo 54 · React Native 0.81 · **Reanimated 3** + **Worklets** · Zustand (11 stores) · React Navigation (bottom-tabs + native-stack) · Axios · i18next + react-i18next (EN/TR) · **lucide-react-native** icons · **@shopify/flash-list** virtualization · **react-native-svg** charts · **Sentry React Native** · **react-native-performance** (cold-start) |
+| **Mobile native hooks** | `expo-haptics` · `expo-blur` · `expo-linear-gradient` · `expo-image` · `expo-clipboard` · `expo-sharing` · `expo-file-system` · `expo-notifications` · `expo-local-authentication` (biometric) · `expo-secure-store` (token vault) · `expo-localization` |
+| **Admin** | React 18 · Vite · TypeScript · **React Router DOM** · Vitest + Testing Library + jsdom |
+| **API** | FastAPI 0.104 · SQLAlchemy 2 · **Pydantic v2** + pydantic-settings · Alembic · httpx · `websockets` 12 · `uvicorn[standard]` · Celery-style in-process workers · Expo Push client |
+| **Auth & crypto** | `python-jose[cryptography]` · `passlib[bcrypt]` · TOTP (base32 secret + HOTP dynamic truncation) · HMAC webhook verify |
+| **Data** | PostgreSQL 16 · Redis 7 (cache + rate-limit + pub/sub) · `psycopg2-binary` |
+| **Pricing** | 8 providers fused by a priority-aware aggregator · derived-instrument layer · Redis write-through · on-demand upstream refresh |
+| **Infra** | **Multi-stage Dockerfile** (`base → dev → runtime`) · Docker Compose · **Terraform** (AWS ALB/ECS/ECR/VPC · env overlays) |
+| **CI/CD** | 13-job GitHub Actions pipeline · GHCR publish · staged Terraform deploy · Alembic migrate · smoke + release-gate SLO check |
+| **Quality** | ruff 0.14 · **mypy** · pytest + pytest-cov (≥75% floor) · ESLint 9 flat · **typescript-eslint** · Playwright · **k6** perf |
+| **Observability** | Sentry (FE + BE) · `/health` + `/api/v1/health/readiness` probes · structured append-only audit log |
+| **Security scanners** | **gitleaks** · **semgrep** SAST · **pip-audit** (`--strict`) · **npm audit** (`--audit-level=high`) |
 
 </div>
 
@@ -249,28 +344,50 @@ flowchart TB
 ```
 MarketPulseAI/
 ├── apps/
-│   ├── mobile/          Expo + RN investor app (49 screens, EN/TR)
-│   ├── admin/           React + Vite operations console
-│   └── api/             FastAPI · 31 endpoints · 84 service modules
-│       ├── app/api/v1/endpoints/   auth · portfolio · intelligence · pro_tools · trust · billing · ws …
-│       ├── app/services/           price · llm · portfolio · alert · deep_card · social · push …
-│       └── alembic/versions/       6 schema migrations
+│   ├── mobile/              Expo + RN investor app
+│   │   └── src/
+│   │       ├── screens/     49 app screens + 4 auth screens
+│   │       ├── components/  alert · asset · charts · dashboard · deep-card
+│   │       │                · effects · intelligence · onboarding · portfolio
+│   │       │                · portfolio-powers · social · transaction · trust · ui
+│   │       ├── store/       11 Zustand stores
+│   │       ├── i18n/        EN + TR locales
+│   │       ├── ws/          authenticated WebSocket client
+│   │       └── hooks/       useTransactionForm, …
+│   ├── admin/               React + Vite operations console (7 pages)
+│   └── api/                 FastAPI backend
+│       ├── app/api/v1/endpoints/   31 endpoints
+│       ├── app/services/           15 packages · 84 files
+│       │    (price · intelligence · deep_card · portfolio · portfolio_powers
+│       │     · pro_tools · social · trust · llm · alert · market · push
+│       │     · websocket · jobs · auth_service · audit_service)
+│       ├── app/models/             10 SQLAlchemy models
+│       ├── app/schemas/            19 Pydantic v2 schemas
+│       ├── alembic/versions/       6 schema migrations
+│       ├── tests/                  14 pytest files · ≥75% coverage floor
+│       ├── ruff.toml               line-length 120 · per-file-ignores
+│       └── Dockerfile              multi-stage · base → dev → runtime
 ├── packages/
-│   ├── ui/              shared design tokens + primitives
-│   └── types/           shared TS contracts
+│   ├── ui/                  shared design tokens + primitives
+│   ├── types/               shared TS contracts
+│   └── config/              shared workspace config
 ├── infra/
-│   ├── docker-compose.yml    postgres · redis · api · worker · admin (multi-stage "dev" target)
-│   ├── scripts/              bootstrap_local.sh · run_live_demo.sh · validate_terraform.sh
-│   └── terraform/            AWS modules + env overlays
+│   ├── docker-compose.yml   postgres · redis · api · worker · admin
+│   ├── scripts/             9 ops scripts (bootstrap · smoke · rollback · rotate …)
+│   └── terraform/           modules + environments (staging/prod overlays)
 ├── tests/
-│   ├── e2e/             Playwright
-│   └── perf/            k6 benchmark
+│   ├── e2e/                 Playwright (admin-smoke · api-health)
+│   └── perf/                k6 portfolio benchmark
 ├── docs/
-│   ├── adr/             ADR index (API/worker split, refresh rotation, realtime arch)
-│   ├── security/        baseline + automated checks matrix
-│   ├── releases/        release discipline
-│   ├── RUNBOOK.md · CASE_STUDY_MARKETPULSE.md · DEPLOYMENT_README.md · TEST_STRATEGY.md …
-└── .github/workflows/ci-cd.yml
+│   ├── adr/                 3 ADRs + template + index
+│   ├── security/            SECURITY_BASELINE · AUTOMATED_CHECKS_MATRIX
+│   ├── releases/            release discipline (required on PRs)
+│   ├── CASE_STUDY_MARKETPULSE.md · RUNBOOK.md · DEPLOYMENT_README.md
+│   ├── PRODUCTION_ENVIRONMENT_GUIDE.md · TEST_STRATEGY.md
+│   ├── SECURITY_CHECKLIST.md · APP_STORE_RELEASE_CHECKLIST.md
+│   └── PRIORITY_ACTION_PLAN.md
+├── turbo.json               Turborepo pipelines
+└── .github/workflows/ci-cd.yml   13 jobs
 ```
 
 ---
@@ -283,7 +400,7 @@ MarketPulseAI/
 npm run setup:local
 ```
 
-Behind the scenes it installs deps, bootstraps `infra/.env`, brings up `postgres + redis + api + worker + admin`, runs Alembic migrations, seeds demo data, and generates OpenAPI clients.
+Under the hood (`infra/scripts/bootstrap_local.sh`): installs deps, bootstraps `infra/.env`, brings up `postgres + redis + api + worker + admin`, runs Alembic migrations, seeds demo data, and generates OpenAPI clients for admin + mobile.
 
 ### Endpoints
 
@@ -303,60 +420,68 @@ demo@marketpulse.ai  / Demo12345!
 ### Mobile (Expo Go)
 
 ```bash
-cd apps/mobile && npm run dev
-# scan the QR in Expo Go (iOS/Android)
+cd apps/mobile && npm run dev       # scan QR in Expo Go
+```
+
+### Developer commands
+
+```bash
+npm run dev                          # turbo parallel dev servers
+npm run build                        # turbo build
+npm run lint                         # repo-wide lint
+npm run setup:local                  # full local stack
+npm run demo:live                    # seeded live demo run
+npm run seed:local                   # reseed Postgres
+npm run generate:api-types           # regen OpenAPI clients
+npm run test:e2e                     # Playwright
+npm run test:perf:k6                 # k6 benchmark
+npm run infra:validate               # terraform fmt+init+validate
+
+# backend
+cd apps/api && ruff check app && python3 -m pytest --cov=app
+
+# mobile
+cd apps/mobile && npm run lint && npm run typecheck
 ```
 
 ---
 
-## 🧪 Quality & safety gates
+## 🚦 CI/CD pipeline
 
-Every PR on `main` runs `.github/workflows/ci-cd.yml`:
+Every PR and every push to `main` runs [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml). The DAG:
 
 ```mermaid
 flowchart LR
   PR[PR / push] --> SEC[security-scans]
-  SEC --> BE[backend-tests · coverage ≥75%]
-  SEC --> FE[admin + mobile tests]
-  BE --> E2E[Playwright e2e]
-  FE --> E2E
-  E2E --> PERF[k6 perf smoke]
-  PERF --> TF[terraform validate]
-  TF --> DEPLOY[deploy gate]
+  SEC --> BE[backend-tests<br/>coverage ≥75%]
+  SEC --> LS[lint-and-static-analysis<br/>ruff + mypy]
+  SEC --> TFV[terraform-validate]
+  BE & LS --> RS[api-readiness-smoke]
+  RS --> FB[frontend-build<br/>admin + mobile tests]
+  FB & RS --> E2E[e2e-api-admin<br/>Playwright]
+  FB --> EM[e2e-mobile-flow]
+  RS --> PS[perf-smoke<br/>k6]
+  SEC & BE & LS & FB & E2E --> RN[release-notes-check]
+  FB & TFV & E2E & EM & PS --> DB[docker-build]
+  DB --> PI[publish-images<br/>GHCR]
+  PI --> DS[deploy-staging<br/>terraform + migrate + smoke + SLO gate]
 ```
 
-| Gate | Tooling |
-|---|---|
-| Secret scan | `gitleaks` (fails on leak) |
-| SAST | `semgrep --config=auto` on `apps/**` + `infra/` |
-| Python deps | `pip-audit --strict` |
-| Node deps | `npm audit --omit=dev --audit-level=high` |
-| Backend correctness | `pytest --cov=app --cov-fail-under=75` |
-| Backend lint / types | `ruff check app` (0) + `mypy` |
-| Mobile lint / types | `eslint .` (0) + `tsc --noEmit` (0) |
-| E2E | Playwright across admin & API |
-| Performance | k6 portfolio benchmark |
-| IaC | `terraform validate` |
-| Release hygiene | release notes required · lockfile present |
-
-### Run them yourself
-
-```bash
-# backend
-cd apps/api && ruff check app && python3 -m pytest -q
-
-# mobile
-cd apps/mobile && npm run lint && npm run typecheck
-
-# end-to-end
-npm run test:e2e
-
-# perf
-npm run test:perf:k6
-
-# infra
-npm run infra:validate
-```
+| # | Job | What it does |
+|---|---|---|
+| 1 | `security-scans` | gitleaks · semgrep · pip-audit (`--strict`) · npm audit (high) · baseline docs check · lockfile check |
+| 2 | `backend-tests` | `pytest --cov=app --cov-report=xml --cov-fail-under=75` + coverage artifact upload |
+| 3 | `lint-and-static-analysis` | npm monorepo lint · `ruff check app tests` · `mypy app --config-file mypy.ini` |
+| 4 | `api-readiness-smoke` | `docker compose up postgres redis api` → waits for `/api/v1/health/readiness` |
+| 5 | `frontend-build` | builds admin · runs admin Vitest suite · runs mobile Jest suite |
+| 6 | `e2e-api-admin` | boots docker stack + admin preview · Playwright e2e across admin + API |
+| 7 | `e2e-mobile-flow` | runs onboarding flow smoke test |
+| 8 | `perf-smoke` | k6 portfolio benchmark against live API |
+| 9 | `terraform-validate` | `terraform fmt -check · init · validate` |
+| 10 | `release-notes-check` | enforces a new file under `docs/releases/` on every PR |
+| 11 | `docker-build` | builds API + admin images tagged with commit SHA |
+| 12 | `publish-images` | pushes API + admin images to **GHCR** |
+| 13 | `deploy-staging` | Terraform plan/apply · Alembic migrate · `post_deploy_smoke.sh` · `release_gate_check.py` SLO verdict |
 
 ---
 
@@ -365,44 +490,66 @@ npm run infra:validate
 | Control | Implementation |
 |---|---|
 | Session auth | Cookie auth + **CSRF** enforcement for mutating cookie flows |
-| Refresh tokens | Hashed at rest · **rotated** on every refresh · revocable |
-| Rate limiting | Redis-backed · per-path + per-IP · trusted-proxy aware (CIDR list) |
-| Admin actions | Role gating + **step-up** re-auth for destructive ops |
-| 2FA | TOTP setup/verify/disable · base32 secret · HOTP dynamic truncation |
-| Webhooks | **HMAC signature verify** + Redis replay-protection on body fingerprint |
-| Audit | Append-only `audit_logs` with actor, entity, before/after diff |
-| App-layer | Biometric lock, "Steel Account" badge, transparency page, disclaimer gate |
+| Refresh tokens | **Hashed at rest** · rotated on every refresh · revocable |
+| Rate limiting | Redis-backed · per-path + per-IP · **trusted-proxy CIDR aware** |
+| Admin actions | Role gating + **step-up re-auth** for destructive ops |
+| 2FA | TOTP setup / verify / disable · base32 secret · HOTP dynamic truncation |
+| Webhooks | **HMAC signature verify** + Redis **replay protection** on body fingerprint |
+| Audit log | Append-only `audit_logs` with actor · entity · **before/after diff** |
+| App-layer | Biometric lock · TOTP · "Steel Account" badge · transparency page · disclaimer gate |
+| Supply chain | gitleaks · semgrep · pip-audit `--strict` · npm audit high · lockfile-only installs |
 
-See [`docs/SECURITY_CHECKLIST.md`](docs/SECURITY_CHECKLIST.md) and [`docs/security/SECURITY_BASELINE.md`](docs/security/SECURITY_BASELINE.md).
+See [`docs/SECURITY_CHECKLIST.md`](docs/SECURITY_CHECKLIST.md) · [`docs/security/SECURITY_BASELINE.md`](docs/security/SECURITY_BASELINE.md) · [`docs/security/AUTOMATED_CHECKS_MATRIX.md`](docs/security/AUTOMATED_CHECKS_MATRIX.md).
+
+---
+
+## 🛠 Operations scripts (`infra/scripts/`)
+
+| Script | Purpose |
+|---|---|
+| `bootstrap_local.sh` | full local stack setup (deps · env · compose · migrate · seed · OpenAPI) |
+| `run_live_demo.sh` | seeded end-to-end demo run |
+| `post_deploy_smoke.sh` | black-box smoke checks against a deployed env |
+| `release_gate_check.py` | SLO + funnel verdict after staged deploy |
+| `rollback_release.sh` | rollback path invoked from runbook |
+| `rotate_secrets.sh` | secret rotation workflow |
+| `run_incident_playbook.sh` | incident playbook entry-point |
+| `security_incident_response.sh` | sev-1 security response automation |
+| `validate_terraform.sh` | fmt + init + validate across environments |
 
 ---
 
 ## 📐 Engineering principles (documented, not implied)
 
 - **ADRs for every consequential decision** → [`docs/adr/`](docs/adr/)
-  - 0001 · API / worker split
-  - 0002 · Refresh-token rotation trade-offs
-  - 0003 · Realtime architecture choice (Redis pub/sub + WS)
+  - `0001` API / worker split &middot; `0002` Refresh-token rotation &middot; `0003` Realtime architecture (Redis pub/sub + WS)
 - **Case study** of a shipped slice → [`docs/CASE_STUDY_MARKETPULSE.md`](docs/CASE_STUDY_MARKETPULSE.md)
 - **Test strategy** → [`docs/TEST_STRATEGY.md`](docs/TEST_STRATEGY.md)
 - **Runbook** with incident automation hooks → [`docs/RUNBOOK.md`](docs/RUNBOOK.md)
-- **Release discipline** with required release notes → [`docs/releases/README.md`](docs/releases/README.md)
+- **Release discipline** → [`docs/releases/README.md`](docs/releases/README.md) *(enforced by `release-notes-check` CI job)*
+- **App-store release checklist** → [`docs/APP_STORE_RELEASE_CHECKLIST.md`](docs/APP_STORE_RELEASE_CHECKLIST.md)
+- **Production environment guide** → [`docs/PRODUCTION_ENVIRONMENT_GUIDE.md`](docs/PRODUCTION_ENVIRONMENT_GUIDE.md)
+- **Priority roadmap** → [`docs/PRIORITY_ACTION_PLAN.md`](docs/PRIORITY_ACTION_PLAN.md)
 
 ---
 
 ## 🗺 Roadmap
 
-- [x] Cross-asset AI insights (regime detector, correlation heatmap, ratio radar)
-- [x] Pro tools (TA panel, Alerts 2.0, strategy playground, volatility cone)
-- [x] Trust surface (live badge, transparency page, Steel Account)
+- [x] Cross-asset AI insights (regime detector, correlation heatmap, ratio radar, macro calendar)
+- [x] Deep per-asset cards (metals / crypto / FX / equities / commodities / ETF)
+- [x] Portfolio superpowers (multi-denomination, rebalancer, DCA, goals, stress, FIFO tax lots)
+- [x] Pro tools (TA, Alerts 2.0, spread detector, vol cone, position slicer, tax export, strategy playground)
+- [x] Social layer (community lists, leaderboard, copy strategy, referral, share cards, live events)
+- [x] Recap layer (weekly recap, monthly wrapped, academy articles)
+- [x] Trust layer (live source badge, transparency page, Steel Account, disclaimer)
 - [x] Turkish gold/silver derived instruments with auto-base refresh
 - [x] Premium hero sparkline (Catmull-Rom smoothing, gradient, glow)
-- [x] Multi-stage Docker + ruff/ESLint/typecheck CI gates
-- [ ] Apple Watch complications + iOS Live Activity
-- [ ] On-device biometric quick-unlock + passkeys
-- [ ] Multi-portfolio household sharing
+- [x] Multi-stage Docker + ruff/mypy/ESLint/typecheck CI gates + 13-job CI/CD
+- [ ] Apple Watch complications + iOS Live Activity + Dynamic Island
+- [ ] iOS/Android home-screen widgets
+- [ ] Passkeys + WebAuthn
+- [ ] Household / multi-portfolio sharing
 - [ ] Inter-exchange arbitrage streaming channel
-- [ ] Widget extension (iOS + Android)
 
 ---
 
@@ -412,14 +559,14 @@ See [`docs/SECURITY_CHECKLIST.md`](docs/SECURITY_CHECKLIST.md) and [`docs/securi
 
 <table>
 <tr><th align="left">Signal recruiters / hiring managers care about</th><th>Where it shows up in this repo</th></tr>
-<tr><td>Full-stack ownership</td><td><code>apps/mobile</code> · <code>apps/admin</code> · <code>apps/api</code> · <code>infra/</code></td></tr>
-<tr><td>Product thinking in engineering</td><td>49 mobile screens with empty/loading/error states, EN+TR i18n, haptics, tabular-nums</td></tr>
-<tr><td>Fintech-grade security habits</td><td>CSRF, rotated refresh tokens, step-up, HMAC + replay-guarded webhooks, TOTP, biometric</td></tr>
-<tr><td>System design depth</td><td>8-provider pricing aggregator · derived-instrument layer · Redis pub/sub WS · FIFO tax lots</td></tr>
-<tr><td>CI / release discipline</td><td><code>.github/workflows/ci-cd.yml</code>: gitleaks · semgrep · pip-audit · pytest ≥75% · playwright · k6</td></tr>
-<tr><td>Operational maturity</td><td>Runbook · ADRs · audit log · release checklist · incident playbook hooks</td></tr>
-<tr><td>Code-quality seriousness</td><td>ruff 0 warnings · ESLint 9 flat · <code>tsc --noEmit</code> clean · multi-stage Dockerfile</td></tr>
-<tr><td>IaC + cloud</td><td>Terraform modules for ALB/ECS/ECR/VPC · env overlays</td></tr>
+<tr><td>Full-stack ownership</td><td><code>apps/mobile</code> · <code>apps/admin</code> · <code>apps/api</code> · <code>packages/</code> · <code>infra/</code></td></tr>
+<tr><td>Product thinking in engineering</td><td>49 mobile screens with empty/loading/error states · EN+TR i18n · haptics · tabular-nums · biometric lock · share-card studio</td></tr>
+<tr><td>Fintech-grade security habits</td><td>CSRF · rotated refresh tokens · step-up · HMAC + replay-guarded webhooks · TOTP · biometric · append-only audit log</td></tr>
+<tr><td>System design depth</td><td>8-provider pricing aggregator · derived-instrument layer · Redis pub/sub WS · FIFO tax lots · LLM neutrality prompts</td></tr>
+<tr><td>CI / release discipline</td><td>13-job <code>ci-cd.yml</code>: gitleaks · semgrep · pip-audit · ruff+mypy · pytest ≥75% · Playwright · k6 · Terraform validate · release-notes gate · GHCR publish · staged deploy</td></tr>
+<tr><td>Operational maturity</td><td>Runbook · 3 ADRs · case study · 9 ops scripts · incident playbook · rollback automation · app-store release checklist</td></tr>
+<tr><td>Code-quality seriousness</td><td>ruff 0 warnings · ESLint 9 flat 0 warnings · <code>tsc --noEmit</code> clean · multi-stage Dockerfile · Turborepo pipelines</td></tr>
+<tr><td>IaC + cloud</td><td>Terraform modules for ALB/ECS/ECR/VPC · staging overlay · GHCR image registry · automated Alembic migrate</td></tr>
 </table>
 
 </div>
@@ -434,7 +581,7 @@ PRs are welcome. Before opening one:
 
 1. `cd apps/api && ruff check app && python3 -m pytest -q`
 2. `cd apps/mobile && npm run lint && npm run typecheck`
-3. Add / update a release note under `docs/releases/`
+3. Add / update a release note under `docs/releases/` *(required by CI)*
 4. If your change is architectural, propose or update an ADR under `docs/adr/`
 
 ---
