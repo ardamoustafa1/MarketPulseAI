@@ -37,11 +37,11 @@ export const AssetRow: React.FC<AssetRowProps> = ({
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
       <Box row justify="space-between" align="center" style={styles.container}>
-        <Box row align="center">
+        <Box row align="center" style={styles.leftSection}>
           <Box style={styles.iconBox} center>
             {icon || <LineChart color={colors.text.primary} size={20} />}
           </Box>
-          <Box style={{ marginLeft: spacing.md }}>
+          <Box style={styles.infoSection}>
             <Box row align="center">
                 <Text variant="h3">{symbol}</Text>
                 {typeof isFavorite !== 'undefined' && (
@@ -80,8 +80,17 @@ export const AssetRow: React.FC<AssetRowProps> = ({
           </Box>
         </Box>
         
-        <Box align="flex-end">
-          <Text variant="body" weight="600" style={{ fontSize: 17, letterSpacing: -0.5 }}>{price}</Text>
+        <Box align="flex-end" style={styles.priceSection}>
+          <Text
+            variant="body"
+            weight="600"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.78}
+            style={styles.priceText}
+          >
+            {price}
+          </Text>
           <Box row align="center" style={[styles.sentimentPill, { backgroundColor: isPositive ? 'rgba(59,217,132,0.1)' : 'rgba(255,92,92,0.1)' }]}>
             {isPositive ? (
               <TrendingUp color={sentimentColor} size={12} style={{ marginRight: 4 }} />
@@ -103,6 +112,26 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md + 4,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.03)',
+  },
+  leftSection: {
+    flex: 1,
+    minWidth: 0,
+    marginRight: spacing.sm,
+  },
+  infoSection: {
+    flex: 1,
+    minWidth: 0,
+    marginLeft: spacing.md,
+  },
+  priceSection: {
+    minWidth: 86,
+    maxWidth: '42%',
+    flexShrink: 1,
+  },
+  priceText: {
+    fontSize: 17,
+    letterSpacing: -0.5,
+    textAlign: 'right',
   },
   iconBox: {
     width: 48,

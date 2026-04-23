@@ -8,6 +8,7 @@ import { Text } from '../ui/Text';
 import { colors, radius, spacing } from '../../theme';
 import { Search, X, Check, TrendingUp, Layers, Gem } from 'lucide-react-native';
 import { apiClient } from '../../api/client';
+import { useMarketDataStore } from '../../store/useMarketDataStore';
 
 export interface AssetItem {
   id: string;
@@ -42,11 +43,26 @@ export const AssetPickerSheet: React.FC<AssetPickerSheetProps> = ({
   visible, selectedId, onSelect, onClose
 }) => {
   const insets = useSafeAreaInsets();
+  const getAssetCatalog = useMarketDataStore((state) => state.getAssetCatalog);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
   const [assets, setAssets] = useState<AssetItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const fallbackAssets = useMemo<AssetItem[]>(() => {
+    const categoryMap: Record<string, AssetItem['type']> = {
+      crypto: 'crypto',
+      forex: 'fiat',
+      metals: 'metal',
+    };
+    return getAssetCatalog().map((item) => ({
+      id: item.symbol,
+      symbol: item.symbol,
+      name: item.name,
+      type: categoryMap[item.category] ?? 'crypto',
+    }));
+  }, [getAssetCatalog]);
 
   useEffect(() => {
     if (!visible) {
@@ -83,15 +99,20 @@ export const AssetPickerSheet: React.FC<AssetPickerSheetProps> = ({
         if (!isMounted) {
           return;
         }
-        setError(requestError?.response?.data?.detail || 'Failed to load assets.');
-        setAssets([]);
+        if (fallbackAssets.length > 0) {
+          setAssets(fallbackAssets);
+          setError(null);
+        } else {
+          setError(requestError?.response?.data?.detail || 'Failed to load assets.');
+          setAssets([]);
+        }
         setIsLoading(false);
       });
 
     return () => {
       isMounted = false;
     };
-  }, [visible]);
+  }, [visible, fallbackAssets]);
 
   const filtered = useMemo(() => {
     let list = assets;

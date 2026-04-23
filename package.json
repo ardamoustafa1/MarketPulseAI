@@ -22,10 +22,14 @@
     "generate:api-types": "npm run generate:api-types:admin && npm run generate:api-types:mobile"
   },
   "devDependencies": {
+    "@eslint/js": "^9.38.0",
     "@playwright/test": "^1.59.1",
+    "eslint": "^9.38.0",
     "expo": "54.0.33",
+    "globals": "^16.4.0",
     "openapi-typescript": "^7.10.1",
     "prettier": "^3.0.0",
+    "typescript-eslint": "^8.46.2",
     "turbo": "^1.11.0"
   },
   "overrides": {

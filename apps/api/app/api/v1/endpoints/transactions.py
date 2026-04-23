@@ -70,7 +70,11 @@ def _resolve_asset(db: Session, payload: TransactionCreateRequest) -> Asset:
             return by_symbol
 
     if payload.asset_id:
-        by_id = db.query(Asset).filter(Asset.id == payload.asset_id).first()
+        try:
+            asset_uuid = UUID(str(payload.asset_id))
+        except (ValueError, TypeError):
+            asset_uuid = None
+        by_id = db.query(Asset).filter(Asset.id == asset_uuid).first() if asset_uuid else None
         if by_id:
             return by_id
 

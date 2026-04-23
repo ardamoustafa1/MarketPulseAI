@@ -1,10 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   TextInput,
+  TouchableWithoutFeedback,
   Alert,
 } from 'react-native';
 import { ArrowDownUp, ChevronDown, Copy, Search, Star } from 'lucide-react-native';
@@ -369,105 +374,126 @@ export const ConverterScreen = () => {
   };
 
   return (
-    <Box flex={1} bg={colors.background.base} padding={spacing.lg}>
-      <Text variant="h1" style={{ fontSize: 32, letterSpacing: -1, marginTop: spacing.xxl, marginBottom: spacing.lg }}>
-        {t('converter.title')}
-      </Text>
+    <Box flex={1} bg={colors.background.base}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+            contentContainerStyle={styles.contentContainer}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text variant="h1" style={{ fontSize: 32, letterSpacing: -1, marginTop: spacing.xxl, marginBottom: spacing.lg }}>
+              {t('converter.title')}
+            </Text>
 
-      <Box style={{ marginBottom: spacing.md }}>
-        <Text
-          variant="caption"
-          weight="700"
-          color={hasUsageData ? colors.accent.premium_gold : colors.text.secondary}
-          style={{ marginBottom: spacing.xs }}
-        >
-          {hasUsageData ? t('converter.mostUsed') : t('converter.quickPairs')}
-        </Text>
-        <Box row style={{ gap: spacing.sm }}>
-          {dynamicQuickPairs.map((pair) => (
-            <Pressable key={`${pair.from}-${pair.to}`} onPress={() => setPair(pair)}>
-              <Box style={styles.quickChip}>
-                <Text variant="caption" weight="600" color={colors.text.secondary}>
-                  {pair.from}/{pair.to}
+            <Box style={{ marginBottom: spacing.md }}>
+              <Text
+                variant="caption"
+                weight="700"
+                color={hasUsageData ? colors.accent.premium_gold : colors.text.secondary}
+                style={{ marginBottom: spacing.xs }}
+              >
+                {hasUsageData ? t('converter.mostUsed') : t('converter.quickPairs')}
+              </Text>
+              <Box row style={{ gap: spacing.sm }}>
+                {dynamicQuickPairs.map((pair) => (
+                  <Pressable key={`${pair.from}-${pair.to}`} onPress={() => setPair(pair)}>
+                    <Box style={styles.quickChip}>
+                      <Text variant="caption" weight="600" color={colors.text.secondary}>
+                        {pair.from}/{pair.to}
+                      </Text>
+                    </Box>
+                  </Pressable>
+                ))}
+              </Box>
+            </Box>
+
+            {favoritePairs.length > 0 ? (
+              <Box row style={{ marginBottom: spacing.md, gap: spacing.sm }}>
+                {favoritePairs.map((pair) => (
+                  <Pressable key={`fav-${pair.from}-${pair.to}`} onPress={() => setPair(pair)}>
+                    <Box style={styles.favoriteChip}>
+                      <Text variant="caption" weight="700" color={colors.accent.premium_gold}>
+                        {pair.from}/{pair.to}
+                      </Text>
+                    </Box>
+                  </Pressable>
+                ))}
+              </Box>
+            ) : null}
+
+            <Box style={styles.card}>
+              <Text variant="caption" color={colors.text.secondary} style={styles.label}>{t('converter.amount')}</Text>
+              <TextInput
+                value={amountInput}
+                onChangeText={setAmountInput}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+                blurOnSubmit
+                onSubmitEditing={Keyboard.dismiss}
+                onEndEditing={Keyboard.dismiss}
+                style={styles.amountInput}
+                placeholder={t('converter.amountPlaceholder')}
+                placeholderTextColor={colors.text.muted}
+              />
+
+              <Box row align="center" justify="space-between" style={{ marginTop: spacing.md }}>
+                <Pressable onPress={() => openPicker('from')} style={styles.selectorBtn}>
+                  <Box row align="center">
+                    <Text variant="h3" weight="700">{fromSymbol}</Text>
+                    <ChevronDown size={16} color={colors.text.secondary} style={{ marginLeft: 6 }} />
+                  </Box>
+                </Pressable>
+
+                <Pressable onPress={handleSwap} style={styles.swapBtn}>
+                  <ArrowDownUp size={18} color={colors.text.primary} />
+                </Pressable>
+
+                <Pressable onPress={() => openPicker('to')} style={styles.selectorBtn}>
+                  <Box row align="center">
+                    <Text variant="h3" weight="700">{toSymbol}</Text>
+                    <ChevronDown size={16} color={colors.text.secondary} style={{ marginLeft: 6 }} />
+                  </Box>
+                </Pressable>
+              </Box>
+
+              <Box style={styles.resultBox}>
+                <Box row justify="space-between" align="center">
+                  <Text variant="caption" color={colors.text.secondary}>{t('converter.converted')}</Text>
+                  <Box row align="center" style={{ gap: 8 }}>
+                    <Pressable onPress={toggleFavoritePair}>
+                      <Star
+                        size={16}
+                        color={isFavoritePair ? colors.accent.premium_gold : colors.text.muted}
+                        fill={isFavoritePair ? colors.accent.premium_gold : 'transparent'}
+                      />
+                    </Pressable>
+                    <Pressable onPress={handleCopyResult}>
+                      <Copy size={16} color={colors.text.muted} />
+                    </Pressable>
+                  </Box>
+                </Box>
+                <Text variant="h1" weight="700" style={{ fontSize: 34, marginTop: 4 }}>
+                  {result === null ? '--' : `${formatNumberByLocale(result, 8)} ${toSymbol}`}
                 </Text>
               </Box>
-            </Pressable>
-          ))}
-        </Box>
-      </Box>
 
-      {favoritePairs.length > 0 ? (
-        <Box row style={{ marginBottom: spacing.md, gap: spacing.sm }}>
-          {favoritePairs.map((pair) => (
-            <Pressable key={`fav-${pair.from}-${pair.to}`} onPress={() => setPair(pair)}>
-              <Box style={styles.favoriteChip}>
-                <Text variant="caption" weight="700" color={colors.accent.premium_gold}>
-                  {pair.from}/{pair.to}
-                </Text>
+              <Box row style={{ marginTop: spacing.md, gap: spacing.sm }}>
+                <SourceBadge symbol={fromSymbol} />
+                <SourceBadge symbol={toSymbol} />
               </Box>
-            </Pressable>
-          ))}
-        </Box>
-      ) : null}
-
-      <Box style={styles.card}>
-        <Text variant="caption" color={colors.text.secondary} style={styles.label}>{t('converter.amount')}</Text>
-        <TextInput
-          value={amountInput}
-          onChangeText={setAmountInput}
-          keyboardType="decimal-pad"
-          style={styles.amountInput}
-          placeholder={t('converter.amountPlaceholder')}
-          placeholderTextColor={colors.text.muted}
-        />
-
-        <Box row align="center" justify="space-between" style={{ marginTop: spacing.md }}>
-          <Pressable onPress={() => openPicker('from')} style={styles.selectorBtn}>
-            <Box row align="center">
-              <Text variant="h3" weight="700">{fromSymbol}</Text>
-              <ChevronDown size={16} color={colors.text.secondary} style={{ marginLeft: 6 }} />
             </Box>
-          </Pressable>
 
-          <Pressable onPress={handleSwap} style={styles.swapBtn}>
-            <ArrowDownUp size={18} color={colors.text.primary} />
-          </Pressable>
-
-          <Pressable onPress={() => openPicker('to')} style={styles.selectorBtn}>
-            <Box row align="center">
-              <Text variant="h3" weight="700">{toSymbol}</Text>
-              <ChevronDown size={16} color={colors.text.secondary} style={{ marginLeft: 6 }} />
-            </Box>
-          </Pressable>
-        </Box>
-
-        <Box style={styles.resultBox}>
-          <Box row justify="space-between" align="center">
-            <Text variant="caption" color={colors.text.secondary}>{t('converter.converted')}</Text>
-            <Box row align="center" style={{ gap: 8 }}>
-              <Pressable onPress={toggleFavoritePair}>
-                <Star
-                  size={16}
-                  color={isFavoritePair ? colors.accent.premium_gold : colors.text.muted}
-                  fill={isFavoritePair ? colors.accent.premium_gold : 'transparent'}
-                />
-              </Pressable>
-              <Pressable onPress={handleCopyResult}>
-                <Copy size={16} color={colors.text.muted} />
-              </Pressable>
-            </Box>
-          </Box>
-          <Text variant="h1" weight="700" style={{ fontSize: 34, marginTop: 4 }}>
-            {result === null ? '--' : `${formatNumberByLocale(result, 8)} ${toSymbol}`}
-          </Text>
-        </Box>
-
-        <Box row style={{ marginTop: spacing.md, gap: spacing.sm }}>
-          <SourceBadge symbol={fromSymbol} />
-          <SourceBadge symbol={toSymbol} />
-        </Box>
-      </Box>
-
+            <Box style={{ height: spacing.xl }} />
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+      
       <Modal visible={pickerVisible} transparent animationType="slide">
         <Box flex={1} style={styles.modalOverlay}>
           <Pressable style={{ flex: 1 }} onPress={() => setPickerVisible(false)} />
@@ -504,6 +530,10 @@ export const ConverterScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  contentContainer: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
+  },
   card: {
     backgroundColor: 'rgba(255,255,255,0.03)',
     borderWidth: 1,

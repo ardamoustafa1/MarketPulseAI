@@ -211,8 +211,11 @@ export function computeTotal(data: TransactionFormData): {
  * Maps frontend field names to backend snake_case contract.
  */
 export function buildTransactionPayload(data: TransactionFormData) {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    data.assetId
+  );
   return {
-    asset_id: data.assetId,
+    asset_id: isUuid ? data.assetId : null,
     asset_symbol: data.assetSymbol,
     type: data.type,
     quantity: data.quantity,

@@ -63,9 +63,35 @@ jobs:
           name: backend-coverage-xml
           path: apps/api/coverage.xml
 
+  lint-and-static-analysis:
+    runs-on: ubuntu-latest
+    needs: security-scans
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install monorepo dependencies
+        run: npm ci
+      - name: Run monorepo lint
+        run: npm run lint
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install backend static analysis dependencies
+        working-directory: apps/api
+        run: pip install -r requirements-dev.txt
+      - name: Run Ruff checks
+        working-directory: apps/api
+        run: ruff check app tests
+      - name: Run Mypy checks
+        working-directory: apps/api
+        run: mypy app --config-file mypy.ini
+
   api-readiness-smoke:
     runs-on: ubuntu-latest
-    needs: backend-tests
+    needs: [backend-tests, lint-and-static-analysis]
     steps:
       - uses: actions/checkout@v4
       - name: Boot infra stack for readiness smoke test
@@ -89,7 +115,7 @@ jobs:
 
   frontend-build:
     runs-on: ubuntu-latest
-    needs: [backend-tests, api-readiness-smoke]
+    needs: [backend-tests, lint-and-static-analysis, api-readiness-smoke]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -185,7 +211,7 @@ jobs:
 
   release-notes-check:
     runs-on: ubuntu-latest
-    needs: [security-scans, backend-tests, frontend-build, e2e-api-admin]
+    needs: [security-scans, backend-tests, lint-and-static-analysis, frontend-build, e2e-api-admin]
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
