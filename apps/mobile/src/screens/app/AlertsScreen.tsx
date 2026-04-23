@@ -60,7 +60,9 @@ export const AlertsScreen = ({ navigation }: any) => {
             </Pressable>
             <Switch
               value={alert.is_active}
-              onValueChange={(val) => toggleAlert(alert.id, val)}
+              onValueChange={(val) => {
+                void toggleAlert(alert.id, val);
+              }}
               trackColor={{ false: 'rgba(255,255,255,0.1)', true: colors.sentiment.bull_green }}
               thumbColor={Platform.OS === 'ios' ? '#fff' : (alert.is_active ? '#fff' : '#ccc')}
               ios_backgroundColor="rgba(255,255,255,0.1)"

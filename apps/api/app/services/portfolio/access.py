@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -12,7 +11,7 @@ from app.models.portfolio import Portfolio
 def get_or_create_default_portfolio(db: Session, user_id: UUID) -> Portfolio:
     portfolio = (
         db.query(Portfolio)
-        .filter(Portfolio.user_id == user_id, Portfolio.is_default == True, Portfolio.deleted_at.is_(None))
+        .filter(Portfolio.user_id == user_id, Portfolio.is_default is True, Portfolio.deleted_at.is_(None))
         .first()
     )
     if portfolio:
@@ -25,7 +24,7 @@ def get_or_create_default_portfolio(db: Session, user_id: UUID) -> Portfolio:
     return portfolio
 
 
-def resolve_portfolio(db: Session, user_id: UUID, portfolio_id: Optional[UUID]) -> Portfolio:
+def resolve_portfolio(db: Session, user_id: UUID, portfolio_id: UUID | None) -> Portfolio:
     if portfolio_id is not None:
         p = (
             db.query(Portfolio)

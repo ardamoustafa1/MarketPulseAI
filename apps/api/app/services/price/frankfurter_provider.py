@@ -1,7 +1,6 @@
-from datetime import datetime, timezone
-from decimal import Decimal
-from typing import List
 import logging
+from datetime import UTC, datetime
+from decimal import Decimal
 
 import httpx
 
@@ -26,8 +25,8 @@ class FrankfurterProvider(BasePriceProvider):
     def __init__(self):
         super().__init__(name="frankfurter")
 
-    async def fetch_prices(self, symbols: List[str]) -> List[NormalizedPrice]:
-        prices: List[NormalizedPrice] = []
+    async def fetch_prices(self, symbols: list[str]) -> list[NormalizedPrice]:
+        prices: list[NormalizedPrice] = []
         async with httpx.AsyncClient(
             timeout=settings.PRICE_HTTP_TIMEOUT_SECONDS, follow_redirects=True
         ) as client:
@@ -61,7 +60,7 @@ class FrankfurterProvider(BasePriceProvider):
                         price=price,
                         change_24h=None,
                         asset_type="fiat",
-                        last_updated_at=datetime.now(timezone.utc),
+                        last_updated_at=datetime.now(UTC),
                         source=self.name,
                         is_stale=False,
                     )

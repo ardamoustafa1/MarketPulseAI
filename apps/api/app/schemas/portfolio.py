@@ -1,6 +1,6 @@
-from pydantic import BaseModel
 from decimal import Decimal
-from typing import List, Optional
+
+from pydantic import BaseModel
 
 
 class PortfolioBucket(BaseModel):
@@ -41,8 +41,8 @@ class PortfolioSummary(BaseModel):
     missing_price_positions: int = 0
     stale_price_positions: int = 0
     
-    positions: List[AssetPositionStatus]
-    allocation: List[AssetAllocation]
+    positions: list[AssetPositionStatus]
+    allocation: list[AssetAllocation]
 
     model_config = {
         "json_encoders": {Decimal: str}

@@ -1,14 +1,15 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
 from jose import JWTError
 from pydantic import ValidationError
+
+from app.api.deps import get_ws_manager
 from app.core.config import settings
 from app.core.rate_limit import enforce_rate_limit
 from app.core.security import decode_token
-from app.api.deps import get_ws_manager
-from app.services.websocket.manager import ConnectionManager
-from app.services.websocket.dispatcher import WebSocketDispatcher
 from app.schemas.websocket import WSMessageIn
 from app.services.websocket.connection import FastAPIWebSocketConnection
+from app.services.websocket.dispatcher import WebSocketDispatcher
+from app.services.websocket.manager import ConnectionManager
 
 router = APIRouter()
 

@@ -1,32 +1,32 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.exceptions import RequestValidationError
-from contextlib import asynccontextmanager
 import logging
 import time
+from contextlib import asynccontextmanager
 from uuid import uuid4
 
 import sentry_sdk
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
-from app.core.config import settings
-from app.core.security import validate_secret_strength
+from app.api.deps import get_ws_manager
 from app.api.v1.api import api_router
+from app.core.config import settings
+from app.core.exceptions import (
+    BusinessRuleException,
+    EntityNotFoundException,
+    ForbiddenException,
+    UnauthorizedException,
+)
+from app.core.security import validate_secret_strength
+from app.db.redis import redis_pool
+from app.db.session import engine
 from app.observability.metrics import record_request
-from app.services.price.scheduler import global_price_scheduler
 from app.services.alert.evaluator import global_alert_evaluator
 from app.services.jobs.queue import global_job_worker
-from app.api.deps import get_ws_manager
+from app.services.price.scheduler import global_price_scheduler
 from app.services.websocket.redis_listener import RedisWebSocketBridge
-from app.db.session import engine
-from app.db.redis import redis_pool
-from app.core.exceptions import (
-    EntityNotFoundException,
-    BusinessRuleException,
-    UnauthorizedException,
-    ForbiddenException
-)
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +135,11 @@ async def business_rule_exception_handler(request: Request, exc: BusinessRuleExc
 
 @app.exception_handler(UnauthorizedException)
 async def unauthorized_exception_handler(request: Request, exc: UnauthorizedException):
-    return JSONResponse(status_code=exc.status_code, content={"message": exc.detail, "error": "Unauthorized"}, headers=exc.headers)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"message": exc.detail, "error": "Unauthorized"},
+        headers=exc.headers,
+    )
 
 @app.exception_handler(ForbiddenException)
 async def forbidden_exception_handler(request: Request, exc: ForbiddenException):

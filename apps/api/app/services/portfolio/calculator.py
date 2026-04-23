@@ -1,8 +1,9 @@
-from decimal import Decimal, InvalidOperation
-from typing import List, Dict, Optional
 from dataclasses import dataclass
+from decimal import Decimal
 from enum import Enum
-from app.schemas.portfolio import AssetPositionStatus, PortfolioSummary, AssetAllocation
+
+from app.schemas.portfolio import AssetAllocation, AssetPositionStatus, PortfolioSummary
+
 
 class TransactionType(str, Enum):
     buy = "buy"
@@ -24,8 +25,8 @@ class PortfolioCalculationEngine:
     @staticmethod
     def calculate_asset_position(
         symbol: str, 
-        transactions: List[TransactionDTO], 
-        current_price: Optional[Decimal] = None,
+        transactions: list[TransactionDTO], 
+        current_price: Decimal | None = None,
         has_live_price: bool = True,
         is_stale_price: bool = False,
     ) -> AssetPositionStatus:
@@ -96,7 +97,7 @@ class PortfolioCalculationEngine:
 
     @staticmethod
     def calculate_portfolio_summary(
-        positions: List[AssetPositionStatus]
+        positions: list[AssetPositionStatus]
     ) -> PortfolioSummary:
         """
         Aggregates all calculated asset positions into a combined Portfolio Summary,

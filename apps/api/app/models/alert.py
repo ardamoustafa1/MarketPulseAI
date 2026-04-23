@@ -1,6 +1,9 @@
-from sqlalchemy import Column, String, Boolean, ForeignKey, Numeric, Enum, JSON
-from app.db.base_class import Base
 import enum
+
+from sqlalchemy import JSON, Boolean, Column, Enum, ForeignKey, Numeric, String
+
+from app.db.base_class import Base
+
 
 class ConditionEnum(str, enum.Enum):
     greater_than = "gt"

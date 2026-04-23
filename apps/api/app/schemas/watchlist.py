@@ -1,15 +1,15 @@
+
 from pydantic import BaseModel, ConfigDict
-from typing import List, Optional
-import uuid
+
 
 class WatchlistAssetResponse(BaseModel):
     id: str
     symbol: str
     name: str
     type: str
-    price: Optional[float] = None
-    change_24h_percent: Optional[float] = None
-    image_url: Optional[str] = None
+    price: float | None = None
+    change_24h_percent: float | None = None
+    image_url: str | None = None
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -17,6 +17,6 @@ class WatchlistResponse(BaseModel):
     id: str
     name: str
     user_id: str
-    assets: List[WatchlistAssetResponse]
+    assets: list[WatchlistAssetResponse]
 
     model_config = ConfigDict(from_attributes=True)

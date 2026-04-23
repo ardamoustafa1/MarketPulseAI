@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { StyleSheet, Modal, Pressable } from 'react-native';
 import Animated, {
   FadeIn,
-  FadeOut,
   ZoomIn,
   SlideInUp,
   useAnimatedStyle,
@@ -11,7 +10,6 @@ import Animated, {
   withSpring,
   withSequence,
   withTiming,
-  runOnJS,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Box } from '../ui/Box';
@@ -50,7 +48,7 @@ export const TransactionSuccessOverlay: React.FC<SuccessOverlayProps> = ({
       ringScale.value = 0;
       pulseOpacity.value = 0;
     }
-  }, [visible]);
+  }, [visible, ringScale, pulseOpacity]);
 
   const ringStyle = useAnimatedStyle(() => ({
     transform: [{ scale: ringScale.value }],

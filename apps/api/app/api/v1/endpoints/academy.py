@@ -6,7 +6,6 @@ next iteration (authoring CMS) will emit, so clients never need to change.
 When a DB-backed Academy is added later, swap `_SEED_ARTICLES` for a query
 without touching the route or schema.
 """
-from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -25,8 +24,8 @@ class AcademyArticle(BaseModel):
     subtitle: str
     read_time_minutes: int
     hero_color: str
-    cards: List[AcademyCard]
-    tags: List[str] = Field(default_factory=list)
+    cards: list[AcademyCard]
+    tags: list[str] = Field(default_factory=list)
 
 
 class AcademyArticleSummary(BaseModel):
@@ -37,10 +36,10 @@ class AcademyArticleSummary(BaseModel):
     subtitle: str
     read_time_minutes: int
     hero_color: str
-    tags: List[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
 
 
-_SEED_ARTICLES: List[AcademyArticle] = [
+_SEED_ARTICLES: list[AcademyArticle] = [
     AcademyArticle(
         slug="dca-101",
         locale="tr",
@@ -324,7 +323,7 @@ _SEED_ARTICLES: List[AcademyArticle] = [
 ]
 
 
-def _filter(locale: Optional[str], category: Optional[str]) -> List[AcademyArticle]:
+def _filter(locale: str | None, category: str | None) -> list[AcademyArticle]:
     items = _SEED_ARTICLES
     if locale:
         items = [a for a in items if a.locale == locale.lower()]
@@ -336,8 +335,8 @@ def _filter(locale: Optional[str], category: Optional[str]) -> List[AcademyArtic
 router = APIRouter()
 
 
-@router.get("/articles", response_model=List[AcademyArticleSummary])
-def list_articles(locale: Optional[str] = None, category: Optional[str] = None):
+@router.get("/articles", response_model=list[AcademyArticleSummary])
+def list_articles(locale: str | None = None, category: str | None = None):
     """Browse-friendly summaries grouped by locale/category."""
     items = _filter(locale, category)
     return [

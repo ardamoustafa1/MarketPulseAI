@@ -1,21 +1,22 @@
+import hmac
 from datetime import datetime
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
-import hmac
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+
 from app.api.deps import get_current_admin, get_db
+from app.core.config import settings
+from app.core.security import verify_totp_code
 from app.models.alert import AiInsight
 from app.models.asset import Asset, AssetTypeEnum
 from app.models.audit import AdminAction
 from app.models.portfolio import Portfolio, Transaction
-from app.models.user import User, RefreshToken
+from app.models.user import RefreshToken, User
 from app.services.audit_service import AuditService
-from app.core.config import settings
-from app.core.security import verify_totp_code
 
 router = APIRouter()
 
@@ -180,7 +181,7 @@ def update_admin_user(
     try:
         parsed_id = UUID(user_id)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id") from None
     user = db.query(User).filter(User.id == parsed_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -300,7 +301,7 @@ def update_admin_asset(
     try:
         parsed_id = UUID(asset_id)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid asset id")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid asset id") from None
     asset = db.query(Asset).filter(Asset.id == parsed_id).first()
     if not asset:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
@@ -320,7 +321,14 @@ def update_admin_asset(
         action="admin.asset.updated",
         entity_table="assets",
         entity_id=str(asset.id),
-        details={"before": before, "after": {"name": asset.name, "is_active": asset.is_active, "image_url": asset.image_url}},
+        details={
+            "before": before,
+            "after": {
+                "name": asset.name,
+                "is_active": asset.is_active,
+                "image_url": asset.image_url,
+            },
+        },
         actor=current_admin,
     )
     db.commit()
@@ -383,7 +391,10 @@ def delete_admin_transaction(
     try:
         parsed_id = UUID(transaction_id)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid transaction id")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid transaction id",
+        ) from None
     tx = db.query(Transaction).filter(Transaction.id == parsed_id).first()
     if not tx:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found")
@@ -424,7 +435,15 @@ def read_admin_audit_timeline(
     )
     from app.models.audit import AuditLog
     audit_log_rows = (
-        db.query(AuditLog.id, AuditLog.created_at, AuditLog.action, AuditLog.entity_table, AuditLog.entity_id, AuditLog.details, User.email)
+        db.query(
+            AuditLog.id,
+            AuditLog.created_at,
+            AuditLog.action,
+            AuditLog.entity_table,
+            AuditLog.entity_id,
+            AuditLog.details,
+            User.email,
+        )
         .outerjoin(User, User.id == AuditLog.user_id)
         .order_by(AuditLog.created_at.desc())
         .limit(safe_limit)
@@ -529,9 +548,12 @@ def revoke_refresh_tokens(
         try:
             target_user_id = UUID(payload.user_id)
         except ValueError:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid user id",
+            ) from None
 
-    query = db.query(RefreshToken).filter(RefreshToken.revoked == False)
+    query = db.query(RefreshToken).filter(RefreshToken.revoked is False)
     if target_user_id:
         query = query.filter(RefreshToken.user_id == target_user_id)
 

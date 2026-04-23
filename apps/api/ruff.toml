@@ -1,6 +1,16 @@
 target-version = "py311"
-line-length = 100
+line-length = 120
 exclude = ["alembic"]
 
 [lint]
 select = ["E", "F", "I", "B", "UP"]
+# B008 flags `Depends(...)`, `Query(...)`, `Header(...)` etc. as
+# function-call-in-default-argument — this is the official FastAPI idiom, so we
+# opt out globally rather than decorate every endpoint.
+ignore = ["B008"]
+
+[lint.per-file-ignores]
+# Public re-export surfaces: unused imports here are intentional module APIs.
+"**/__init__.py" = ["F401"]
+# Alembic revisions lean on long auto-generated SQL strings.
+"alembic/versions/*.py" = ["E501"]

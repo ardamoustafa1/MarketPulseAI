@@ -40,7 +40,7 @@ export const FifoSummaryScreen = ({ navigation }: { navigation: { goBack: () => 
     } finally {
       setLoading(false);
     }
-  }, [activePortfolioId]);
+  }, [activePortfolioId, t]);
 
   useEffect(() => {
     void load();

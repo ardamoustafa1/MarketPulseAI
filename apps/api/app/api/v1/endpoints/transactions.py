@@ -1,8 +1,7 @@
 import csv
 import io
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -12,25 +11,25 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
+from app.db.redis import get_redis_client
 from app.models.asset import Asset
 from app.models.portfolio import Portfolio, Transaction, TransactionTypeEnum
 from app.models.user import User
-from app.services.portfolio.access import resolve_portfolio
 from app.services.jobs.queue import enqueue_job, get_job_result, register_job_handler
-from app.db.redis import get_redis_client
+from app.services.portfolio.access import resolve_portfolio
 
 router = APIRouter()
 
 
 class TransactionCreateRequest(BaseModel):
-    asset_id: Optional[str] = None
-    asset_symbol: Optional[str] = None
+    asset_id: str | None = None
+    asset_symbol: str | None = None
     type: TransactionTypeEnum
     quantity: Decimal
     price: Decimal
-    notes: Optional[str] = None
+    notes: str | None = None
     transaction_date: datetime
-    portfolio_id: Optional[UUID] = None
+    portfolio_id: UUID | None = None
 
 
 class TransactionResponse(BaseModel):
@@ -41,7 +40,7 @@ class TransactionResponse(BaseModel):
     quantity: Decimal
     price: Decimal
     fee: Decimal
-    notes: Optional[str]
+    notes: str | None
     transaction_date: datetime
     created_at: datetime
 
@@ -59,7 +58,7 @@ class TaxReportSummary(BaseModel):
 
 class TaxReportAsyncRequest(BaseModel):
     country: str = "TR"
-    portfolio_id: Optional[UUID] = None
+    portfolio_id: UUID | None = None
     report_pack: str = "standard"
 
 
@@ -147,7 +146,7 @@ def _build_tax_report(rows, country: str) -> tuple[str, TaxReportSummary]:
 def read_transactions(
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
-    portfolio_id: Optional[UUID] = Query(None),
+    portfolio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -167,7 +166,7 @@ def read_transactions(
 
 @router.get("/export/csv")
 def export_transactions_csv(
-    portfolio_id: Optional[UUID] = Query(None),
+    portfolio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -225,7 +224,7 @@ def export_transactions_csv(
 @router.get("/export/tax-report")
 def export_tax_report(
     country: str = Query("TR"),
-    portfolio_id: Optional[UUID] = Query(None),
+    portfolio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -253,7 +252,7 @@ def export_tax_report(
 def export_report_pack(
     country: str = Query("TR"),
     pack: str = Query("standard"),
-    portfolio_id: Optional[UUID] = Query(None),
+    portfolio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -286,7 +285,7 @@ def export_report_pack(
 
 @router.get("/export/pdf")
 def export_transactions_pdf(
-    portfolio_id: Optional[UUID] = Query(None),
+    portfolio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -300,7 +299,10 @@ def export_transactions_pdf(
     )
     lines = ["MarketPulse Statement", f"portfolio={portfolio.name}", f"row_count={len(rows)}", ""]
     for tx, symbol in rows[:300]:
-        lines.append(f"{tx.transaction_date.isoformat()} | {symbol} | {tx.type.value} | qty={tx.quantity} | price={tx.price or Decimal('0')}")
+        lines.append(
+            f"{tx.transaction_date.isoformat()} | {symbol} | {tx.type.value} "
+            f"| qty={tx.quantity} | price={tx.price or Decimal('0')}"
+        )
     content = "\n".join(lines)
     filename = f"marketpulse-statement-{portfolio.id}.pdf"
     return StreamingResponse(
@@ -403,7 +405,7 @@ async def create_transaction(
 
     normalized_transaction_date = payload.transaction_date
     if normalized_transaction_date.tzinfo is None:
-        normalized_transaction_date = normalized_transaction_date.replace(tzinfo=timezone.utc)
+        normalized_transaction_date = normalized_transaction_date.replace(tzinfo=UTC)
 
     tx = Transaction(
         portfolio_id=portfolio.id,

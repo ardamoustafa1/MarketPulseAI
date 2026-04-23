@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, ViewProps, StyleSheet } from 'react-native';
+import { View, ViewProps } from 'react-native';
 
 interface BoxProps extends ViewProps {
   flex?: number;
   row?: boolean;
   center?: boolean;
   justify?: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around';
-  align?: 'flex-start' | 'center' | 'flex-end' | 'stretch';
+  align?: 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'baseline';
   padding?: number;
   margin?: number;
   bg?: string;

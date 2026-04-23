@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
 import re
-from typing import Any, Optional
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
+from typing import Any
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -11,17 +11,16 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_admin, get_current_user, get_db
+from app.api.v1.endpoints.portfolio import _build_summary_for_portfolio
+from app.core.config import settings
 from app.models.alert import Alert
 from app.models.audit import AuditLog
-from app.models.asset import Asset
 from app.models.billing import PublicPortfolioSnapshot
-from app.models.portfolio import Portfolio, Transaction, TransactionTypeEnum
+from app.models.portfolio import Portfolio, Transaction
 from app.models.push_device import PushDevice
 from app.models.user import User
-from app.core.config import settings
 from app.services.audit_service import AuditService
 from app.services.portfolio.access import resolve_portfolio
-from app.api.v1.endpoints.portfolio import _build_summary_for_portfolio
 
 router = APIRouter()
 EVENT_NAME_REGEX = re.compile(r"^[a-z0-9]+(?:[._-][a-z0-9]+){0,9}$")
@@ -148,7 +147,7 @@ def _rank_actions_for_user(
 ) -> list[StrategyAction]:
     if not actions:
         return actions
-    seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
+    seven_days_ago = datetime.now(UTC) - timedelta(days=7)
     try:
         recent_events = (
             db.query(AuditLog.action, AuditLog.created_at)
@@ -187,7 +186,7 @@ def _rank_actions_for_user(
 
 @router.get("/coach-loop", response_model=CoachLoopResponse)
 async def coach_loop(
-    portfolio_id: Optional[UUID] = Query(None),
+    portfolio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -195,7 +194,7 @@ async def coach_loop(
     summary = await _build_summary_for_portfolio(db, portfolio)
     active_alerts = (
         db.query(Alert)
-        .filter(Alert.user_id == current_user.id, Alert.is_active == True)
+        .filter(Alert.user_id == current_user.id, Alert.is_active is True)
         .count()
     )
     goals = _fetch_latest_goals(db, current_user.id)
@@ -280,7 +279,7 @@ def apply_coach_action(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    details = {"action_id": action_id, "payload": payload or {}, "applied_at": datetime.now(timezone.utc).isoformat()}
+    details = {"action_id": action_id, "payload": payload or {}, "applied_at": datetime.now(UTC).isoformat()}
     AuditService(db).log(
         action="strategy.coach_action.applied",
         entity_table="users",
@@ -340,7 +339,7 @@ def upsert_goals(
 
 @router.get("/risk-report", response_model=RiskReportResponse)
 async def risk_report(
-    portfolio_id: Optional[UUID] = Query(None),
+    portfolio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -382,13 +381,13 @@ async def risk_report(
 
 @router.post("/public-snapshot/create", response_model=PublicSnapshotCreateResponse)
 def create_public_snapshot(
-    portfolio_id: Optional[UUID] = Query(None),
+    portfolio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     portfolio = resolve_portfolio(db, current_user.id, portfolio_id)
     token = str(uuid4())
-    expires_at = datetime.now(timezone.utc) + timedelta(hours=settings.PUBLIC_SNAPSHOT_EXPIRE_HOURS)
+    expires_at = datetime.now(UTC) + timedelta(hours=settings.PUBLIC_SNAPSHOT_EXPIRE_HOURS)
     snapshot = PublicPortfolioSnapshot(
         share_token=token,
         user_id=current_user.id,
@@ -421,11 +420,15 @@ async def read_public_snapshot(share_token: str, db: Session = Depends(get_db)):
         .filter(PublicPortfolioSnapshot.share_token == share_token)
         .first()
     )
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if not snapshot or snapshot.revoked_at is not None or snapshot.expires_at < now:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Snapshot not found.")
 
-    portfolio = db.query(Portfolio).filter(Portfolio.id == snapshot.portfolio_id, Portfolio.deleted_at.is_(None)).first()
+    portfolio = (
+        db.query(Portfolio)
+        .filter(Portfolio.id == snapshot.portfolio_id, Portfolio.deleted_at.is_(None))
+        .first()
+    )
     if not portfolio:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found.")
     summary = await _build_summary_for_portfolio(db, portfolio)
@@ -456,7 +459,7 @@ def revoke_public_snapshot(
     )
     if not snapshot:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Snapshot not found.")
-    snapshot.revoked_at = datetime.now(timezone.utc)
+    snapshot.revoked_at = datetime.now(UTC)
     db.add(snapshot)
     AuditService(db).log(
         action="strategy.public_snapshot.revoked",
@@ -471,12 +474,12 @@ def revoke_public_snapshot(
 
 @router.post("/public-snapshot/rotate", response_model=PublicSnapshotRotateResponse)
 def rotate_public_snapshot(
-    portfolio_id: Optional[UUID] = Query(None),
+    portfolio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     portfolio = resolve_portfolio(db, current_user.id, portfolio_id)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     active_rows = (
         db.query(PublicPortfolioSnapshot)
         .filter(
@@ -511,7 +514,7 @@ def rotate_public_snapshot(
 @router.post("/what-if", response_model=WhatIfResponse)
 async def what_if_simulation(
     payload: WhatIfRequest,
-    portfolio_id: Optional[UUID] = Query(None),
+    portfolio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -524,7 +527,11 @@ async def what_if_simulation(
         projected_volatility = current_volatility
     else:
         total = sum(target_values)
-        max_target = (max(target_values) / total * Decimal("100")).quantize(Decimal("0.01")) if total > 0 else Decimal("0")
+        max_target = (
+            (max(target_values) / total * Decimal("100")).quantize(Decimal("0.01"))
+            if total > 0
+            else Decimal("0")
+        )
         projected_concentration = max_target
         concentration_delta = (current_concentration - projected_concentration) / Decimal("4")
         projected_volatility = max(Decimal("0"), (current_volatility - concentration_delta)).quantize(Decimal("0.01"))
@@ -549,11 +556,11 @@ def north_star_metrics(
     current_admin: User = Depends(get_current_admin),
 ):
     _ = current_admin
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     last_7 = now - timedelta(days=7)
     last_30 = now - timedelta(days=30)
 
-    total_users = db.query(User).filter(User.is_active == True).count()
+    total_users = db.query(User).filter(User.is_active is True).count()
     activated_users = (
         db.query(Portfolio.user_id)
         .join(Transaction, Transaction.portfolio_id == Portfolio.id)
@@ -599,10 +606,10 @@ def north_star_metrics(
     )
     funnel_conversion = round((coach_action_users / coach_open_users) * 100, 2) if coach_open_users else 0
 
-    cohort_rows = db.query(User).filter(User.is_active == True).all()
+    cohort_rows = db.query(User).filter(User.is_active is True).all()
     cohort_metrics: dict[str, dict[str, float | int]] = {}
     for user in cohort_rows:
-        created_at = user.created_at.replace(tzinfo=timezone.utc) if user.created_at.tzinfo is None else user.created_at
+        created_at = user.created_at.replace(tzinfo=UTC) if user.created_at.tzinfo is None else user.created_at
         cohort_key = f"{created_at.year}-W{created_at.isocalendar().week:02d}"
         if cohort_key not in cohort_metrics:
             cohort_metrics[cohort_key] = {

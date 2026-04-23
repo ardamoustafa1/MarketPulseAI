@@ -1,7 +1,8 @@
-from pydantic import BaseModel, EmailStr, ConfigDict, Field, constr
-from uuid import UUID
 from datetime import datetime
-from typing import Optional
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, constr
+
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -15,11 +16,11 @@ class UserCreate(UserBase):
     )
 
 class UserUpdate(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    password: Optional[constr(min_length=12, max_length=128)] = None
-    current_password: Optional[constr(min_length=1, max_length=128)] = None
-    step_up_token: Optional[str] = None
+    first_name: str | None = None
+    last_name: str | None = None
+    password: constr(min_length=12, max_length=128) | None = None
+    current_password: constr(min_length=1, max_length=128) | None = None
+    step_up_token: str | None = None
 
 class UserInDBBase(UserBase):
     id: UUID

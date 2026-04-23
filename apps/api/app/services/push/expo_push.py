@@ -1,5 +1,4 @@
 import logging
-from typing import List
 from uuid import UUID
 
 import httpx
@@ -13,7 +12,7 @@ EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send"
 
 
 async def send_expo_push(
-    tokens: List[str],
+    tokens: list[str],
     title: str,
     body: str,
     data: dict | None = None,

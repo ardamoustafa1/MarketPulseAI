@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
-from app.core.config import settings
-from app.services.price.scheduler import aggregated_provider
-from app.db.session import engine
-from app.db.redis import get_redis_client
-from app.observability.metrics import release_gate_status, slo, snapshot
+
 from app.api.deps import get_current_admin
+from app.core.config import settings
+from app.db.redis import get_redis_client
+from app.db.session import engine
 from app.models.user import User
+from app.observability.metrics import release_gate_status, slo, snapshot
+from app.services.price.scheduler import aggregated_provider
 
 router = APIRouter()
 

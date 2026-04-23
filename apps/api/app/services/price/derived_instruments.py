@@ -1,6 +1,5 @@
+from datetime import UTC, datetime
 from decimal import Decimal
-from datetime import datetime, timezone
-from typing import Dict, List
 
 from app.schemas.price import NormalizedPrice
 
@@ -8,7 +7,7 @@ TROY_OUNCE_IN_GRAMS = Decimal("31.1034768")
 TROY_OUNCE_IN_KILOGRAM = Decimal("32.1507466")
 
 
-def _to_map(prices: List[NormalizedPrice]) -> Dict[str, NormalizedPrice]:
+def _to_map(prices: list[NormalizedPrice]) -> dict[str, NormalizedPrice]:
     return {p.symbol.upper(): p for p in prices}
 
 
@@ -28,13 +27,13 @@ def _build(
         price=price,
         change_24h=change_24h,
         asset_type=asset_type,
-        last_updated_at=datetime.now(timezone.utc),
+        last_updated_at=datetime.now(UTC),
         source=source,
         is_stale=False,
     )
 
 
-def build_derived_prices(base_prices: List[NormalizedPrice]) -> List[NormalizedPrice]:
+def build_derived_prices(base_prices: list[NormalizedPrice]) -> list[NormalizedPrice]:
     by_symbol = _to_map(base_prices)
     xau = by_symbol.get("XAU")
     xag = by_symbol.get("XAG")
@@ -46,7 +45,7 @@ def build_derived_prices(base_prices: List[NormalizedPrice]) -> List[NormalizedP
     if not xau:
         return []
 
-    derived: List[NormalizedPrice] = []
+    derived: list[NormalizedPrice] = []
     xau_change = _as_decimal(xau.change_24h)
     usdtry_change = _as_decimal(usdtry.change_24h if usdtry else Decimal("0"))
 

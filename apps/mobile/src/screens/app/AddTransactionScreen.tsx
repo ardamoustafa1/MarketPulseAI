@@ -3,7 +3,7 @@ import {
   ScrollView, Pressable, StyleSheet, Platform,
   TextInput, KeyboardAvoidingView, Keyboard, View, Alert
 } from 'react-native';
-import Animated, { FadeInUp, FadeIn, ZoomIn, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,7 +25,6 @@ import {
   ArrowUpRight,
   Calendar,
   ChevronDown,
-  FileText,
   DollarSign,
   Hash,
   Percent,
@@ -41,9 +40,9 @@ export const AddTransactionScreen = ({ navigation }: any) => {
 
   // ── Form Hook ──
   const {
-    form, errors, touched, isDirty, isValid, total,
+    form, errors, touched, isDirty, total,
     updateField, updateDecimalField, markTouched,
-    setType, selectAsset, setDate,
+    setType, selectAsset,
     validateAll, reset, getVisibleError,
   } = useTransactionForm();
 
@@ -86,7 +85,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
       // Scroll up to show errors
       scrollRef.current?.scrollTo({ y: 0, animated: true });
     }
-  }, [validateAll, form.quantity, form.unitPrice, form.type]);
+  }, [validateAll, form.quantity, form.unitPrice, form.type, t]);
 
   const handleConfirm = useCallback(async () => {
     const result = await submitTransaction(form);
@@ -121,7 +120,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
     } else {
       navigation?.goBack();
     }
-  }, [isDirty, navigation]);
+  }, [isDirty, navigation, t]);
 
   const handleReset = useCallback(() => {
     if (isDirty) {
@@ -130,7 +129,7 @@ export const AddTransactionScreen = ({ navigation }: any) => {
         { text: t('addTx.reset'), style: 'destructive', onPress: reset }
       ]);
     }
-  }, [isDirty, reset]);
+  }, [isDirty, reset, t]);
 
   // ── Success Dismiss ──
   const handleSuccessDismiss = useCallback(() => {
@@ -139,7 +138,6 @@ export const AddTransactionScreen = ({ navigation }: any) => {
   }, [navigation]);
 
   const isBuy = form.type === 'buy';
-  const accentColor = isBuy ? colors.sentiment.bull_green : colors.sentiment.bear_red;
 
   return (
     <Box flex={1} bg={colors.background.base}>

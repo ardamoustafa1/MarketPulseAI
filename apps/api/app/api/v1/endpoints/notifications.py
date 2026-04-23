@@ -1,13 +1,13 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Body, Depends, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db, get_current_user, get_current_admin
+from app.api.deps import get_current_admin, get_current_user, get_db
 from app.models.audit import AuditLog
 from app.models.portfolio import Portfolio, Transaction
-from app.models.user import User
 from app.models.push_device import PushDevice
+from app.models.user import User
 from app.schemas.notifications import PushTokenRegister, PushTokenUnregister
 from app.services.audit_service import AuditService
 
@@ -59,7 +59,7 @@ def weekly_summary(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
+    seven_days_ago = datetime.now(UTC) - timedelta(days=7)
     tx_count = (
         db.query(Transaction)
         .join(Portfolio, Portfolio.id == Transaction.portfolio_id)
@@ -77,7 +77,11 @@ def weekly_summary(
     )
     insight_count = (
         db.query(AuditLog)
-        .filter(AuditLog.user_id == current_user.id, AuditLog.action.like("insight.%"), AuditLog.created_at >= seven_days_ago)
+        .filter(
+            AuditLog.user_id == current_user.id,
+            AuditLog.action.like("insight.%"),
+            AuditLog.created_at >= seven_days_ago,
+        )
         .count()
     )
     risk_events = (
@@ -115,7 +119,7 @@ def run_reengagement_campaign(
     db: Session = Depends(get_db),
     current_admin: User = Depends(get_current_admin),
 ):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     stale_cutoff = now - timedelta(days=14)
     active_recent = (
         db.query(AuditLog.user_id)

@@ -1,8 +1,9 @@
 import logging
-from typing import Callable, Dict, Awaitable
-from app.schemas.websocket import WSMessageIn, WSActionEnum
-from app.services.websocket.manager import ConnectionManager
+from collections.abc import Awaitable, Callable
+
+from app.schemas.websocket import WSActionEnum, WSMessageIn
 from app.services.websocket.connection import IConnection
+from app.services.websocket.manager import ConnectionManager
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ class WebSocketDispatcher:
     """
     def __init__(self, manager: ConnectionManager):
         self.manager = manager
-        self._handlers: Dict[WSActionEnum, EventHandler] = {
+        self._handlers: dict[WSActionEnum, EventHandler] = {
             WSActionEnum.ping: self._handle_ping,
             WSActionEnum.subscribe: self._handle_subscribe,
             WSActionEnum.unsubscribe: self._handle_unsubscribe,

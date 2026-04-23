@@ -19,7 +19,6 @@ import {
   TrendingUp,
   Star,
   ShieldAlert,
-  Info,
   AlertTriangle,
 } from 'lucide-react-native';
 import { useInsightStore, InsightCard } from '../../store/useInsightStore';
@@ -142,7 +141,7 @@ export const InsightsScreen = ({ navigation }: any) => {
 
   useEffect(() => {
     fetchLatestInsight();
-  }, []);
+  }, [fetchLatestInsight]);
 
   const handleGenerate = async () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);

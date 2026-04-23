@@ -37,6 +37,7 @@ services:
     build:
       context: ../apps/api
       dockerfile: Dockerfile
+      target: ${API_BUILD_TARGET:-dev}
     container_name: marketpulse_api
     restart: unless-stopped
     depends_on:
@@ -88,6 +89,7 @@ services:
     build:
       context: ../apps/api
       dockerfile: Dockerfile
+      target: ${API_BUILD_TARGET:-dev}
     container_name: marketpulse_api_worker
     restart: unless-stopped
     depends_on:

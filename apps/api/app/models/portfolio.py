@@ -1,7 +1,19 @@
-from sqlalchemy import Column, String, Boolean, ForeignKey, Numeric, DateTime, Enum, UniqueConstraint
-from sqlalchemy.orm import relationship
 import enum
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Numeric,
+    String,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import relationship
+
 from app.db.base_class import Base
+
 
 class TransactionTypeEnum(str, enum.Enum):
     buy = "buy"

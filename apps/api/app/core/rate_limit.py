@@ -1,5 +1,7 @@
-from fastapi import HTTPException, Request, status
 import ipaddress
+
+from fastapi import HTTPException, Request, status
+
 from app.core.config import settings
 from app.db.redis import get_redis_client
 
@@ -25,7 +27,10 @@ def get_client_ip(request: Request) -> str:
     if settings.TRUSTED_PROXY_CIDRS:
         try:
             peer_obj = ipaddress.ip_address(peer_ip)
-            peer_trusted = any(peer_obj in ipaddress.ip_network(cidr, strict=False) for cidr in settings.TRUSTED_PROXY_CIDRS)
+            peer_trusted = any(
+                peer_obj in ipaddress.ip_network(cidr, strict=False)
+                for cidr in settings.TRUSTED_PROXY_CIDRS
+            )
         except ValueError:
             peer_trusted = False
     if settings.TRUST_PROXY_HEADERS:

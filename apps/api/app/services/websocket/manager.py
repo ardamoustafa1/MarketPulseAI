@@ -1,7 +1,7 @@
 import logging
-from typing import Dict, Set
 from datetime import datetime
-from app.schemas.websocket import WSMessageOut, WSActionEnum
+
+from app.schemas.websocket import WSActionEnum, WSMessageOut
 from app.services.websocket.connection import IConnection
 
 logger = logging.getLogger(__name__)
@@ -12,8 +12,8 @@ class ConnectionManager:
     Instantiated once per application lifecycle (Singleton via DI).
     """
     def __init__(self):
-        self._active_connections: Dict[IConnection, str] = {}
-        self._subscriptions: Dict[str, Set[IConnection]] = {}
+        self._active_connections: dict[IConnection, str] = {}
+        self._subscriptions: dict[str, set[IConnection]] = {}
 
     def connect(self, connection: IConnection, user_id: str):
         # Socket acceptance is handled outside, manager just registers state

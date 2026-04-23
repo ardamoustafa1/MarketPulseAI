@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, Pressable, Platform, Modal, TextInput, Keyboard, ActivityIndicator } from 'react-native';
-import Animated, { FadeInUp, FadeInDown, FadeIn } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,7 +10,7 @@ import { AssetPickerSheet, AssetItem } from '../transaction/AssetPickerSheet';
 import { useAlertStore, AlertCondition } from '../../store/useAlertStore';
 import { useMarketDataStore } from '../../store/useMarketDataStore';
 import { colors, radius, spacing } from '../../theme';
-import { X, Search, BellRing, Target, Percent, ArrowUpRight, ArrowDownRight, ChevronDown } from 'lucide-react-native';
+import { X, BellRing, Target, Percent, ArrowUpRight, ArrowDownRight, ChevronDown } from 'lucide-react-native';
 
 interface CreateAlertSheetProps {
   visible: boolean;

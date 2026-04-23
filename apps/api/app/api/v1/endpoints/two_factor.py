@@ -4,7 +4,7 @@ from __future__ import annotations
 import base64
 import os
 import secrets
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -107,7 +107,7 @@ def totp_verify(
         )
 
     current_user.totp_enabled = True
-    current_user.totp_confirmed_at = datetime.now(timezone.utc)
+    current_user.totp_confirmed_at = datetime.now(UTC)
     db.commit()
     db.refresh(current_user)
     return TotpStatusResponse(
@@ -144,5 +144,13 @@ def totp_disable(
     return TotpStatusResponse(enabled=False, confirmed_at=None)
 
 
-__all__ = ["router", "TotpSetupResponse", "TotpVerifyRequest", "TotpDisableRequest", "TotpStatusResponse", "_generate_base32_secret", "_otpauth_url"]
+__all__ = [
+    "router",
+    "TotpSetupResponse",
+    "TotpVerifyRequest",
+    "TotpDisableRequest",
+    "TotpStatusResponse",
+    "_generate_base32_secret",
+    "_otpauth_url",
+]
 _ = secrets  # kept for future recovery-code generation; silence unused-import warnings

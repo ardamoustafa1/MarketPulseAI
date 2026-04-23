@@ -1,12 +1,14 @@
-from typing import List
+import hmac
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user, RoleChecker
-from app.schemas.user import User as UserSchema, UserUpdate
-from app.models.user import User
-from app.core.security import get_password_hash, verify_password
+
+from app.api.deps import RoleChecker, get_current_user, get_db
 from app.core.config import settings
-import hmac
+from app.core.security import get_password_hash, verify_password
+from app.models.user import User
+from app.schemas.user import User as UserSchema
+from app.schemas.user import UserUpdate
 
 router = APIRouter()
 
@@ -40,7 +42,7 @@ def update_user_me(
     db.refresh(current_user)
     return current_user
 
-@router.get("/", response_model=List[UserSchema], dependencies=[Depends(allow_admin)])
+@router.get("/", response_model=list[UserSchema], dependencies=[Depends(allow_admin)])
 def read_users(
     skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
 ):

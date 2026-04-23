@@ -75,7 +75,7 @@ export const StrategyHubScreen = ({ navigation }: any) => {
     } catch {
       setError(t('strategyHub.loadError'));
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     logScreen('StrategyHub', { source: 'home_dashboard' });

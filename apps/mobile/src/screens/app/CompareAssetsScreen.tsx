@@ -40,7 +40,7 @@ export const CompareAssetsScreen = ({ navigation }: { navigation: { goBack: () =
     } finally {
       setLoading(false);
     }
-  }, [a, b, range]);
+  }, [a, b, range, t]);
 
   useEffect(() => {
     void load();

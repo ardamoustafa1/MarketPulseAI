@@ -1,5 +1,7 @@
-from sqlalchemy import Column, String, ForeignKey, JSON
+from sqlalchemy import JSON, Column, ForeignKey, String
+
 from app.db.base_class import Base
+
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"

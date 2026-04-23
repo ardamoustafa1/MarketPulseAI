@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ViewStyle } from 'react-native';
+import { DimensionValue, ViewStyle } from 'react-native';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -11,8 +11,8 @@ import Animated, {
 import { colors, radius } from '../../theme';
 
 interface SkeletonProps {
-  width?: number | string;
-  height: number | string;
+  width?: DimensionValue;
+  height: DimensionValue;
   style?: ViewStyle;
   circle?: boolean;
 }
@@ -29,7 +29,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({ width = '100%', height, styl
       -1,
       true
     );
-  }, []);
+  }, [opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

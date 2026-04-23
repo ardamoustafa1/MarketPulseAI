@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable } from 'react-native';
 import { Box } from '../../components/ui/Box';
 import { Text } from '../../components/ui/Text';
-import { colors, radius, spacing } from '../../theme';
+import { colors, spacing } from '../../theme';
 
 export const RegisterScreen = ({ navigation }: any) => {
   return (

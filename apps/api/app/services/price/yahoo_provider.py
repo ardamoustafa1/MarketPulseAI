@@ -1,7 +1,6 @@
-from decimal import Decimal
-from datetime import datetime, timezone
-from typing import List
 import asyncio
+from datetime import UTC, datetime
+from decimal import Decimal
 
 import httpx
 
@@ -127,8 +126,8 @@ class YahooProvider(BasePriceProvider):
     def __init__(self):
         super().__init__(name="yahoo")
 
-    async def fetch_prices(self, symbols: List[str]) -> List[NormalizedPrice]:
-        prices: List[NormalizedPrice] = []
+    async def fetch_prices(self, symbols: list[str]) -> list[NormalizedPrice]:
+        prices: list[NormalizedPrice] = []
         async with httpx.AsyncClient(timeout=settings.PRICE_HTTP_TIMEOUT_SECONDS) as client:
             for symbol in symbols:
                 normalized_symbol = symbol.upper()
@@ -168,7 +167,10 @@ class YahooProvider(BasePriceProvider):
                 change_24h = None
                 if previous_close not in (None, 0):
                     previous_close_decimal = Decimal(str(previous_close))
-                    change_24h = ((current_price_decimal - previous_close_decimal) / previous_close_decimal) * Decimal("100")
+                    change_24h = (
+                        (current_price_decimal - previous_close_decimal)
+                        / previous_close_decimal
+                    ) * Decimal("100")
 
                 prices.append(
                     NormalizedPrice(
@@ -176,7 +178,7 @@ class YahooProvider(BasePriceProvider):
                         price=current_price_decimal,
                         change_24h=change_24h,
                             asset_type=ASSET_TYPE_MAP.get(normalized_symbol, "fiat"),
-                        last_updated_at=datetime.now(timezone.utc),
+                        last_updated_at=datetime.now(UTC),
                         source=self.name,
                         is_stale=False,
                     )

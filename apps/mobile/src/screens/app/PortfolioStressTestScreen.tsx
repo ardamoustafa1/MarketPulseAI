@@ -37,7 +37,7 @@ export const PortfolioStressTestScreen = ({ navigation }: any) => {
 
   useEffect(() => {
     run();
-  }, []);
+  }, [run]);
 
   const toggle = (id: StressScenarioId) => {
     const next = new Set(selected);

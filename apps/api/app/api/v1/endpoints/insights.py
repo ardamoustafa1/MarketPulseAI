@@ -1,11 +1,13 @@
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone
+
 from app.api.deps import get_current_user, get_db
 from app.core.plan_limits import insight_cooldown_for_user
-from app.models.user import User
 from app.models.alert import AiInsight
-from app.schemas.insights import InsightResponse, InsightGenerateRequest
+from app.models.user import User
+from app.schemas.insights import InsightGenerateRequest, InsightResponse
 from app.services.llm.insight_generator import generate_insights_for_user, get_latest_insight
 
 router = APIRouter()
@@ -19,7 +21,7 @@ async def read_insights(db: Session = Depends(get_db), current_user: User = Depe
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No insights generated yet. Use /generate to create one.",
-        )
+        ) from None
 
 @router.post("/generate", response_model=InsightResponse)
 async def generate_insights(
@@ -37,8 +39,8 @@ async def generate_insights(
     )
     if latest:
         cooldown = insight_cooldown_for_user(getattr(current_user, "subscription_tier", None))
-        now = datetime.now(timezone.utc)
-        last_created = latest.created_at.replace(tzinfo=timezone.utc) if latest.created_at.tzinfo is None else latest.created_at
+        now = datetime.now(UTC)
+        last_created = latest.created_at.replace(tzinfo=UTC) if latest.created_at.tzinfo is None else latest.created_at
         if now - last_created < cooldown:
             remaining = int((cooldown - (now - last_created)).total_seconds())
             raise HTTPException(

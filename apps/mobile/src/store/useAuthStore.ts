@@ -106,7 +106,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       } else {
         set({ isAuthenticated: false, isLoading: false });
       }
-    } catch (error) {
+    } catch {
       // Token expired or invalid — clear everything and send to login
       useMarketDataStore.getState().resetRealtime();
       wsClient.destroy();

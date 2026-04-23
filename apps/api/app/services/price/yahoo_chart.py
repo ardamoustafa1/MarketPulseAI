@@ -4,7 +4,7 @@ Historical OHLC from Yahoo Finance chart API (v8) for line charts and comparison
 from __future__ import annotations
 
 import logging
-from typing import List, Sequence, Tuple
+from collections.abc import Sequence
 
 import httpx
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
 
 # UI range key -> (Yahoo range param, interval)
-RANGE_QUERY: dict[str, Tuple[str, str]] = {
+RANGE_QUERY: dict[str, tuple[str, str]] = {
     "1H": ("1d", "5m"),
     "1D": ("1d", "5m"),
     "1W": ("5d", "1h"),
@@ -29,8 +29,8 @@ def resolve_yahoo_ticker(symbol: str) -> str | None:
     return YAHOO_SYMBOL_MAP.get(symbol.strip().upper())
 
 
-def _forward_fill_closes(closes: Sequence[float | None]) -> List[float]:
-    out: List[float] = []
+def _forward_fill_closes(closes: Sequence[float | None]) -> list[float]:
+    out: list[float] = []
     last: float | None = None
     for c in closes:
         if c is not None and not (isinstance(c, float) and c != c):  # not NaN
@@ -83,7 +83,7 @@ async def fetch_close_history(symbol: str, range_key: str) -> tuple[list[int], l
         raise ValueError("Chart response missing timestamps or closes")
 
     closes = _forward_fill_closes(closes_raw)
-    pairs = list(zip(ts, closes))
+    pairs = list(zip(ts, closes, strict=False))
 
     if range_key.upper() == "1H" and len(pairs) > 12:
         pairs = pairs[-13:]
@@ -93,7 +93,7 @@ async def fetch_close_history(symbol: str, range_key: str) -> tuple[list[int], l
     return times, values, ticker
 
 
-def normalize_to_index100(values: Sequence[float]) -> List[float]:
+def normalize_to_index100(values: Sequence[float]) -> list[float]:
     if not values:
         return []
     base = values[0]

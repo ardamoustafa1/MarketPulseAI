@@ -136,7 +136,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
       return fullName;
     }
     return user?.email ?? t('profileScreen.userFallback');
-  }, [user]);
+  }, [user, t]);
 
   const initials = useMemo(() => {
     const source = `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim() || user?.email || 'U';

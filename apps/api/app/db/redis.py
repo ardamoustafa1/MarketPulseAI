@@ -1,4 +1,5 @@
 import redis.asyncio as redis
+
 from app.core.config import settings
 
 # Create a global Redis connection pool

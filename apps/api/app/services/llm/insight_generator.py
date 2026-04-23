@@ -15,7 +15,11 @@ from app.models.asset import Asset
 from app.models.portfolio import Portfolio, Transaction, TransactionTypeEnum
 from app.models.user import User
 from app.schemas.insights import InsightCard, InsightResponse
-from app.services.portfolio.calculator import PortfolioCalculationEngine, TransactionDTO, TransactionType
+from app.services.portfolio.calculator import (
+    PortfolioCalculationEngine,
+    TransactionDTO,
+    TransactionType,
+)
 from app.services.price.cache import get_all_cached_prices
 
 logger = logging.getLogger(__name__)
@@ -31,7 +35,7 @@ async def _build_cards(db: Session, user: User, include_portfolio: bool, include
 
     portfolio = (
         db.query(Portfolio)
-        .filter(Portfolio.user_id == user.id, Portfolio.is_default == True, Portfolio.deleted_at.is_(None))
+        .filter(Portfolio.user_id == user.id, Portfolio.is_default is True, Portfolio.deleted_at.is_(None))
         .first()
     )
 

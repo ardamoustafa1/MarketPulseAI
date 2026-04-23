@@ -1,12 +1,12 @@
 import React from 'react';
-import { StyleSheet, ViewStyle, View } from 'react-native';
+import { StyleSheet, ViewStyle } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, radius } from '../../theme';
+import { radius } from '../../theme';
 
 interface PremiumCardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: ViewStyle | ViewStyle[] | (ViewStyle | undefined | null | false)[];
   delay?: number;
   glowColor?: string;
 }

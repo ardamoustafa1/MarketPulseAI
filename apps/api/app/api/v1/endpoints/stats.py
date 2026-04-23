@@ -6,7 +6,7 @@ in Redis with a short TTL so the home screen can render them at 60fps without
 hammering Postgres.
 """
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -43,7 +43,7 @@ async def get_activity_stats(
         payload = json.loads(cached)
         return ActivityStats(**payload)
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     day_ago = now - timedelta(hours=24)
     week_ago = now - timedelta(days=7)
 

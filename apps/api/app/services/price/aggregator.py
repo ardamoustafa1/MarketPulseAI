@@ -1,6 +1,5 @@
 import logging
 from collections import defaultdict
-from typing import Dict, List
 
 from app.schemas.price import NormalizedPrice
 from app.services.price.alpha_vantage_provider import AlphaVantageProvider
@@ -44,7 +43,7 @@ class PriceAggregator(BasePriceProvider):
         self.stooq_provider = stooq_provider or StooqProvider()
         self.yahoo_provider = yahoo_provider or YahooProvider()
 
-    async def fetch_prices(self, symbols: List[str]) -> List[NormalizedPrice]:
+    async def fetch_prices(self, symbols: list[str]) -> list[NormalizedPrice]:
         symbols_by_type = defaultdict(list)
         for symbol in symbols:
             normalized = symbol.upper()
@@ -53,7 +52,7 @@ class PriceAggregator(BasePriceProvider):
             else:
                 symbols_by_type["non_crypto"].append(normalized)
 
-        results: Dict[str, NormalizedPrice] = {}
+        results: dict[str, NormalizedPrice] = {}
 
         if symbols_by_type["crypto"]:
             try:

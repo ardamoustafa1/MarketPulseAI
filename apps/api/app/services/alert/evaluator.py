@@ -2,7 +2,9 @@ import asyncio
 import logging
 import uuid
 from decimal import Decimal
+
 from sqlalchemy.orm import Session
+
 from app.db.session import SessionLocal
 from app.models.alert import Alert, AlertEvent, ConditionEnum
 from app.models.asset import Asset
@@ -33,12 +35,12 @@ class AlertEvaluatorService:
                 active_rows = (
                     db.query(Alert, Asset.symbol)
                     .join(Asset, Asset.id == Alert.asset_id)
-                    .filter(Alert.is_active == True)
+                    .filter(Alert.is_active is True)
                     .all()
                 )
             except AttributeError:
                 # Test doubles may not implement join(); preserve backwards-compatible behavior.
-                fallback_alerts = db.query(Alert).filter(Alert.is_active == True).all()
+                fallback_alerts = db.query(Alert).filter(Alert.is_active is True).all()
                 active_rows = [(alert, str(alert.asset_id).upper()) for alert in fallback_alerts]
             if not active_rows:
                 return

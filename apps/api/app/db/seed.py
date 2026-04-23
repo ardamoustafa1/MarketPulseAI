@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from app.core.security import get_password_hash
@@ -67,7 +67,7 @@ def _create_demo_transactions_if_empty(db, portfolio: Portfolio, assets: dict[st
     if tx_count > 0:
         return 0
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     demo_rows = [
         Transaction(
             portfolio_id=portfolio.id,
@@ -120,7 +120,7 @@ def seed_data() -> None:
             "XAU": _get_or_create_asset(db, "XAU", "Gold Ounce", AssetTypeEnum.metal, metal),
         }
 
-        admin = _get_or_create_user(
+        _get_or_create_user(
             db,
             email="admin@marketpulse.ai",
             first_name="Super",
@@ -141,8 +141,8 @@ def seed_data() -> None:
 
         db.commit()
         print("Seed completed successfully.")
-        print(f"Admin login: admin@marketpulse.ai / Admin123!")
-        print(f"Demo login : demo@marketpulse.ai / Demo12345!")
+        print("Admin login: admin@marketpulse.ai / Admin123!")
+        print("Demo login : demo@marketpulse.ai / Demo12345!")
         print(f"Seeded demo transactions: {seeded_tx_count}")
     except Exception:
         db.rollback()

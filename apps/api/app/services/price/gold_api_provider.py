@@ -1,7 +1,6 @@
-from datetime import datetime, timezone
-from decimal import Decimal
-from typing import List
 import logging
+from datetime import UTC, datetime
+from decimal import Decimal
 
 import httpx
 
@@ -17,12 +16,12 @@ class GoldApiProvider(BasePriceProvider):
     def __init__(self):
         super().__init__(name="gold_api")
 
-    async def fetch_prices(self, symbols: List[str]) -> List[NormalizedPrice]:
+    async def fetch_prices(self, symbols: list[str]) -> list[NormalizedPrice]:
         requested = [s.upper() for s in symbols if s.upper() in METAL_SYMBOLS]
         if not requested:
             return []
 
-        prices: List[NormalizedPrice] = []
+        prices: list[NormalizedPrice] = []
         async with httpx.AsyncClient(timeout=settings.PRICE_HTTP_TIMEOUT_SECONDS) as client:
             for symbol in requested:
                 try:
@@ -43,7 +42,7 @@ class GoldApiProvider(BasePriceProvider):
                         price=price,
                         change_24h=None,
                         asset_type="metal",
-                        last_updated_at=datetime.now(timezone.utc),
+                        last_updated_at=datetime.now(UTC),
                         source=self.name,
                         is_stale=False,
                     )

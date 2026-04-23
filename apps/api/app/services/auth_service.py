@@ -1,13 +1,14 @@
-from datetime import datetime, timedelta, timezone
-from sqlalchemy.orm import Session
+import logging
+from datetime import UTC, datetime, timedelta
+
 from fastapi import HTTPException, status
 from jose import JWTError
-from app.models.user import User, RefreshToken as RefreshTokenModel
-from app.schemas.user import UserCreate
-from app.schemas.auth import Token
+from sqlalchemy.orm import Session
+
+from app.core.config import settings
 from app.core.security import (
-    create_password_reset_token,
     create_access_token,
+    create_password_reset_token,
     create_refresh_token,
     decode_token,
     get_password_hash,
@@ -16,9 +17,11 @@ from app.core.security import (
     verify_password,
     verify_totp_code,
 )
-from app.core.config import settings
 from app.db.redis import get_redis_client
-import logging
+from app.models.user import RefreshToken as RefreshTokenModel
+from app.models.user import User
+from app.schemas.auth import Token
+from app.schemas.user import UserCreate
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +114,7 @@ class AuthService:
         )
 
         refresh_token_str = create_refresh_token(subject=str(user.id))
-        rt_expires = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        rt_expires = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         
         db_rt = RefreshTokenModel(
             user_id=user.id,
@@ -140,10 +143,10 @@ class AuthService:
 
         db_rt = self.db.query(RefreshTokenModel).filter(
             RefreshTokenModel.token_hash == hash_refresh_token(refresh_token),
-            RefreshTokenModel.revoked == False
+            RefreshTokenModel.revoked is False
         ).first()
         
-        if not db_rt or db_rt.expires_at < datetime.now(timezone.utc):
+        if not db_rt or db_rt.expires_at < datetime.now(UTC):
             raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
             
         user = self.db.query(User).filter(User.id == db_rt.user_id).first()
@@ -165,7 +168,7 @@ class AuthService:
             self.db.commit()
 
     async def request_password_reset(self, email: str) -> str | None:
-        user = self.db.query(User).filter(User.email == email, User.is_active == True).first()
+        user = self.db.query(User).filter(User.email == email, User.is_active is True).first()
         if not user:
             return None
 
@@ -198,7 +201,7 @@ class AuthService:
         if not stored_user_id or stored_user_id != user_id:
             raise HTTPException(status_code=401, detail="Invalid or expired reset token")
 
-        user = self.db.query(User).filter(User.id == user_id, User.is_active == True).first()
+        user = self.db.query(User).filter(User.id == user_id, User.is_active is True).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 

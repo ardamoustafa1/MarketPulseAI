@@ -1,8 +1,9 @@
 import uuid
 from datetime import datetime
+
 from sqlalchemy import Column, DateTime, MetaData
-from sqlalchemy.orm import declarative_base
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import declarative_base
 
 # Production Grade: Enforcing naming conventions guarantees that Alembic can auto-generate migrations
 # correctly and safely apply DOWN migrations without throwing constraint name mismatch errors.

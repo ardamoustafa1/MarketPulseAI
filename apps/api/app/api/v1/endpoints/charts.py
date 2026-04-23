@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -30,7 +29,7 @@ async def get_price_history(
         logger.exception("chart history failed: %s", e)
         raise HTTPException(status_code=502, detail="Chart provider unavailable") from e
 
-    points = [HistoryPoint(t=t, close=c) for t, c in zip(ts, closes)]
+    points = [HistoryPoint(t=t, close=c) for t, c in zip(ts, closes, strict=False)]
     return PriceHistoryResponse(
         symbol=symbol.strip().upper(),
         range=key,
@@ -45,7 +44,7 @@ async def compare_symbols(
     range: str = Query("1W", alias="range"),
 ):
     """Two (or more) symbols on the same timeline with prices normalized to 100 at the first bar."""
-    sym_list: List[str] = [s.strip().upper() for s in symbols.split(",") if s.strip()]
+    sym_list: list[str] = [s.strip().upper() for s in symbols.split(",") if s.strip()]
     if len(sym_list) < 2:
         raise HTTPException(status_code=400, detail="Provide at least two symbols (comma-separated).")
     if len(sym_list) > 5:
@@ -59,7 +58,6 @@ async def compare_symbols(
     series_out: list[CompareSeries] = []
 
     try:
-        first_ts: List[int] | None = None
         raw_series: list[tuple[str, str, list[int], list[float]]] = []
 
         for sym in sym_list:
@@ -74,7 +72,7 @@ async def compare_symbols(
             ts2 = ts[-min_len:]
             cl2 = closes[-min_len:]
             norm = normalize_to_index100(cl2)
-            points = [HistoryPoint(t=t, close=v) for t, v in zip(ts2, norm)]
+            points = [HistoryPoint(t=t, close=v) for t, v in zip(ts2, norm, strict=False)]
             series_out.append(CompareSeries(symbol=sym, yahoo_ticker=yt, points=points))
 
     except HTTPException:

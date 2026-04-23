@@ -1,6 +1,5 @@
 import json
 from decimal import Decimal
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -8,17 +7,21 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
+from app.core.rate_limit import enforce_rate_limit, get_client_ip
+from app.db.redis import get_redis_client
 from app.models.asset import Asset
 from app.models.portfolio import Portfolio, Transaction, TransactionTypeEnum
 from app.models.user import User
 from app.schemas.fifo import FifoRow, FifoSummaryResponse
 from app.schemas.portfolio import PortfolioBucket, PortfolioSummary
 from app.services.portfolio.access import list_portfolios, resolve_portfolio
-from app.services.portfolio.calculator import PortfolioCalculationEngine, TransactionDTO, TransactionType
+from app.services.portfolio.calculator import (
+    PortfolioCalculationEngine,
+    TransactionDTO,
+    TransactionType,
+)
 from app.services.portfolio.fifo import fifo_process_symbol
 from app.services.price.cache import get_all_cached_prices
-from app.db.redis import get_redis_client
-from app.core.rate_limit import enforce_rate_limit, get_client_ip
 
 router = APIRouter()
 BENCHMARK_CACHE_TTL_SECONDS = 120
@@ -150,7 +153,7 @@ def set_default_bucket(
 @router.get("", response_model=PortfolioSummary)
 @router.get("/", response_model=PortfolioSummary)
 async def read_portfolio(
-    portfolio_id: Optional[UUID] = Query(None, description="Target portfolio; default bucket if omitted."),
+    portfolio_id: UUID | None = Query(None, description="Target portfolio; default bucket if omitted."),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -174,7 +177,7 @@ async def read_portfolio(
 
 @router.get("/fifo", response_model=FifoSummaryResponse)
 def fifo_summary(
-    portfolio_id: Optional[UUID] = Query(None),
+    portfolio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -223,7 +226,7 @@ def fifo_summary(
 @router.get("/benchmark", response_model=BenchmarkResponse)
 async def portfolio_benchmark(
     request: Request,
-    portfolio_id: Optional[UUID] = Query(None),
+    portfolio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -249,7 +252,10 @@ async def portfolio_benchmark(
     my_summary = await _build_summary_for_portfolio(db, portfolio)
     if my_summary.total_cost_basis == 0:
         raise HTTPException(status_code=400, detail="Benchmark requires non-zero cost basis.")
-    user_return = ((my_summary.total_current_value - my_summary.total_cost_basis) / my_summary.total_cost_basis) * Decimal("100")
+    user_return = (
+        (my_summary.total_current_value - my_summary.total_cost_basis)
+        / my_summary.total_cost_basis
+    ) * Decimal("100")
 
     portfolios = (
         db.query(Portfolio)

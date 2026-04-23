@@ -1,18 +1,18 @@
 import asyncio
+import logging
 import uuid
-from typing import List
+
 from app.core.config import settings
 from app.db.redis import get_redis_client
-from app.services.price.provider_base import BasePriceProvider
 from app.services.price.aggregator import PriceAggregator
 from app.services.price.cache import cache_prices
 from app.services.price.derived_instruments import build_derived_prices
-import logging
+from app.services.price.provider_base import BasePriceProvider
 
 logger = logging.getLogger(__name__)
 
 class PriceFeedScheduler:
-    def __init__(self, provider: BasePriceProvider, symbols: List[str], interval_seconds: int = 5):
+    def __init__(self, provider: BasePriceProvider, symbols: list[str], interval_seconds: int = 5):
         self.provider = provider
         self.symbols = symbols
         self.interval_seconds = interval_seconds

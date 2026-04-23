@@ -5,9 +5,8 @@ These endpoints aggregate the user's activity in the last 7/30 days into a
 short, pre-formatted narrative the mobile client renders as story cards.
 All heavy lifting stays server-side so the client can be dumb + fast.
 """
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -21,14 +20,13 @@ from app.models.user import User
 from app.services.portfolio.access import resolve_portfolio
 from app.services.price.cache import get_all_cached_prices
 
-
 router = APIRouter()
 
 
 class RecapHighlight(BaseModel):
     label: str
     value: str
-    delta: Optional[str] = None
+    delta: str | None = None
 
 
 class RecapAssetLine(BaseModel):
@@ -43,8 +41,8 @@ class WeeklyRecap(BaseModel):
     period_end: datetime
     headline: str
     narrative: str
-    highlights: List[RecapHighlight]
-    top_assets: List[RecapAssetLine]
+    highlights: list[RecapHighlight]
+    top_assets: list[RecapAssetLine]
     actions_count: int
 
 
@@ -55,14 +53,14 @@ class MonthlyWrappedCard(BaseModel):
     title: str
     body: str
     accent_color: str
-    stat: Optional[str] = None
-    support_stat: Optional[str] = None
+    stat: str | None = None
+    support_stat: str | None = None
 
 
 class MonthlyWrapped(BaseModel):
     period_start: datetime
     period_end: datetime
-    cards: List[MonthlyWrappedCard]
+    cards: list[MonthlyWrappedCard]
 
 
 def _fetch_user_transactions(
@@ -81,11 +79,11 @@ def _fetch_user_transactions(
 async def _build_recap(
     db: Session,
     user: User,
-    portfolio_id: Optional[UUID],
+    portfolio_id: UUID | None,
     days: int,
 ) -> tuple[list[tuple[Transaction, str]], dict[str, Decimal], datetime, datetime]:
     portfolio = resolve_portfolio(db, user.id, portfolio_id)
-    end = datetime.now(timezone.utc)
+    end = datetime.now(UTC)
     start = end - timedelta(days=days)
     rows = _fetch_user_transactions(db, portfolio.id, start)
 
@@ -136,7 +134,7 @@ def _asset_stats(
 
 @router.get("/weekly-recap", response_model=WeeklyRecap)
 async def weekly_recap(
-    portfolio_id: Optional[UUID] = Query(None),
+    portfolio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -208,7 +206,7 @@ async def weekly_recap(
 
 @router.get("/monthly-wrapped", response_model=MonthlyWrapped)
 async def monthly_wrapped(
-    portfolio_id: Optional[UUID] = Query(None),
+    portfolio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -308,13 +306,13 @@ class WidgetAsset(BaseModel):
 class WidgetSnapshot(BaseModel):
     total_value_usd: str
     daily_change_pct: str
-    featured_asset: Optional[WidgetAsset] = None
+    featured_asset: WidgetAsset | None = None
     generated_at: datetime
 
 
 @router.get("/widget-snapshot", response_model=WidgetSnapshot)
 async def widget_snapshot(
-    portfolio_id: Optional[UUID] = Query(None),
+    portfolio_id: UUID | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -344,7 +342,7 @@ async def widget_snapshot(
     cached = await get_all_cached_prices(symbols)
     total_value = Decimal("0")
     total_cost = Decimal("0")
-    best_symbol: Optional[str] = None
+    best_symbol: str | None = None
     best_change = Decimal("-1e9")
     for symbol, entry in agg.items():
         price_entry = cached.get(symbol)
@@ -357,7 +355,7 @@ async def widget_snapshot(
             best_change = pct_decimal
             best_symbol = symbol
 
-    featured: Optional[WidgetAsset] = None
+    featured: WidgetAsset | None = None
     if best_symbol and cached.get(best_symbol):
         ce = cached[best_symbol]
         ce_change = getattr(ce, "change_24h", None) or Decimal("0")
@@ -377,5 +375,5 @@ async def widget_snapshot(
         total_value_usd=f"{total_value:.2f}",
         daily_change_pct=f"{daily_pct:+.2f}",
         featured_asset=featured,
-        generated_at=datetime.now(timezone.utc),
+        generated_at=datetime.now(UTC),
     )

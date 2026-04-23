@@ -1,19 +1,26 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+
 from app.api.deps import get_current_user, get_db
 from app.core.plan_limits import max_alerts_for_user
-from app.models.user import User
 from app.models.alert import Alert, AlertEvent
 from app.models.asset import Asset
 from app.models.portfolio import Portfolio, Transaction, TransactionTypeEnum
-from app.schemas.alert import AlertCreate, AlertUpdate, AlertResponse, AlertEventResponse, AlertSuggestion
+from app.models.user import User
+from app.schemas.alert import (
+    AlertCreate,
+    AlertEventResponse,
+    AlertResponse,
+    AlertSuggestion,
+    AlertUpdate,
+)
 from app.services.price.cache import get_all_cached_prices
-import uuid
 
 router = APIRouter()
 
-@router.get("/", response_model=List[AlertResponse])
+@router.get("/", response_model=list[AlertResponse])
 def get_alerts(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """List all alerts for the current user."""
     alerts = db.query(Alert).filter(Alert.user_id == current_user.id).all()
@@ -44,11 +51,17 @@ def create_alert(
     db.refresh(new_alert)
     return new_alert
 
-@router.get("/history", response_model=List[AlertEventResponse])
+@router.get("/history", response_model=list[AlertEventResponse])
 def get_alert_history(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Get history of triggered alerts for the user."""
     # Join alerts to get only events for the current user's alerts
-    events = db.query(AlertEvent).join(Alert).filter(Alert.user_id == current_user.id).order_by(AlertEvent.id.desc()).all()
+    events = (
+        db.query(AlertEvent)
+        .join(Alert)
+        .filter(Alert.user_id == current_user.id)
+        .order_by(AlertEvent.id.desc())
+        .all()
+    )
     return events
 
 @router.patch("/{alert_id}", response_model=AlertResponse)
@@ -87,7 +100,7 @@ def delete_alert(
     return None
 
 
-@router.get("/suggestions", response_model=List[AlertSuggestion])
+@router.get("/suggestions", response_model=list[AlertSuggestion])
 async def get_alert_suggestions(
     limit: int = 5,
     db: Session = Depends(get_db),
@@ -96,7 +109,7 @@ async def get_alert_suggestions(
     safe_limit = max(1, min(limit, 20))
     default_portfolio = (
         db.query(Portfolio)
-        .filter(Portfolio.user_id == current_user.id, Portfolio.is_default == True, Portfolio.deleted_at.is_(None))
+        .filter(Portfolio.user_id == current_user.id, Portfolio.is_default is True, Portfolio.deleted_at.is_(None))
         .first()
     )
     if not default_portfolio:
@@ -116,7 +129,7 @@ async def get_alert_suggestions(
         )
     ]
     prices = await get_all_cached_prices(symbols)
-    suggestions: List[AlertSuggestion] = []
+    suggestions: list[AlertSuggestion] = []
     for symbol in symbols[:safe_limit]:
         price = prices.get(symbol)
         if not price or price.change_24h is None:

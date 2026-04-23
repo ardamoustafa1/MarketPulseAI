@@ -1,6 +1,8 @@
-from pydantic import BaseModel, Field
-from typing import Optional, Any, List
 import enum
+from typing import Any
+
+from pydantic import BaseModel, Field
+
 
 class WSActionEnum(str, enum.Enum):
     subscribe = "subscribe"
@@ -12,7 +14,7 @@ class WSActionEnum(str, enum.Enum):
 
 class WSMessageIn(BaseModel):
     action: WSActionEnum
-    payload: Optional[dict] = Field(default_factory=dict)
+    payload: dict | None = Field(default_factory=dict)
     
 class WSMessageOut(BaseModel):
     event: WSActionEnum

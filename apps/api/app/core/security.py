@@ -1,14 +1,16 @@
-import re
-import hmac
 import base64
 import hashlib
+import hmac
+import re
 import struct
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from hashlib import sha256
-from typing import Any, Union
+from typing import Any
 from uuid import uuid4
+
 from jose import jwt
 from passlib.context import CryptContext
+
 from app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -29,8 +31,8 @@ def is_password_strong(password: str) -> bool:
         and bool(re.search(r"[^A-Za-z0-9]", password))
     )
 
-def create_access_token(subject: Union[str, Any], expires_delta: timedelta | None = None) -> str:
-    now = datetime.now(timezone.utc)
+def create_access_token(subject: str | Any, expires_delta: timedelta | None = None) -> str:
+    now = datetime.now(UTC)
     expire = now + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode = {
         "exp": expire,
@@ -43,8 +45,8 @@ def create_access_token(subject: Union[str, Any], expires_delta: timedelta | Non
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
-def create_refresh_token(subject: Union[str, Any]) -> str:
-    now = datetime.now(timezone.utc)
+def create_refresh_token(subject: str | Any) -> str:
+    now = datetime.now(UTC)
     expire = now + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode = {
         "exp": expire,
@@ -57,8 +59,8 @@ def create_refresh_token(subject: Union[str, Any]) -> str:
     }
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
-def create_password_reset_token(subject: Union[str, Any], expires_delta: timedelta | None = None) -> str:
-    now = datetime.now(timezone.utc)
+def create_password_reset_token(subject: str | Any, expires_delta: timedelta | None = None) -> str:
+    now = datetime.now(UTC)
     expire = now + (expires_delta or timedelta(minutes=settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES))
     to_encode = {
         "exp": expire,
@@ -122,7 +124,7 @@ def verify_totp_code(secret: str, code: str, at_time: int | None = None, period:
     except Exception:
         return False
 
-    now = int(at_time or datetime.now(timezone.utc).timestamp())
+    now = int(at_time or datetime.now(UTC).timestamp())
     counter = now // period
     width = len(code)
 
@@ -133,7 +135,12 @@ def verify_totp_code(secret: str, code: str, at_time: int | None = None, period:
         msg = struct.pack(">Q", c)
         digest = hmac.new(key, msg, hashlib.sha1).digest()
         i = digest[-1] & 0x0F
-        binary = ((digest[i] & 0x7F) << 24) | ((digest[i + 1] & 0xFF) << 16) | ((digest[i + 2] & 0xFF) << 8) | (digest[i + 3] & 0xFF)
+        binary = (
+            ((digest[i] & 0x7F) << 24)
+            | ((digest[i + 1] & 0xFF) << 16)
+            | ((digest[i + 2] & 0xFF) << 8)
+            | (digest[i + 3] & 0xFF)
+        )
         otp = str(binary % (10 ** width)).zfill(width)
         if hmac.compare_digest(otp, code):
             return True

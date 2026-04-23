@@ -24,7 +24,7 @@ def read_assets(
 ):
     assets = (
         db.query(Asset)
-        .filter(Asset.is_active == True)
+        .filter(Asset.is_active is True)
         .order_by(Asset.symbol.asc())
         .all()
     )

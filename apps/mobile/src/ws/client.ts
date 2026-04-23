@@ -1,4 +1,4 @@
-import { AppState, AppStateStatus, Platform } from 'react-native';
+import { AppState, AppStateStatus } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 
@@ -72,7 +72,7 @@ export class MarketPulseWebSocket {
     }
 
     // Prevent duplicate connections
-    if (this.ws && [WebSocket.OPEN, WebSocket.CONNECTING].includes(this.ws.readyState)) return;
+    if (this.ws && ([WebSocket.OPEN, WebSocket.CONNECTING] as number[]).includes(this.ws.readyState)) return;
     
     const connectVersion = this.sessionVersion;
     const token = await SecureStore.getItemAsync('access_token');
@@ -93,7 +93,7 @@ export class MarketPulseWebSocket {
       // can crash in some environments ("expected 1-2 args"). We authenticate via
       // Sec-WebSocket-Protocol token, so keep constructor to 2 args for stability.
       this.ws = new WebSocket(`${normalizedBaseUrl}/`, ['access_token', token]);
-    } catch (e) {
+    } catch {
       this.scheduleReconnect();
       return;
     }
@@ -120,7 +120,7 @@ export class MarketPulseWebSocket {
         // Backend pong responses are silently consumed
         if (data.event === 'pong') return;
         this.onMessage?.(data);
-      } catch (e) {
+      } catch {
         // Malformed JSON — silently ignore
       }
     };

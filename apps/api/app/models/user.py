@@ -1,8 +1,11 @@
-from sqlalchemy import Column, String, Boolean, ForeignKey, DateTime, Enum
-from sqlalchemy.sql import text
-from sqlalchemy.orm import relationship
 import enum
+
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, String
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import text
+
 from app.db.base_class import Base
+
 
 class RoleEnum(str, enum.Enum):
     user = "user"

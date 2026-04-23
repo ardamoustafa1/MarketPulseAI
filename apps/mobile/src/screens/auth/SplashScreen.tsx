@@ -9,7 +9,7 @@ export const SplashScreen = ({ navigation }: any) => {
       navigation.replace('Onboarding');
     }, 1500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [navigation]);
 
   return (
     <Box flex={1} bg={colors.background.base} center>

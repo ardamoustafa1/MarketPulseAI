@@ -8,8 +8,7 @@ Design goals:
 """
 import json
 import secrets
-from datetime import datetime, timedelta, timezone
-from typing import List
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -39,7 +38,7 @@ class SharePayload(BaseModel):
     share_url: str
     owner_display_name: str
     asset_count: int
-    assets: List[SharedAsset]
+    assets: list[SharedAsset]
     expires_at: datetime
 
 
@@ -105,7 +104,7 @@ async def create_watchlist_share(
         or (raw_email.split("@")[0] if raw_email else "")
         or "Trader"
     )
-    expires_at = datetime.now(timezone.utc) + timedelta(seconds=SHARE_TTL_SECONDS)
+    expires_at = datetime.now(UTC) + timedelta(seconds=SHARE_TTL_SECONDS)
     payload_body = _serialize_payload(owner_name, assets, expires_at)
 
     if existing_token:

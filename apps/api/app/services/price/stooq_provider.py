@@ -1,7 +1,6 @@
-from decimal import Decimal
-from datetime import datetime, timezone
-from typing import List
 import asyncio
+from datetime import UTC, datetime
+from decimal import Decimal
 
 import httpx
 
@@ -59,8 +58,8 @@ class StooqProvider(BasePriceProvider):
     def __init__(self):
         super().__init__(name="stooq")
 
-    async def fetch_prices(self, symbols: List[str]) -> List[NormalizedPrice]:
-        prices: List[NormalizedPrice] = []
+    async def fetch_prices(self, symbols: list[str]) -> list[NormalizedPrice]:
+        prices: list[NormalizedPrice] = []
         async with httpx.AsyncClient(timeout=settings.PRICE_HTTP_TIMEOUT_SECONDS) as client:
             for symbol in symbols:
                 normalized_symbol = symbol.upper()
@@ -114,7 +113,7 @@ class StooqProvider(BasePriceProvider):
                         price=current_price,
                         change_24h=change_24h,
                         asset_type=ASSET_TYPE_MAP.get(normalized_symbol, "fiat"),
-                        last_updated_at=datetime.now(timezone.utc),
+                        last_updated_at=datetime.now(UTC),
                         source=self.name,
                         is_stale=False,
                     )

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import List
+
 from app.schemas.price import NormalizedPrice
+
 
 class BasePriceProvider(ABC):
     """
@@ -12,7 +13,7 @@ class BasePriceProvider(ABC):
         self.name = name
 
     @abstractmethod
-    async def fetch_prices(self, symbols: List[str]) -> List[NormalizedPrice]:
+    async def fetch_prices(self, symbols: list[str]) -> list[NormalizedPrice]:
         """
         Belirtilen varlıkların ilgili kaynaktan fiyatlarını çeker.
         Normalize modele mapleyip listeler.

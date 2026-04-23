@@ -3,7 +3,7 @@ import json
 import logging
 import uuid
 from collections.abc import Awaitable, Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from app.db.redis import get_redis_client
@@ -29,7 +29,7 @@ async def enqueue_job(job_type: str, payload: dict[str, Any]) -> str:
         "id": job_id,
         "type": job_type,
         "payload": payload,
-        "enqueued_at": datetime.now(timezone.utc).isoformat(),
+        "enqueued_at": datetime.now(UTC).isoformat(),
     }
     await redis.rpush(JOB_QUEUE_KEY, json.dumps(envelope))
     return job_id

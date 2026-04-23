@@ -1,7 +1,6 @@
-from datetime import datetime, timezone
-from decimal import Decimal
-from typing import List
 import logging
+from datetime import UTC, datetime
+from decimal import Decimal
 
 import httpx
 
@@ -25,11 +24,11 @@ class TwelveDataProvider(BasePriceProvider):
     def __init__(self):
         super().__init__(name="twelve_data")
 
-    async def fetch_prices(self, symbols: List[str]) -> List[NormalizedPrice]:
+    async def fetch_prices(self, symbols: list[str]) -> list[NormalizedPrice]:
         if not settings.TWELVE_DATA_API_KEY:
             return []
 
-        prices: List[NormalizedPrice] = []
+        prices: list[NormalizedPrice] = []
         async with httpx.AsyncClient(timeout=settings.PRICE_HTTP_TIMEOUT_SECONDS) as client:
             for symbol in symbols:
                 normalized_symbol = symbol.upper()
@@ -64,7 +63,7 @@ class TwelveDataProvider(BasePriceProvider):
                         price=price,
                         change_24h=None,
                         asset_type=asset_type,
-                        last_updated_at=datetime.now(timezone.utc),
+                        last_updated_at=datetime.now(UTC),
                         source=self.name,
                         is_stale=False,
                     )

@@ -1,7 +1,6 @@
-from decimal import Decimal
-from datetime import datetime, timezone
-from typing import Dict, List
 import asyncio
+from datetime import UTC, datetime
+from decimal import Decimal
 
 import httpx
 
@@ -47,8 +46,8 @@ class BinanceProvider(BasePriceProvider):
     def __init__(self):
         super().__init__(name="binance")
 
-    async def fetch_prices(self, symbols: List[str]) -> List[NormalizedPrice]:
-        wanted: Dict[str, str] = {}
+    async def fetch_prices(self, symbols: list[str]) -> list[NormalizedPrice]:
+        wanted: dict[str, str] = {}
         for symbol in symbols:
             normalized_symbol = symbol.upper()
             binance_symbol = BINANCE_SYMBOL_MAP.get(normalized_symbol)
@@ -81,8 +80,8 @@ class BinanceProvider(BasePriceProvider):
             if isinstance(item, dict)
         }
 
-        prices: List[NormalizedPrice] = []
-        now = datetime.now(timezone.utc)
+        prices: list[NormalizedPrice] = []
+        now = datetime.now(UTC)
         for normalized_symbol, binance_symbol in wanted.items():
             data = rows_by_symbol.get(binance_symbol)
             if not data:

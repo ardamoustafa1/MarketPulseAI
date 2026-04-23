@@ -46,7 +46,13 @@ export function useTransactionForm(): UseTransactionFormReturn {
   const initialFormRef = useRef<TransactionFormData>({ ...INITIAL_FORM });
 
   // ── Computed Values ──
-  const total = useMemo(() => computeTotal(form), [form.quantity, form.unitPrice, form.fee, form.type]);
+  const total = useMemo(
+    () => computeTotal(form),
+    // `computeTotal` only reads the four fields below. Depending on `form` as a
+    // whole would invalidate the memo on every keystroke to unrelated fields.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [form.quantity, form.unitPrice, form.fee, form.type],
+  );
   
   const isDirty = useMemo(() => {
     const init = initialFormRef.current;
@@ -157,7 +163,7 @@ export function useTransactionForm(): UseTransactionFormReturn {
       if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     return !hasErrors;
-  }, [form]);
+  }, [form, availableQty]);
 
   // ── Reset ──
   const reset = useCallback(() => {

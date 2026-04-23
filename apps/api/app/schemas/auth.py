@@ -1,5 +1,7 @@
 from pydantic import BaseModel, EmailStr, constr
+
 from app.schemas.user import User
+
 
 class Token(BaseModel):
     access_token: str

@@ -1,8 +1,14 @@
 import secrets
-from fastapi import APIRouter, Depends, Request, Response, HTTPException, status
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from jose import JWTError
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user, enforce_csrf_for_cookie_auth
-from app.schemas.user import UserCreate, User as UserSchema
+
+from app.api.deps import enforce_csrf_for_cookie_auth, get_current_user, get_db
+from app.core.config import settings
+from app.core.rate_limit import enforce_auth_rate_limit
+from app.core.security import decode_token
+from app.models.user import User
 from app.schemas.auth import (
     AuthResponse,
     ForgotPasswordRequest,
@@ -10,11 +16,7 @@ from app.schemas.auth import (
     RefreshTokenRequest,
     ResetPasswordRequest,
 )
-from app.models.user import User
-from app.core.config import settings
-from app.core.rate_limit import enforce_auth_rate_limit
-from app.core.security import decode_token
-from jose import JWTError
+from app.schemas.user import UserCreate
 from app.services.audit_service import AuditService
 from app.services.auth_service import AuthService
 
@@ -87,7 +89,12 @@ async def login(payload: LoginPayload, request: Request, response: Response, db:
     return AuthResponse(user=user, token=token)
 
 @router.post("/refresh", response_model=AuthResponse)
-async def refresh_token(payload: RefreshTokenRequest, request: Request, response: Response, db: Session = Depends(get_db)):
+async def refresh_token(
+    payload: RefreshTokenRequest,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+):
     await enforce_auth_rate_limit(request, "refresh")
     auth_service = AuthService(db)
     refresh = payload.refresh_token or request.cookies.get(settings.REFRESH_COOKIE_NAME)
@@ -115,7 +122,10 @@ def logout(
     _: None = Depends(enforce_csrf_for_cookie_auth),
     current_user: User = Depends(get_current_user),
 ):
-    refresh_token = (payload.refresh_token if payload else None) or (request.cookies.get(settings.REFRESH_COOKIE_NAME) if request else None)
+    refresh_token = (
+        (payload.refresh_token if payload else None)
+        or (request.cookies.get(settings.REFRESH_COOKIE_NAME) if request else None)
+    )
     try:
         token_payload = decode_token(refresh_token) if refresh_token else {}
     except JWTError:

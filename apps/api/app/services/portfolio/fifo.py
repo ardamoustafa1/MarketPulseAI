@@ -6,7 +6,6 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Deque, List
 
 from app.services.portfolio.calculator import TransactionDTO, TransactionType
 
@@ -19,7 +18,7 @@ class FifoAssetSummary:
     remaining_cost_basis_fifo: Decimal
 
 
-def fifo_process_symbol(transactions: List[TransactionDTO]) -> FifoAssetSummary:
+def fifo_process_symbol(transactions: list[TransactionDTO]) -> FifoAssetSummary:
     """
     Process chronological buy/sell transactions with FIFO sells.
     """
@@ -32,7 +31,7 @@ def fifo_process_symbol(transactions: List[TransactionDTO]) -> FifoAssetSummary:
         )
 
     symbol = transactions[0].symbol
-    lots: Deque[tuple[Decimal, Decimal]] = deque()  # (quantity, unit_cost)
+    lots: deque[tuple[Decimal, Decimal]] = deque()  # (quantity, unit_cost)
     realized = Decimal("0")
 
     for t in transactions:

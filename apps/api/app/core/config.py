@@ -1,7 +1,8 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import field_validator
-from typing import List
 from urllib.parse import urlparse
+
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "MarketPulse AI"
@@ -22,7 +23,7 @@ class Settings(BaseSettings):
     WS_CONNECT_RATE_LIMIT_WINDOW_SECONDS: int = 60
     TRUST_PROXY_HEADERS: bool = False
     TRUSTED_PROXY_HOPS: int = 1
-    TRUSTED_PROXY_CIDRS: List[str] = []
+    TRUSTED_PROXY_CIDRS: list[str] = []
     ADMIN_STEP_UP_TOKEN: str = ""
     ADMIN_STEP_UP_TOTP_SECRET: str = ""
     PUBLIC_SNAPSHOT_EXPIRE_HOURS: int = 168
@@ -33,7 +34,7 @@ class Settings(BaseSettings):
     COOKIE_SAMESITE: str = "lax"
     
     # CORS
-    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
     
     # DB & Redis
     DATABASE_URL: str = "postgresql://user:pass@localhost:5432/db"
@@ -65,7 +66,7 @@ class Settings(BaseSettings):
     TWELVE_DATA_API_KEY: str | None = None
     ALPHA_VANTAGE_BASE_URL: str = "https://www.alphavantage.co/query"
     ALPHA_VANTAGE_API_KEY: str | None = None
-    PRICE_SYMBOLS: List[str] = [
+    PRICE_SYMBOLS: list[str] = [
         "BTC",
         "ETH",
         "SOL",

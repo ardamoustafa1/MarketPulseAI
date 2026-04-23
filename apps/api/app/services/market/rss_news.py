@@ -6,7 +6,6 @@ from __future__ import annotations
 import logging
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
-from typing import List
 
 import httpx
 
@@ -32,8 +31,8 @@ def _text(el: ET.Element | None) -> str:
     return (el.text or "").strip()
 
 
-def _parse_rss(xml_bytes: bytes, source: str) -> List[NewsItem]:
-    items: List[NewsItem] = []
+def _parse_rss(xml_bytes: bytes, source: str) -> list[NewsItem]:
+    items: list[NewsItem] = []
     try:
         root = ET.fromstring(xml_bytes)
     except ET.ParseError as e:
@@ -67,8 +66,8 @@ def _parse_rss(xml_bytes: bytes, source: str) -> List[NewsItem]:
     return items
 
 
-async def fetch_market_headlines(limit: int = 30) -> List[NewsItem]:
-    out: List[NewsItem] = []
+async def fetch_market_headlines(limit: int = 30) -> list[NewsItem]:
+    out: list[NewsItem] = []
     async with httpx.AsyncClient(timeout=15.0) as client:
         for source_name, url in FEEDS:
             try:

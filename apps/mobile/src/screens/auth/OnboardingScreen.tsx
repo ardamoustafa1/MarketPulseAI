@@ -151,7 +151,7 @@ export const OnboardingScreen = ({ navigation }: any) => {
         onMomentumScrollEnd={onMomentumEnd}
         style={{ flex: 1 }}
       >
-        {SLIDES.map((slide, idx) => (
+        {SLIDES.map((slide, _idx) => (
           <View key={slide.key} style={{ width, flex: 1 }}>
             {slide.accent === 'consent' ? (
               <Box flex={1} style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg }}>

@@ -1,10 +1,12 @@
-from typing import Generator, Optional
+from collections.abc import Generator
+
 from fastapi import Depends, Header, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 from sqlalchemy.orm import Session
+
 from app.core.config import settings
-from app.core.exceptions import UnauthorizedException, ForbiddenException
+from app.core.exceptions import ForbiddenException, UnauthorizedException
 from app.core.security import decode_token
 from app.db.session import SessionLocal
 from app.models.user import User
@@ -54,7 +56,7 @@ def get_current_user(
             
         return user
     except JWTError:
-        raise UnauthorizedException(detail="Could not validate credentials")
+        raise UnauthorizedException(detail="Could not validate credentials") from None
 
 
 def enforce_csrf_for_cookie_auth(

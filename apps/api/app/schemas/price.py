@@ -1,7 +1,8 @@
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
+
 from pydantic import BaseModel
-from typing import Optional
+
 
 class NormalizedPrice(BaseModel):
     """
@@ -10,7 +11,7 @@ class NormalizedPrice(BaseModel):
     """
     symbol: str  # e.g., 'BTC', 'XAU', 'USDTRY'
     price: Decimal
-    change_24h: Optional[Decimal] = None
+    change_24h: Decimal | None = None
     asset_type: str # 'crypto', 'fiat', 'metal'
     last_updated_at: datetime
     source: str # e.g., 'binance', 'yahoo'

@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
 from app.api.deps import get_current_user, get_db
-from app.models.user import User
 from app.models.alert import Watchlist, WatchlistItem
 from app.models.asset import Asset
-from app.schemas.watchlist import WatchlistResponse, WatchlistAssetResponse
-import uuid
+from app.models.user import User
+from app.schemas.watchlist import WatchlistAssetResponse, WatchlistResponse
 
 router = APIRouter()
 
@@ -25,7 +27,12 @@ def get_watchlist(db: Session = Depends(get_db), current_user: User = Depends(ge
     watchlist = get_or_create_default_watchlist(db, current_user.id)
     
     # Fetch assets through the watchlist_items join
-    items = db.query(WatchlistItem, Asset).join(Asset, WatchlistItem.asset_id == Asset.id).filter(WatchlistItem.watchlist_id == watchlist.id).all()
+    items = (
+        db.query(WatchlistItem, Asset)
+        .join(Asset, WatchlistItem.asset_id == Asset.id)
+        .filter(WatchlistItem.watchlist_id == watchlist.id)
+        .all()
+    )
     
     asset_responses = []
     for _, asset in items:
@@ -55,7 +62,14 @@ def add_to_watchlist(symbol: str, db: Session = Depends(get_db), current_user: U
         
     watchlist = get_or_create_default_watchlist(db, current_user.id)
     
-    existing = db.query(WatchlistItem).filter(WatchlistItem.watchlist_id == watchlist.id, WatchlistItem.asset_id == asset.id).first()
+    existing = (
+        db.query(WatchlistItem)
+        .filter(
+            WatchlistItem.watchlist_id == watchlist.id,
+            WatchlistItem.asset_id == asset.id,
+        )
+        .first()
+    )
     if not existing:
         new_item = WatchlistItem(id=uuid.uuid4(), watchlist_id=watchlist.id, asset_id=asset.id)
         db.add(new_item)
@@ -72,7 +86,14 @@ def remove_from_watchlist(symbol: str, db: Session = Depends(get_db), current_us
         
     watchlist = get_or_create_default_watchlist(db, current_user.id)
     
-    item = db.query(WatchlistItem).filter(WatchlistItem.watchlist_id == watchlist.id, WatchlistItem.asset_id == asset.id).first()
+    item = (
+        db.query(WatchlistItem)
+        .filter(
+            WatchlistItem.watchlist_id == watchlist.id,
+            WatchlistItem.asset_id == asset.id,
+        )
+        .first()
+    )
     if item:
         db.delete(item)
         db.commit()
