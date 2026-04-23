@@ -46,7 +46,14 @@ const BASE_CURRENCY_BY_SYMBOL: Record<string, DisplayCurrency> = {
   GUMUSTL: 'TRY',
 };
 
-function toDataBadge(item: MarketQuote): 'LIVE' | 'DERIVED' | 'STALE' {
+function toDataBadge(
+  item: MarketQuote & { hasQuote?: boolean },
+): 'LIVE' | 'DERIVED' | 'STALE' | undefined {
+  // Catalog placeholder (no quote yet) — no badge, prevents showing a
+  // misleading "LIVE" pill on an empty row.
+  if (item.hasQuote === false) {
+    return undefined;
+  }
   if (item.isStale) {
     return 'STALE';
   }
@@ -81,7 +88,6 @@ export const MarketsScreen = ({ navigation }: any) => {
     initializeRealtime,
     fetchQuotes,
     getAssetCatalog,
-    getQuotesForCategory,
     getQuote,
     clearError: clearMarketError,
   } = useMarketDataStore();
@@ -109,7 +115,6 @@ export const MarketsScreen = ({ navigation }: any) => {
     fetchWatchlist();
   }, [cryptoSymbols, fetchQuotes, fetchWatchlist, initializeRealtime]);
 
-  const baseQuotes = getQuotesForCategory(activeTab === 'favorites' ? 'favorites' : activeTab);
   const activeTabSymbols = useMemo(() => {
     if (activeTab === 'favorites') {
       return Object.keys(favorites);
@@ -129,73 +134,58 @@ export const MarketsScreen = ({ navigation }: any) => {
     }
   }, [activeTabSymbols, fetchQuotes, getQuote]);
 
-  const filteredData = useMemo(() => {
-    const normalizedSearch = searchQuery.trim().toLowerCase();
-    const enriched = baseQuotes.map((quote) => ({
-      ...quote,
-      favorite: !!favorites[quote.symbol.toUpperCase()],
-    }));
-
-    const tabFiltered =
-      activeTab === 'favorites' ? enriched.filter((item) => item.favorite) : enriched;
-
-    if (!normalizedSearch) {
-      return tabFiltered;
-    }
-
-    let filtered = tabFiltered.filter((item) => {
-      return (
-        item.symbol.toLowerCase().includes(normalizedSearch) ||
-        item.name.toLowerCase().includes(normalizedSearch)
-      );
-    });
-
-    if (showLiveOnly) {
-      filtered = filtered.filter((item) => !item.isStale && !item.source.toLowerCase().startsWith('derived'));
-    }
-
-    if (showGainersOnly) {
-      filtered = filtered.filter((item) => item.changePercent > 0);
-    }
-
-    return filtered;
-  }, [activeTab, baseQuotes, favorites, searchQuery, showGainersOnly, showLiveOnly]);
-
+  // Always project every asset from the catalog for the active tab so rare
+  // symbols (gram altın, çeyrek, ata, gümüş TL, platin/ons variants) stay
+  // visible even if the backend temporarily lacks a price. When a quote is
+  // missing we render a neutral placeholder instead of dropping the row.
   const fallbackTabData = useMemo(() => {
-    if (filteredData.length > 0 || searchQuery.trim().length > 0) {
-      return filteredData;
-    }
-
     const metaForTab =
       activeTab === 'favorites'
         ? assetCatalog.filter((asset) => favorites[asset.symbol.toUpperCase()])
         : assetCatalog.filter((asset) => asset.category === activeTab);
 
-    let fallback = metaForTab.map((asset) => {
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+
+    let rows = metaForTab.map((asset) => {
       const liveQuote = getQuote(asset.symbol);
+      const hasQuote = Boolean(liveQuote);
       return {
         symbol: asset.symbol,
         name: asset.name,
         category: asset.category,
         price: liveQuote?.price ?? 0,
         changePercent: liveQuote?.changePercent ?? 0,
-        source: liveQuote?.source ?? 'unavailable',
-        isStale: liveQuote?.isStale ?? true,
+        source: liveQuote?.source ?? 'pending',
+        // Only treat as stale when backend explicitly flags it. Missing
+        // quotes are "pending" (placeholder), not stale.
+        isStale: Boolean(liveQuote?.isStale),
         updatedAt: liveQuote?.updatedAt ?? new Date().toISOString(),
         favorite: !!favorites[asset.symbol.toUpperCase()],
+        hasQuote,
       };
     });
 
+    if (normalizedSearch) {
+      rows = rows.filter((item) => {
+        return (
+          item.symbol.toLowerCase().includes(normalizedSearch) ||
+          item.name.toLowerCase().includes(normalizedSearch)
+        );
+      });
+    }
+
     if (showLiveOnly) {
-      fallback = fallback.filter((item) => !item.isStale && !item.source.toLowerCase().startsWith('derived'));
+      rows = rows.filter(
+        (item) => item.hasQuote && !item.isStale && !item.source.toLowerCase().startsWith('derived'),
+      );
     }
 
     if (showGainersOnly) {
-      fallback = fallback.filter((item) => item.changePercent > 0);
+      rows = rows.filter((item) => item.changePercent > 0);
     }
 
-    return fallback;
-  }, [activeTab, assetCatalog, favorites, filteredData, getQuote, searchQuery, showGainersOnly, showLiveOnly]);
+    return rows;
+  }, [activeTab, assetCatalog, favorites, getQuote, searchQuery, showGainersOnly, showLiveOnly]);
 
   const renderSkeletons = () => (
     <Box padding={spacing.lg}>
@@ -222,55 +212,58 @@ export const MarketsScreen = ({ navigation }: any) => {
     [toggleFavorite],
   );
 
-  const keyExtractor = useCallback((item: (typeof fallbackTabData)[number]) => item.symbol, [fallbackTabData]);
+  const keyExtractor = useCallback((item: (typeof fallbackTabData)[number]) => item.symbol, []);
 
-  const formatMarketPrice = (item: MarketQuote): string => {
-    if (item.category === 'forex') {
-      if (item.price <= 0) {
+  const formatMarketPrice = useCallback(
+    (item: MarketQuote): string => {
+      if (item.category === 'forex') {
+        if (item.price <= 0) {
+          return '-';
+        }
+        return item.price.toFixed(4);
+      }
+
+      const symbol = item.symbol.toUpperCase();
+      let baseCurrency: DisplayCurrency = BASE_CURRENCY_BY_SYMBOL[symbol] ?? 'USD';
+
+      if (!BASE_CURRENCY_BY_SYMBOL[symbol] && (symbol.endsWith('TRY') || symbol.includes('TL'))) {
+        baseCurrency = 'TRY';
+      } else if (!BASE_CURRENCY_BY_SYMBOL[symbol] && symbol.startsWith('EUR')) {
+        baseCurrency = 'EUR';
+      }
+
+      let converted = item.price;
+      if (baseCurrency !== displayCurrency) {
+        if (baseCurrency === 'USD' && displayCurrency === 'TRY') {
+          if (!usdTry) return '-';
+          converted = item.price * usdTry;
+        } else if (baseCurrency === 'USD' && displayCurrency === 'EUR') {
+          if (!eurUsd) return '-';
+          converted = item.price / eurUsd;
+        } else if (baseCurrency === 'TRY' && displayCurrency === 'USD') {
+          if (!usdTry || usdTry === 0) return '-';
+          converted = item.price / usdTry;
+        } else if (baseCurrency === 'TRY' && displayCurrency === 'EUR') {
+          if (!usdTry || !eurUsd || usdTry === 0) return '-';
+          converted = item.price / usdTry / eurUsd;
+        } else if (baseCurrency === 'EUR' && displayCurrency === 'USD') {
+          if (!eurUsd) return '-';
+          converted = item.price * eurUsd;
+        } else if (baseCurrency === 'EUR' && displayCurrency === 'TRY') {
+          if (!eurUsd || !usdTry) return '-';
+          converted = item.price * eurUsd * usdTry;
+        }
+      }
+
+      if (!Number.isFinite(converted) || converted <= 0) {
         return '-';
       }
-      return item.price.toFixed(4);
-    }
 
-    const symbol = item.symbol.toUpperCase();
-    let baseCurrency: DisplayCurrency = BASE_CURRENCY_BY_SYMBOL[symbol] ?? 'USD';
-
-    if (!BASE_CURRENCY_BY_SYMBOL[symbol] && (symbol.endsWith('TRY') || symbol.includes('TL'))) {
-      baseCurrency = 'TRY';
-    } else if (!BASE_CURRENCY_BY_SYMBOL[symbol] && symbol.startsWith('EUR')) {
-      baseCurrency = 'EUR';
-    }
-
-    let converted = item.price;
-    if (baseCurrency !== displayCurrency) {
-      if (baseCurrency === 'USD' && displayCurrency === 'TRY') {
-        if (!usdTry) return '-';
-        converted = item.price * usdTry;
-      } else if (baseCurrency === 'USD' && displayCurrency === 'EUR') {
-        if (!eurUsd) return '-';
-        converted = item.price / eurUsd;
-      } else if (baseCurrency === 'TRY' && displayCurrency === 'USD') {
-        if (!usdTry || usdTry === 0) return '-';
-        converted = item.price / usdTry;
-      } else if (baseCurrency === 'TRY' && displayCurrency === 'EUR') {
-        if (!usdTry || !eurUsd || usdTry === 0) return '-';
-        converted = item.price / usdTry / eurUsd;
-      } else if (baseCurrency === 'EUR' && displayCurrency === 'USD') {
-        if (!eurUsd) return '-';
-        converted = item.price * eurUsd;
-      } else if (baseCurrency === 'EUR' && displayCurrency === 'TRY') {
-        if (!eurUsd || !usdTry) return '-';
-        converted = item.price * eurUsd * usdTry;
-      }
-    }
-
-    if (!Number.isFinite(converted) || converted <= 0) {
-      return '-';
-    }
-
-    const currencyCode = displayCurrency === 'TRY' ? 'TRY' : displayCurrency;
-    return formatCurrencyByLocale(converted, currencyCode, 2);
-  };
+      const currencyCode = displayCurrency === 'TRY' ? 'TRY' : displayCurrency;
+      return formatCurrencyByLocale(converted, currencyCode, 2);
+    },
+    [displayCurrency, usdTry, eurUsd],
+  );
 
   const renderMarketItem = useCallback(
     ({ item }: { item: (typeof fallbackTabData)[number] }) => (
@@ -289,8 +282,7 @@ export const MarketsScreen = ({ navigation }: any) => {
         onPress={() => navigation.navigate('AssetDetail', { symbol: item.symbol })}
       />
     ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fallbackTabData, isConnected, handleToggleFavorite, navigation, displayCurrency, usdTry, eurUsd],
+    [isConnected, handleToggleFavorite, navigation, formatMarketPrice],
   );
 
   return (

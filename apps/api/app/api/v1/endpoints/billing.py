@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
@@ -7,8 +7,9 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_admin, get_current_user, get_db
 from app.core.config import settings
-from app.core.security import verify_payload_signature
 from app.core.plan_limits import insight_cooldown_for_user, max_alerts_for_user
+from app.core.security import verify_payload_signature
+from app.db.redis import get_redis_client
 from app.models.audit import AuditLog
 from app.models.billing import BillingWebhookReceipt
 from app.models.user import User
@@ -19,7 +20,6 @@ from app.schemas.billing import (
     SubscriptionUpdateRequest,
 )
 from app.services.audit_service import AuditService
-from app.db.redis import get_redis_client
 
 router = APIRouter()
 
@@ -83,21 +83,29 @@ async def billing_webhook(
     db: Session = Depends(get_db),
 ):
     redis = get_redis_client()
+    # Read the raw body up front so replay fingerprinting and HMAC verification
+    # observe the exact same bytes. Previously the fingerprint was computed
+    # against an undefined name which meant replay protection was effectively
+    # disabled and signature verification happened after the replay window had
+    # already been marked consumed.
+    raw_body = await request.body()
     signature_fingerprint = f"{x_signature or 'none'}:{len(raw_body)}"
     replay_key = f"billing:webhook:replay:{signature_fingerprint}"
     if await redis.get(replay_key):
         return {"status": "replay_ignored"}
     await redis.set(replay_key, "1", ex=60 * 15)
 
-    raw_body = await request.body()
     if not verify_payload_signature(raw_body, settings.BILLING_WEBHOOK_SECRET, x_signature):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid billing signature")
 
     try:
         payload_dict = json.loads(raw_body.decode("utf-8"))
         payload = BillingWebhookEvent(**payload_dict)
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid webhook payload")
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid webhook payload",
+        ) from exc
 
     existing = (
         db.query(BillingWebhookReceipt)
@@ -128,7 +136,7 @@ async def billing_webhook(
             event_id=payload.event_id.strip(),
             event_type=payload.event,
             user_email=payload.user_email,
-            processed_at=datetime.now(timezone.utc),
+            processed_at=datetime.now(UTC),
         )
     )
 
@@ -182,7 +190,7 @@ def admin_update_user_subscription(
     try:
         user_uuid = UUID(user_id)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id") from None
 
     user = db.query(User).filter(User.id == user_uuid).first()
     if not user:

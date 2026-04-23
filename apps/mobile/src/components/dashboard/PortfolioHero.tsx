@@ -60,15 +60,33 @@ export const PortfolioHero: React.FC<PortfolioHeroProps> = ({
   const sparkData = useMemo(() => {
     const series = sparklineByRange?.[range];
     if (series && series.length >= 2) return series;
-    // Deterministic placeholder so there's always something pleasant to see.
+    // Organic, silky placeholder: two harmonics + micro-noise + drift direction
+    // steered by sentiment so the hero curve never feels mechanical.
     const base = totalValue || 100;
-    const seed = Array.from({ length: 24 }).map((_, i) => {
-      const phase = Math.sin(i * 0.45) * (palette.isPositive ? 0.02 : -0.015);
-      const drift = (i / 24) * (palette.isPositive ? 0.03 : -0.025);
-      return base * (1 + phase + drift);
+    const POINTS = 40;
+    const amplitude = palette.tier === 'strong' ? 0.05 : palette.tier === 'standard' ? 0.035 : 0.02;
+    const driftTotal = palette.isPositive ? amplitude * 1.2 : -amplitude * 1.1;
+    const seed = Array.from({ length: POINTS }).map((_, i) => {
+      const t = i / (POINTS - 1);
+      const wave =
+        Math.sin(i * 0.55) * amplitude * 0.6 +
+        Math.sin(i * 0.22 + 1.3) * amplitude * 0.4 +
+        Math.sin(i * 1.1 + 0.7) * amplitude * 0.18;
+      const drift = t * driftTotal;
+      return base * (1 + wave + drift);
     });
     return seed;
-  }, [sparklineByRange, range, totalValue, palette.isPositive]);
+  }, [sparklineByRange, range, totalValue, palette.isPositive, palette.tier]);
+
+  // Sentiment palette's neutral tier resolves to a whitish tint which made the
+  // placeholder chart look flat and "primitive". Swap to an electric teal
+  // accent so the hero sparkline always reads as a premium data viz even at $0.
+  const isNeutral = Math.abs(dailyChangePercent) < 0.01;
+  const NEUTRAL_ACCENT = '#56C7FF';
+  const sparkStroke = isNeutral ? NEUTRAL_ACCENT : palette.text;
+  const sparkFill: [string, string] = isNeutral
+    ? ['rgba(86,199,255,0.32)', 'rgba(86,199,255,0.02)']
+    : palette.gradient;
 
   return (
     <Animated.View entering={FadeInUp.duration(700).springify()} style={styles.container}>
@@ -118,10 +136,12 @@ export const PortfolioHero: React.FC<PortfolioHeroProps> = ({
       <Box row justify="space-between" align="center" style={{ marginTop: spacing.lg }}>
         <Sparkline
           data={sparkData}
-          width={180}
-          height={48}
-          strokeColor={palette.text}
-          fillColors={palette.gradient}
+          width={200}
+          height={56}
+          strokeWidth={2.25}
+          strokeColor={sparkStroke}
+          fillColors={sparkFill}
+          glowColor={sparkStroke}
         />
         <Box row style={styles.rangeRow}>
           {RANGES.map((r) => {
