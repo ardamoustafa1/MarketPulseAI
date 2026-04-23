@@ -30,12 +30,14 @@ export const QuoteMetaBadge: React.FC<QuoteMetaBadgeProps> = ({
 
   const providerLabel = formatQuoteSourceLabel(source);
   const updatedLabel = formatQuoteTime(updatedAt);
-  const showCached = isStale || !isConnected;
+  // Only treat the pill as "cached/stale" when the data itself is actually old.
+  // A missing realtime WebSocket shouldn't make every REST-fed quote look broken.
+  const showCached = Boolean(isStale);
 
-  const statusLabel = !isConnected
-    ? t('quoteMeta.statusCached', 'Cached')
-    : isStale
-      ? t('quoteMeta.statusStale', 'Stale')
+  const statusLabel = isStale
+    ? t('quoteMeta.statusStale', 'Stale')
+    : !isConnected
+      ? t('quoteMeta.statusCached', 'Cached')
       : t('quoteMeta.statusLive', 'Live');
 
   return (
@@ -63,7 +65,7 @@ export const QuoteMetaBadge: React.FC<QuoteMetaBadgeProps> = ({
           <Text
             variant="caption"
             weight="600"
-            color={showCached ? colors.sentiment.bear_red : colors.text.secondary}
+            color={showCached ? colors.sentiment.bear_red : colors.text.muted}
             style={{ fontSize: 10 }}
           >
             {compact ? providerLabel : `${providerLabel} · ${statusLabel}`}
@@ -102,7 +104,13 @@ export const QuoteMetaBadge: React.FC<QuoteMetaBadgeProps> = ({
               <MetaRow
                 label={t('quoteMeta.status', 'Status')}
                 value={statusLabel}
-                valueColor={showCached ? colors.sentiment.bear_red : colors.sentiment.bull_green}
+                valueColor={
+                  showCached
+                    ? colors.sentiment.bear_red
+                    : !isConnected
+                      ? colors.text.secondary
+                      : colors.sentiment.bull_green
+                }
               />
 
               <Text

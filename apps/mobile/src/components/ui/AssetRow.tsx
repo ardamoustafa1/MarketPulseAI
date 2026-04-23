@@ -90,32 +90,33 @@ export const AssetRow: React.FC<AssetRowProps> = ({
               {name}
             </Text>
             <Box row align="center" style={{ marginTop: 4, flexWrap: 'wrap', gap: 6 }}>
-              {dataBadge ? (
-                <Box
-                  style={[
-                    styles.badge,
-                    !isConnected
-                      ? styles.badgeStale
-                      : dataBadge === 'LIVE'
-                        ? styles.badgeLive
-                        : dataBadge === 'DERIVED'
-                          ? styles.badgeDerived
-                          : styles.badgeStale,
-                  ]}
-                >
+              {/*
+                Show the dataBadge only when it carries real information:
+                STALE (truly old quote) or DERIVED (computed). A healthy
+                LIVE quote doesn't need a loud pill — the provider chip is
+                enough and the UI stays calm even when the WebSocket is
+                temporarily offline.
+              */}
+              {dataBadge === 'STALE' ? (
+                <Box style={[styles.badge, styles.badgeStale]}>
                   <Text
                     variant="caption"
                     weight="600"
-                    color={
-                      !isConnected
-                        ? colors.sentiment.bear_red
-                        : dataBadge === 'STALE'
-                          ? colors.sentiment.bear_red
-                          : colors.text.secondary
-                    }
+                    color={colors.sentiment.bear_red}
                     style={{ fontSize: 10 }}
                   >
-                    {!isConnected ? 'CACHED' : dataBadge}
+                    STALE
+                  </Text>
+                </Box>
+              ) : dataBadge === 'DERIVED' ? (
+                <Box style={[styles.badge, styles.badgeDerived]}>
+                  <Text
+                    variant="caption"
+                    weight="600"
+                    color={colors.text.muted}
+                    style={{ fontSize: 10 }}
+                  >
+                    DERIVED
                   </Text>
                 </Box>
               ) : null}
@@ -145,18 +146,34 @@ export const AssetRow: React.FC<AssetRowProps> = ({
             weight="600"
             style={{ fontSize: 17 }}
           />
-          <LinearGradient
-            colors={palette.gradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={[styles.sentimentPill, { borderColor: palette.border }]}
-          >
-            <TrendIcon color={palette.text} size={12} style={{ marginRight: 4 }} />
-            <Text variant="caption" color={palette.text} weight="700" mono>
-              {palette.isPositive ? '+' : ''}
-              {changePercent.toFixed(2)}%
-            </Text>
-          </LinearGradient>
+          {Number.isFinite(changePercent) && Math.abs(changePercent) >= 0.01 ? (
+            <LinearGradient
+              colors={palette.gradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.sentimentPill, { borderColor: palette.border }]}
+            >
+              <TrendIcon color={palette.text} size={12} style={{ marginRight: 4 }} />
+              <Text variant="caption" color={palette.text} weight="700" mono>
+                {palette.isPositive ? '+' : ''}
+                {changePercent.toFixed(2)}%
+              </Text>
+            </LinearGradient>
+          ) : (
+            <Box
+              style={[
+                styles.sentimentPill,
+                {
+                  borderColor: 'rgba(255,255,255,0.08)',
+                  backgroundColor: 'rgba(255,255,255,0.03)',
+                },
+              ]}
+            >
+              <Text variant="caption" color={colors.text.muted} weight="600" mono>
+                —
+              </Text>
+            </Box>
+          )}
         </Box>
       </Box>
     </Pressable>
