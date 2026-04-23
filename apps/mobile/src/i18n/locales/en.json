@@ -1,4 +1,123 @@
 {
+  "alertsRail": {
+    "title": "Your alerts",
+    "viewAll": "See all",
+    "watching": "watching"
+  },
+  "socialProof": {
+    "weekLine": "{{count}} people updated their portfolio this week",
+    "dauLine": "{{count}} active investors today"
+  },
+  "academyRail": {
+    "title": "MarketPulse Academy",
+    "browseAll": "Browse all",
+    "minutesShort": "min"
+  },
+  "academyScreen": {
+    "title": "Academy",
+    "minutes": "min read",
+    "emptyTitle": "Content not loaded yet",
+    "emptyDesc": "Check your connection and retry.",
+    "retry": "Retry"
+  },
+  "weeklyRecap": {
+    "eyebrow": "WEEKLY RECAP",
+    "defaultHeadline": "Your AI-powered weekly recap is ready"
+  },
+  "weeklyRecapScreen": {
+    "title": "Weekly Recap",
+    "period": "{{start}} — {{end}}",
+    "topAssets": "Top movers",
+    "emptyTitle": "Recap not available",
+    "emptyDesc": "Not enough data this week. Try again later.",
+    "retry": "Retry"
+  },
+  "monthlyWrappedScreen": {
+    "share": "Share",
+    "emptyTitle": "Wrapped not available yet",
+    "emptyDesc": "Your Wrapped appears once you have enough activity.",
+    "retry": "Retry"
+  },
+  "sharedWatchlist": {
+    "title": "Shared list",
+    "sharedBy": "Shared by",
+    "count": "{{count}} assets",
+    "importAll": "Add all to favorites",
+    "expiredTitle": "Link expired",
+    "expiredDesc": "Ask the owner for a fresh link.",
+    "back": "Go back"
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "next": "Continue",
+    "start": "Start Now",
+    "loginCta": "I already have an account",
+    "slide1": {
+      "headline": "Quiet Luxury. Smarter Portfolio.",
+      "body": "A golden pulse of live prices and AI insights — track your portfolio with calm, premium focus."
+    },
+    "slide2": {
+      "headline": "Signal, Not Noise",
+      "body": "Proven data sources across crypto, forex and metals with flash updates and a real-time sentiment gradient."
+    },
+    "slide3": {
+      "headline": "Your Personal Coach",
+      "body": "AI suggestions and smart alerts accelerate your decisions. Your portfolio is active within 10 minutes."
+    },
+    "consent": {
+      "headline": "Your security, first",
+      "body": "Please review the Terms and the GDPR/KVKK notice before you continue.",
+      "terms": "I have read and accept the Terms of Service.",
+      "termsLink": "View terms",
+      "privacy": "I accept the GDPR/KVKK privacy notice.",
+      "privacyLink": "View privacy notice",
+      "disclaimer": "This app does not provide investment advice. Prices are informational only.",
+      "cta": "Accept & continue"
+    }
+  },
+  "quoteMeta": {
+    "title": "Data source",
+    "symbol": "Symbol",
+    "provider": "Provider",
+    "updated": "Last update",
+    "status": "Status",
+    "statusLive": "Live",
+    "statusStale": "Stale",
+    "statusCached": "Cached",
+    "a11yOpen": "Show data source and last update time",
+    "disclaimer": "Prices are aggregated from third-party providers and shown for informational purposes only. Not investment advice."
+  },
+  "twoFactor": {
+    "title": "Two-factor authentication",
+    "statusEnabled": "Enabled",
+    "statusDisabled": "Not enabled",
+    "description": "Add an extra layer of security by linking an authenticator app (Google Authenticator, 1Password, Authy). A 6-digit code is required on sign-in.",
+    "enableCta": "Enable 2FA",
+    "disableCta": "Disable 2FA",
+    "enrollTitle": "Add to your authenticator",
+    "enrollBody": "Open your authenticator app and add a new account. Enter the secret below or scan the QR code from your browser.",
+    "secret": "Secret",
+    "codeLabel": "Verification code",
+    "verifyCta": "Verify & enable",
+    "disableTitle": "Disable 2FA",
+    "disableBody": "Confirm your password and a current TOTP code to remove two-factor authentication.",
+    "passwordLabel": "Current password",
+    "disableConfirmCta": "Disable",
+    "enabledTitle": "2FA enabled",
+    "enabledBody": "Two-factor authentication is now active.",
+    "enterCode": "Enter the 6-digit code from your authenticator app.",
+    "enterPassword": "Confirm your password to disable 2FA.",
+    "genericError": "Action failed, please try again.",
+    "verifyError": "Invalid code. Try again.",
+    "disableError": "Failed to disable 2FA."
+  },
+  "appearance": {
+    "title": "Appearance",
+    "desc": "Match the system theme or pin the app mode.",
+    "dark": "Dark",
+    "light": "Light",
+    "auto": "Auto"
+  },
   "common": {
     "overview": "Overview",
     "markets": "Markets",
@@ -60,7 +179,10 @@
     "watchlistMissing": "• Follow at least 1 asset",
     "alertsReady": "✓ Alerts active ({{count}})",
     "alertsMissing": "• Create at least 1 price alert",
-    "progressDone": "{{value}}% completed"
+    "progressDone": "{{value}}% completed",
+    "wrappedEyebrow": "MONTHLY WRAPPED",
+    "wrappedTitle": "Your {{month}} story is ready",
+    "wrappedDesc": "See what you did this month — and what to improve — in one tap."
   },
   "marketsScreen": {
     "title": "Discover",
@@ -90,7 +212,10 @@
     "emptyDesc": "After your first transaction, returns, cost basis and AI insight are calculated automatically.",
     "loadErrorTitle": "Portfolio data could not be loaded",
     "loadErrorDefault": "Check connection and try again.",
-    "partialValuation": "Valuation is partial: {{missing}} missing prices, {{stale}} stale prices."
+    "partialValuation": "Valuation is partial: {{missing}} missing prices, {{stale}} stale prices.",
+    "sandboxBadge": "SANDBOX",
+    "sandboxCta": "Enable paper trading",
+    "sandboxDesc": "Test strategies without real money. Same prices, zero risk."
   },
   "profileScreen": {
     "title": "Profile",
@@ -125,6 +250,9 @@
     "feedLockDesc": "Require biometrics when app opens",
     "pushTitle": "Price alert push notifications",
     "pushDesc": "Notify when price alert triggers (Expo push)",
+    "twoFactorTitle": "Two-factor authentication",
+    "twoFactorEnabled": "Enabled — TOTP required on sign-in",
+    "twoFactorDisabled": "Add an authenticator app for extra security",
     "enableAppLock": "Enable app lock",
     "exportUnavailable": "Export unavailable",
     "exportUnavailableDesc": "File system is not available in this environment.",
@@ -162,7 +290,10 @@
     "emptyTitle": "Your watchlist is empty",
     "emptyDesc": "Add relevant assets to favorites to track price movements from one screen.",
     "emptyCta": "Explore markets",
-    "errorHint": "{{error}} Tap notification to try again."
+    "errorHint": "{{error}} Tap notification to try again.",
+    "shareCta": "Share your list",
+    "shareTitle": "Check out my watchlist",
+    "shareBody": "Sharing my {{count}} favorite assets on MarketPulse with you: {{url}}"
   },
   "insightsScreen": {
     "title": "AI Insights",
@@ -261,7 +392,10 @@
     "loadError": "Comparison could not be loaded. Check symbols and try again.",
     "emptyTitle": "No comparison data found",
     "emptyDesc": "Not enough data for selected symbols in this range. Try a different symbol or range.",
-    "emptyCta": "Back to 1M range"
+    "emptyCta": "Back to 1M range",
+    "shareCta": "Share comparison",
+    "shareTitle": "MarketPulse comparison",
+    "shareMessage": "{{assetA}} {{pctA}} vs {{assetB}} {{pctB}} ({{range}}) — MarketPulse"
   },
   "fifoScreen": {
     "title": "FIFO Summary",
@@ -297,5 +431,71 @@
     "subtitle": "Normalized to 100 at the start of the range.",
     "symbolA": "Symbol A",
     "symbolB": "Symbol B"
+  },
+  "intelligence": {
+    "screenTitle": "Intelligence Hub",
+    "dashboardEyebrow": "CROSS-ASSET AI",
+    "dashboardDefaultHeadline": "Today's cross-asset signal",
+    "dashboardMeta": "Regime: {{regime}} · {{bullish}} buys · {{bearish}} sells",
+    "dashboardPrimerMeta": "Tap for live AI signals across BTC, gold, USDTRY and 12+ assets",
+    "heroEyebrow": "TODAY FOR YOUR PORTFOLIO",
+    "heroEmpty": "Signal loading…",
+    "heroHint": "Personalised macro signal appears here once data is ready.",
+    "bullishChip": "{{count}} bullish",
+    "bearishChip": "{{count}} bearish",
+    "confidence": "Confidence: {{value}}%",
+    "todayTitle": "Today's Signal",
+    "todaySubtitle": "Top 12 by conviction",
+    "scoreConfidence": "Conf. {{value}}%",
+    "historicalHit": "Hit rate: {{value}}%",
+    "ratiosTitle": "Cross-Asset Ratio Radar",
+    "ratioMeta": "Value: {{value}} · z: {{z}} · p{{pct}}",
+    "ratioDirection": {
+      "extreme_low": "HISTORIC LOW",
+      "low": "LOW",
+      "normal": "NORMAL",
+      "high": "HIGH",
+      "extreme_high": "HISTORIC HIGH"
+    },
+    "correlationTitle": "Correlation Heatmap ({{window}}d)",
+    "newsImpactTitle": "News → Wallet Impact",
+    "impactValue": "Est. impact {{amount}}",
+    "macroTitle": "Macro Calendar",
+    "importance": {
+      "low": "LOW",
+      "medium": "MED",
+      "high": "HIGH"
+    },
+    "winRate": "win {{value}}%",
+    "onchainTitle": "On-chain Pulse",
+    "onchainBias": {
+      "accumulation": "ACCUMULATION",
+      "distribution": "DISTRIBUTION",
+      "neutral": "NEUTRAL"
+    },
+    "fearGreed": "Fear & Greed: {{value}}",
+    "halvingCountdown": "Halving in {{days}} days",
+    "bazaarTitle": "LBMA / Grand Bazaar Spread",
+    "bazaarRow": "Market: {{bazaar}} · Fair: {{fair}}",
+    "bazaarVerdict": {
+      "rich": "RICH",
+      "fair": "FAIR",
+      "cheap": "CHEAP"
+    },
+    "carryTitle": "FX Carry Scores",
+    "carryVerdict": {
+      "attractive": "ATTRACTIVE",
+      "neutral": "NEUTRAL",
+      "avoid": "AVOID"
+    },
+    "regime": {
+      "risk_on": "RISK-ON",
+      "risk_off": "RISK-OFF",
+      "rotation": "ROTATION",
+      "neutral": "NEUTRAL"
+    },
+    "regimeTitle": "Regime Components",
+    "loading": "Building cross-asset intelligence…",
+    "errorTitle": "Could not load data"
   }
 }

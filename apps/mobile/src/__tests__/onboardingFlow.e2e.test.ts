@@ -1,4 +1,4 @@
-import { ONBOARDING_STEPS } from '../screens/auth/OnboardingScreen';
+import { ONBOARDING_STEPS } from '../screens/auth/onboardingSteps';
 
 describe('mobile onboarding critical flow', () => {
   it('contains three-step activation journey with benchmark promise', () => {

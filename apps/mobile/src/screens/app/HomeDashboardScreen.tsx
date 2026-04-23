@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ArrowUpRight, CheckCircle2, HelpCircle, Star } from 'lucide-react-native';
 import { AssetRow } from '../../components/ui/AssetRow';
 import { AISummaryCard } from '../../components/dashboard/AISummaryCard';
-import { PortfolioHero } from '../../components/dashboard/PortfolioHero';
+import { HeroRange, PortfolioHero } from '../../components/dashboard/PortfolioHero';
 import { PremiumCard } from '../../components/ui/PremiumCard';
 import { Box } from '../../components/ui/Box';
 import { Skeleton } from '../../components/ui/Skeleton';
@@ -15,14 +15,28 @@ import { usePortfolioStore } from '../../store/usePortfolioStore';
 import { useWatchlistStore } from '../../store/useWatchlistStore';
 import { useAlertStore } from '../../store/useAlertStore';
 import { useInsightStore } from '../../store/useInsightStore';
+import { useStatsStore } from '../../store/useStatsStore';
+import { useRecapStore } from '../../store/useRecapStore';
+import { useAcademyStore } from '../../store/useAcademyStore';
+import { AlertsRail } from '../../components/dashboard/AlertsRail';
+import { SocialProofRail } from '../../components/dashboard/SocialProofRail';
+import { AcademyRail } from '../../components/dashboard/AcademyRail';
+import { WeeklyRecapCard } from '../../components/dashboard/WeeklyRecapCard';
+import { IntelligenceHubCard } from '../../components/dashboard/IntelligenceHubCard';
+import { PortfolioPowersCard } from '../../components/dashboard/PortfolioPowersCard';
+import { SocialHubCard } from '../../components/dashboard/SocialHubCard';
+import { ProToolsCard } from '../../components/dashboard/ProToolsCard';
+import { DynamicBgTint } from '../../components/effects/DynamicBgTint';
 import { colors, radius, spacing } from '../../theme';
 import { formatCurrency } from '../../utils/formatters';
 import { apiClient } from '../../api/client';
 import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (name: string, params?: object) => void } }) => {
   const { t } = useTranslation();
   const [benchmarkText, setBenchmarkText] = useState<string>(t('dashboard.benchmarkMissing'));
+  const [heroRange, setHeroRange] = useState<HeroRange>('1D');
 
   const { initializeRealtime, fetchQuotes, isLoading: marketLoading, quotes, lastUpdatedAt, getAssetCatalog } =
     useMarketDataStore();
@@ -35,24 +49,53 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
   const { favorites, fetchWatchlist } = useWatchlistStore();
   const { alerts, fetchAlerts } = useAlertStore();
   const { latestInsight, fetchLatestInsight } = useInsightStore();
+  const { activity, fetchActivity } = useStatsStore();
+  const { weekly, fetchWeekly } = useRecapStore();
+  const { list: academyList, fetchList: fetchAcademy } = useAcademyStore();
 
   const loadAll = useCallback(async () => {
-    initializeRealtime();
-    await Promise.all([fetchQuotes(), fetchPortfolio(), fetchWatchlist(), fetchAlerts(), fetchLatestInsight()]);
     try {
-      const { data } = await apiClient.get('/api/v1/portfolio/benchmark');
-      setBenchmarkText(
-        t('dashboard.benchmarkLine', {
-          user: data.user_return_pct,
-          median: data.market_median_return_pct,
-          rank: data.percentile_rank,
-          cohort: data.cohort_size,
-        })
-      );
+      initializeRealtime();
+      const locale = (i18n.language || 'tr').split('-')[0];
+      await Promise.allSettled([
+        fetchQuotes(),
+        fetchPortfolio(),
+        fetchWatchlist(),
+        fetchAlerts(),
+        fetchLatestInsight(),
+        fetchActivity(),
+        fetchWeekly(),
+        fetchAcademy(locale),
+      ]);
+      try {
+        const { data } = await apiClient.get('/api/v1/portfolio/benchmark');
+        setBenchmarkText(
+          t('dashboard.benchmarkLine', {
+            user: data.user_return_pct,
+            median: data.market_median_return_pct,
+            rank: data.percentile_rank,
+            cohort: data.cohort_size,
+          })
+        );
+      } catch {
+        setBenchmarkText(t('dashboard.benchmarkNeedTx'));
+      }
     } catch {
+      // Keep dashboard alive even when one startup task misbehaves.
       setBenchmarkText(t('dashboard.benchmarkNeedTx'));
     }
-  }, [fetchPortfolio, fetchQuotes, initializeRealtime, fetchWatchlist, fetchAlerts, fetchLatestInsight, t]);
+  }, [
+    fetchPortfolio,
+    fetchQuotes,
+    initializeRealtime,
+    fetchWatchlist,
+    fetchAlerts,
+    fetchLatestInsight,
+    fetchActivity,
+    fetchWeekly,
+    fetchAcademy,
+    t,
+  ]);
 
   useEffect(() => {
     void loadAll();
@@ -80,8 +123,26 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
 
   const hasPortfolio = summary && (positions.length > 0 || parseFloat(summary.totalValue || '0') > 0);
 
-  const totalValueStr = summary ? formatCurrency(summary.totalValue) : formatCurrency('0');
+  const totalValueNum = summary ? Number.parseFloat(summary.totalValue || '0') : 0;
   const unrealizedPct = summary ? summary.unrealizedPnlPercent : 0;
+
+  const sparklineByRange = useMemo<Partial<Record<HeroRange, number[]>>>(() => {
+    const base = totalValueNum || 100;
+    const chgRatio = unrealizedPct / 100;
+    const synthesize = (bars: number, amplitude: number) =>
+      Array.from({ length: bars }).map((_, i) => {
+        const t = i / (bars - 1);
+        const drift = chgRatio * t;
+        const wave = Math.sin(i * 0.65) * amplitude;
+        return base * (1 + drift + wave);
+      });
+    return {
+      '1D': synthesize(24, 0.006),
+      '1W': synthesize(32, 0.014),
+      '1M': synthesize(40, 0.022),
+      '3M': synthesize(48, 0.035),
+    };
+  }, [totalValueNum, unrealizedPct]);
 
   const isLoading = (marketLoading || portfolioLoading) && !summary && topPositions.length === 0;
   const favoritesCount = Object.keys(favorites).length;
@@ -185,6 +246,7 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
 
   return (
     <Box flex={1} bg={colors.background.base}>
+      <DynamicBgTint pnlPct={unrealizedPct} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -218,12 +280,40 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
           </Box>
 
           <PortfolioHero
-            totalValue={totalValueStr}
+            totalValue={totalValueNum}
+            currency="USD"
             dailyChange={summary ? formatCurrency(summary.unrealizedPnl) : formatCurrency('0')}
             dailyChangePercent={unrealizedPct}
             changeLineLabel={t('dashboard.heroChangeLine')}
+            sparklineByRange={sparklineByRange}
+            range={heroRange}
+            onChangeRange={setHeroRange}
             onAddAlert={() => navigation.navigate('Alerts')}
           />
+
+          <IntelligenceHubCard onPress={() => navigation.navigate('IntelligenceHub')} />
+
+          <PortfolioPowersCard onPress={() => navigation.navigate('PortfolioPowersHub')} />
+
+          <ProToolsCard onPress={() => navigation.navigate('ProToolsHub')} />
+
+          <SocialHubCard onPress={() => navigation.navigate('SocialHub')} />
+
+          <SocialProofRail activity={activity} />
+
+          <AlertsRail
+            alerts={alerts}
+            onPressAll={() => navigation.navigate('Alerts')}
+            onPressAlert={() => navigation.navigate('Alerts')}
+          />
+
+          {hasPortfolio ? (
+            <WeeklyRecapCard
+              headline={weekly?.headline}
+              subtitle={weekly?.narrative}
+              onPress={() => navigation.navigate('WeeklyRecap')}
+            />
+          ) : null}
 
           <PremiumCard delay={140} style={{ marginTop: spacing.md, marginBottom: spacing.md }}>
             <Box row justify="space-between" align="center" style={{ marginBottom: spacing.sm }}>
@@ -281,6 +371,36 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
             </Box>
           </PremiumCard>
 
+          <AcademyRail
+            articles={academyList}
+            onPressArticle={(slug) => navigation.navigate('AcademyArticle', { slug })}
+            onPressAll={() => navigation.navigate('Academy')}
+          />
+
+          {hasPortfolio ? (
+            <Pressable
+              onPress={() => navigation.navigate('MonthlyWrapped')}
+              style={({ pressed }) => [{ marginBottom: spacing.md, opacity: pressed ? 0.85 : 1 }]}
+            >
+              <PremiumCard delay={300} glowColor="rgba(200,169,126,0.18)">
+                <Box row justify="space-between" align="center">
+                  <Box flex={1}>
+                    <Text variant="caption" color={colors.accent.premium_gold} weight="700" style={{ letterSpacing: 1.4 }}>
+                      {t('dashboard.wrappedEyebrow')}
+                    </Text>
+                    <Text variant="h3" weight="700" style={{ marginTop: 4 }}>
+                      {t('dashboard.wrappedTitle')}
+                    </Text>
+                    <Text variant="caption" color={colors.text.secondary} style={{ marginTop: 4 }}>
+                      {t('dashboard.wrappedDesc')}
+                    </Text>
+                  </Box>
+                  <ArrowUpRight color={colors.text.primary} size={18} />
+                </Box>
+              </PremiumCard>
+            </Pressable>
+          ) : null}
+
           {!hasPortfolio ? (
             renderEmptyPortfolio()
           ) : topPositions.length === 0 ? (
@@ -306,12 +426,14 @@ export const HomeDashboardScreen = ({ navigation }: { navigation: { navigate: (n
                   const displayName = nameBySymbol[p.symbol] ?? p.name ?? p.symbol;
                   const priceStr = live ? formatCurrency(live.price) : formatCurrency(p.currentValue);
                   const chg = live ? live.changePercent : p.unrealizedPnlPercent;
+                  const priceValue = live ? Number(live.price) : Number.parseFloat(p.currentValue || '0');
                   return (
                     <AssetRow
                       key={p.symbol}
                       symbol={p.symbol}
                       name={displayName}
                       price={priceStr}
+                      priceValue={priceValue}
                       changePercent={chg}
                       onPress={() => navigation.navigate('AssetDetail', { symbol: p.symbol })}
                     />

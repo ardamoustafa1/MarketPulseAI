@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, RefreshCw } from 'lucide-react-native';
+import { ArrowLeft, Newspaper, RefreshCw } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '../../api/client';
 import { Box } from '../../components/ui/Box';
 import { Text } from '../../components/ui/Text';
+import { GuidedStateCard } from '../../components/ui/GuidedStateCard';
 import { colors, spacing } from '../../theme';
 
 type Item = { title: string; link: string | null; source: string; published: string | null };
@@ -56,6 +57,14 @@ export const MarketNewsScreen = ({ navigation }: { navigation: { goBack: () => v
         </Text>
         {loading ? (
           <Text color={colors.text.secondary}>…</Text>
+        ) : items.length === 0 ? (
+          <GuidedStateCard
+            title={t('news.emptyTitle', 'Haber bulunamadı')}
+            description={t('news.emptyDesc', 'Şu anda RSS kaynağından veri alınamadı. Tekrar denemek için aşağıya dokun.')}
+            ctaLabel={t('common.retry')}
+            onPress={() => void load()}
+            icon={<Newspaper color={colors.text.muted} size={32} />}
+          />
         ) : (
           items.map((it, idx) => (
             <Pressable

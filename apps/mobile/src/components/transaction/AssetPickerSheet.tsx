@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Pressable, Platform, Modal, TextInput, FlatList, Keyboard, ActivityIndicator } from 'react-native';
+import { StyleSheet, Pressable, Platform, Modal, TextInput, FlatList, Keyboard, ActivityIndicator, View } from 'react-native';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box } from '../ui/Box';
@@ -196,6 +198,15 @@ export const AssetPickerSheet: React.FC<AssetPickerSheetProps> = ({
           entering={FadeInDown.springify().damping(20)}
           style={[styles.sheetBody, { paddingBottom: insets.bottom + spacing.lg }]}
         >
+          <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill as any} />
+          <LinearGradient
+            colors={['rgba(255,255,255,0.04)', 'rgba(255,255,255,0)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 0.5 }}
+            style={StyleSheet.absoluteFill as any}
+          />
+          <View style={styles.sheetStroke} pointerEvents="none" />
+
           <Box center style={{ paddingVertical: spacing.sm }}>
             <Box style={styles.handle} />
           </Box>
@@ -291,11 +302,18 @@ const styles = StyleSheet.create({
   },
   sheetBody: {
     flex: 1,
-    backgroundColor: colors.background.surface,
+    backgroundColor: 'rgba(17, 19, 26, 0.72)',
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
+  },
+  sheetStroke: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   handle: {
     width: 40,

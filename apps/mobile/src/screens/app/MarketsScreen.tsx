@@ -1,18 +1,21 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { AlertTriangle, Info, SlidersHorizontal } from 'lucide-react-native';
 import { AssetRow } from '../../components/ui/AssetRow';
 import { Box } from '../../components/ui/Box';
 import { CategoryTabs } from '../../components/ui/CategoryTabs';
+import { GuidedStateCard } from '../../components/ui/GuidedStateCard';
 import { Input } from '../../components/ui/Input';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { Text } from '../../components/ui/Text';
 import { useMarketDataStore, type AssetCategory, type MarketQuote } from '../../store/useMarketDataStore';
 import { useWatchlistStore } from '../../store/useWatchlistStore';
 import { colors, spacing } from '../../theme';
-import { formatQuoteSourceLabel, formatQuoteTime } from '../../utils/quoteLabels';
 import { formatCurrencyByLocale } from '../../utils/localeFormat';
 
 type DisplayCurrency = 'USD' | 'EUR' | 'TRY';
@@ -67,9 +70,13 @@ export const MarketsScreen = ({ navigation }: any) => {
   const [activeTab, setActiveTab] = useState<'favorites' | AssetCategory>('crypto');
   const [searchQuery, setSearchQuery] = useState('');
   const [displayCurrency, setDisplayCurrency] = useState<DisplayCurrency>('USD');
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [showLiveOnly, setShowLiveOnly] = useState(false);
+  const [showGainersOnly, setShowGainersOnly] = useState(false);
 
   const {
     isLoading,
+    isConnected,
     error: marketError,
     initializeRealtime,
     fetchQuotes,
@@ -136,13 +143,23 @@ export const MarketsScreen = ({ navigation }: any) => {
       return tabFiltered;
     }
 
-    return tabFiltered.filter((item) => {
+    let filtered = tabFiltered.filter((item) => {
       return (
         item.symbol.toLowerCase().includes(normalizedSearch) ||
         item.name.toLowerCase().includes(normalizedSearch)
       );
     });
-  }, [activeTab, baseQuotes, favorites, searchQuery]);
+
+    if (showLiveOnly) {
+      filtered = filtered.filter((item) => !item.isStale && !item.source.toLowerCase().startsWith('derived'));
+    }
+
+    if (showGainersOnly) {
+      filtered = filtered.filter((item) => item.changePercent > 0);
+    }
+
+    return filtered;
+  }, [activeTab, baseQuotes, favorites, searchQuery, showGainersOnly, showLiveOnly]);
 
   const fallbackTabData = useMemo(() => {
     if (filteredData.length > 0 || searchQuery.trim().length > 0) {
@@ -154,7 +171,7 @@ export const MarketsScreen = ({ navigation }: any) => {
         ? assetCatalog.filter((asset) => favorites[asset.symbol.toUpperCase()])
         : assetCatalog.filter((asset) => asset.category === activeTab);
 
-    return metaForTab.map((asset) => {
+    let fallback = metaForTab.map((asset) => {
       const liveQuote = getQuote(asset.symbol);
       return {
         symbol: asset.symbol,
@@ -168,7 +185,17 @@ export const MarketsScreen = ({ navigation }: any) => {
         favorite: !!favorites[asset.symbol.toUpperCase()],
       };
     });
-  }, [activeTab, assetCatalog, favorites, filteredData, getQuote, searchQuery]);
+
+    if (showLiveOnly) {
+      fallback = fallback.filter((item) => !item.isStale && !item.source.toLowerCase().startsWith('derived'));
+    }
+
+    if (showGainersOnly) {
+      fallback = fallback.filter((item) => item.changePercent > 0);
+    }
+
+    return fallback;
+  }, [activeTab, assetCatalog, favorites, filteredData, getQuote, searchQuery, showGainersOnly, showLiveOnly]);
 
   const renderSkeletons = () => (
     <Box padding={spacing.lg}>
@@ -188,9 +215,14 @@ export const MarketsScreen = ({ navigation }: any) => {
     </Box>
   );
 
-  const handleToggleFavorite = (item: MarketQuote) => {
-    toggleFavorite({ symbol: item.symbol, name: item.name });
-  };
+  const handleToggleFavorite = useCallback(
+    (item: { symbol: string; name: string }) => {
+      toggleFavorite({ symbol: item.symbol, name: item.name });
+    },
+    [toggleFavorite],
+  );
+
+  const keyExtractor = useCallback((item: (typeof fallbackTabData)[number]) => item.symbol, [fallbackTabData]);
 
   const formatMarketPrice = (item: MarketQuote): string => {
     if (item.category === 'forex') {
@@ -240,6 +272,27 @@ export const MarketsScreen = ({ navigation }: any) => {
     return formatCurrencyByLocale(converted, currencyCode, 2);
   };
 
+  const renderMarketItem = useCallback(
+    ({ item }: { item: (typeof fallbackTabData)[number] }) => (
+      <AssetRow
+        symbol={item.symbol}
+        name={item.name}
+        price={formatMarketPrice(item as MarketQuote)}
+        priceValue={Number(item.price) || 0}
+        changePercent={item.changePercent}
+        dataBadge={toDataBadge(item as MarketQuote)}
+        source={item.source}
+        updatedAt={item.updatedAt}
+        isConnected={isConnected}
+        isFavorite={item.favorite}
+        onFavoritePress={() => handleToggleFavorite(item)}
+        onPress={() => navigation.navigate('AssetDetail', { symbol: item.symbol })}
+      />
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fallbackTabData, isConnected, handleToggleFavorite, navigation, displayCurrency, usdTry, eurUsd],
+  );
+
   return (
     <Box flex={1} bg={colors.background.base}>
       <Box style={{ marginTop: spacing.xxl + 20, paddingHorizontal: spacing.lg }}>
@@ -269,7 +322,10 @@ export const MarketsScreen = ({ navigation }: any) => {
             onClear={() => setSearchQuery('')}
             style={{ flex: 1, marginRight: spacing.sm }}
           />
-          <Pressable style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+          <Pressable
+            onPress={() => setIsFilterModalOpen(true)}
+            style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+          >
             <Box
               center
               style={{
@@ -349,41 +405,143 @@ export const MarketsScreen = ({ navigation }: any) => {
         </Pressable>
       )}
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {isLoading ? (
-          renderSkeletons()
-        ) : (
-          <Animated.View entering={FadeInUp.duration(400).springify()}>
-            <Box padding={spacing.lg} style={{ paddingTop: 0 }}>
-              {fallbackTabData.length === 0 ? (
-                <Box center style={{ marginTop: spacing.xxl }}>
-                  <Info color={colors.text.muted} size={32} style={{ marginBottom: spacing.md }} />
-                  <Text variant="h3" color={colors.text.secondary}>
-                    {t('marketsScreen.searchEmpty')}
+      {isLoading ? (
+        renderSkeletons()
+      ) : fallbackTabData.length === 0 ? (
+        <Box padding={spacing.lg}>
+          <GuidedStateCard
+            title={t('marketsScreen.searchEmpty')}
+            description={t('marketsScreen.searchEmptyDesc', 'Filtreleri temizleyerek veya başka bir kategori seçerek tekrar deneyin.')}
+            ctaLabel={t('common.clear')}
+            onPress={() => { setSearchQuery(''); setShowLiveOnly(false); setShowGainersOnly(false); }}
+            icon={<Info color={colors.text.muted} size={32} />}
+          />
+        </Box>
+      ) : (
+        <Animated.View entering={FadeInUp.duration(400).springify()} style={{ flex: 1 }}>
+          <FlashList
+            data={fallbackTabData}
+            keyExtractor={keyExtractor}
+            renderItem={renderMarketItem}
+            contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 80 }}
+            showsVerticalScrollIndicator={false}
+          />
+        </Animated.View>
+      )}
+
+      <Modal visible={isFilterModalOpen} transparent animationType="fade" onRequestClose={() => setIsFilterModalOpen(false)}>
+        <Pressable
+          onPress={() => setIsFilterModalOpen(false)}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}
+        >
+          <Pressable
+            onPress={() => {}}
+            style={{
+              backgroundColor: 'rgba(17,19,26,0.72)',
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              padding: spacing.lg,
+              overflow: 'hidden',
+            }}
+          >
+            <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill as any} />
+            <LinearGradient
+              colors={['rgba(255,255,255,0.04)', 'rgba(255,255,255,0)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 0.5 }}
+              style={StyleSheet.absoluteFill as any}
+            />
+            <View
+              pointerEvents="none"
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' }}
+            />
+            <Text variant="h3" weight="700" style={{ marginBottom: spacing.md }}>
+              {t('common.filter')}
+            </Text>
+
+            <Pressable
+              onPress={() => setShowLiveOnly((prev) => !prev)}
+              style={{ marginBottom: spacing.sm }}
+            >
+              <Box
+                row
+                justify="space-between"
+                align="center"
+                style={{
+                  padding: spacing.md,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.08)',
+                  backgroundColor: 'rgba(255,255,255,0.03)',
+                }}
+              >
+                <Text variant="body">{t('marketsScreen.liveOnly', 'Only live quotes')}</Text>
+                <Text variant="caption" weight="700" color={showLiveOnly ? colors.sentiment.bull_green : colors.text.muted}>
+                  {showLiveOnly ? t('common.on', 'ON') : t('common.off', 'OFF')}
+                </Text>
+              </Box>
+            </Pressable>
+
+            <Pressable
+              onPress={() => setShowGainersOnly((prev) => !prev)}
+              style={{ marginBottom: spacing.md }}
+            >
+              <Box
+                row
+                justify="space-between"
+                align="center"
+                style={{
+                  padding: spacing.md,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.08)',
+                  backgroundColor: 'rgba(255,255,255,0.03)',
+                }}
+              >
+                <Text variant="body">{t('marketsScreen.gainersOnly', 'Only gainers')}</Text>
+                <Text variant="caption" weight="700" color={showGainersOnly ? colors.sentiment.bull_green : colors.text.muted}>
+                  {showGainersOnly ? t('common.on', 'ON') : t('common.off', 'OFF')}
+                </Text>
+              </Box>
+            </Pressable>
+
+            <Box row style={{ gap: spacing.sm }}>
+              <Pressable onPress={() => { setShowLiveOnly(false); setShowGainersOnly(false); }} style={{ flex: 1 }}>
+                <Box
+                  center
+                  style={{
+                    height: 44,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: 'rgba(255,255,255,0.03)',
+                  }}
+                >
+                  <Text variant="caption" weight="700" color={colors.text.secondary}>
+                    {t('common.clear')}
                   </Text>
                 </Box>
-              ) : (
-                fallbackTabData.map((item) => (
-                  <AssetRow
-                    key={item.symbol}
-                    symbol={item.symbol}
-                    name={item.name}
-                    price={formatMarketPrice(item)}
-                    changePercent={item.changePercent}
-                    dataBadge={toDataBadge(item)}
-                    meta={`${formatQuoteSourceLabel(item.source)} · ${formatQuoteTime(item.updatedAt)}`}
-                    isFavorite={item.favorite}
-                    onFavoritePress={() => handleToggleFavorite(item)}
-                    onPress={() => navigation.navigate('AssetDetail', { symbol: item.symbol })}
-                  />
-                ))
-              )}
-
-              <Box style={{ height: 40 }} />
+              </Pressable>
+              <Pressable onPress={() => setIsFilterModalOpen(false)} style={{ flex: 1 }}>
+                <Box
+                  center
+                  style={{
+                    height: 44,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: 'rgba(59,217,132,0.28)',
+                    backgroundColor: 'rgba(59,217,132,0.16)',
+                  }}
+                >
+                  <Text variant="caption" weight="700" color={colors.sentiment.bull_green}>
+                    {t('common.done', 'Done')}
+                  </Text>
+                </Box>
+              </Pressable>
             </Box>
-          </Animated.View>
-        )}
-      </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Box>
   );
 };

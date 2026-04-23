@@ -72,7 +72,7 @@ async def register(user_in: UserCreate, request: Request, response: Response, db
 async def login(payload: LoginPayload, request: Request, response: Response, db: Session = Depends(get_db)):
     await enforce_auth_rate_limit(request, "login")
     auth_service = AuthService(db)
-    user = await auth_service.authenticate(payload.email, payload.password)
+    user = await auth_service.authenticate(payload.email, payload.password, payload.totp_code)
     token = auth_service.generate_tokens(user)
     AuditService(db).log(
         action="auth.login",

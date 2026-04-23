@@ -1,28 +1,41 @@
-import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import React, { useMemo } from 'react';
+import { Platform, Pressable, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { Box } from './Box';
 import { Text } from './Text';
-import { colors, radius, spacing } from '../../theme';
+import { PriceText } from './PriceText';
+import { QuoteMetaBadge } from './QuoteMetaBadge';
+import { colors, radius, sentimentPalette, spacing } from '../../theme';
 import { LineChart, TrendingUp, TrendingDown, Star } from 'lucide-react-native';
 
 interface AssetRowProps {
   symbol: string;
   name: string;
+  /** Formatted, display-ready price string. */
   price: string;
+  /** Numeric copy of the price, used to trigger flash animations. */
+  priceValue?: number;
   changePercent: number;
   dataBadge?: 'LIVE' | 'DERIVED' | 'STALE';
-  /** e.g. "Binance · last update" for transparency */
   meta?: string;
   icon?: React.ReactNode;
   isFavorite?: boolean;
   onFavoritePress?: () => void;
   onPress?: () => void;
+  /** Data provider (for info popover) */
+  source?: string;
+  /** ISO timestamp of last update (for info popover) */
+  updatedAt?: string;
+  /** WebSocket connection state (renders "Cached" vs live) */
+  isConnected?: boolean;
 }
 
 export const AssetRow: React.FC<AssetRowProps> = ({
   symbol,
   name,
   price,
+  priceValue,
   changePercent,
   dataBadge,
   meta,
@@ -30,9 +43,19 @@ export const AssetRow: React.FC<AssetRowProps> = ({
   isFavorite,
   onFavoritePress,
   onPress,
+  source,
+  updatedAt,
+  isConnected = true,
 }) => {
-  const isPositive = changePercent >= 0;
-  const sentimentColor = isPositive ? colors.sentiment.bull_green : colors.sentiment.bear_red;
+  const palette = useMemo(() => sentimentPalette(changePercent), [changePercent]);
+  // When no numeric value was passed we still want the row to be stable; parse
+  // a fallback from the formatted price (strips all non-numeric characters).
+  const effectivePriceValue = useMemo(() => {
+    if (typeof priceValue === 'number' && Number.isFinite(priceValue)) return priceValue;
+    const parsed = Number.parseFloat((price ?? '').replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }, [priceValue, price]);
+  const TrendIcon = palette.isPositive ? TrendingUp : TrendingDown;
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
@@ -43,35 +66,69 @@ export const AssetRow: React.FC<AssetRowProps> = ({
           </Box>
           <Box style={styles.infoSection}>
             <Box row align="center">
-                <Text variant="h3">{symbol}</Text>
-                {typeof isFavorite !== 'undefined' && (
-                    <Pressable onPress={onFavoritePress} hitSlop={10} style={{ marginLeft: 6, marginTop: 2 }}>
-                        <Star color={isFavorite ? colors.accent.premium_gold : colors.text.muted} size={14} fill={isFavorite ? colors.accent.premium_gold : 'transparent'} />
-                    </Pressable>
-                )}
-            </Box>
-            <Text variant="caption" color={colors.text.secondary}>{name}</Text>
-            {dataBadge ? (
-              <Box
-                style={[
-                  styles.badge,
-                  dataBadge === 'LIVE'
-                    ? styles.badgeLive
-                    : dataBadge === 'DERIVED'
-                      ? styles.badgeDerived
-                      : styles.badgeStale,
-                ]}
-              >
-                <Text
-                  variant="caption"
-                  weight="600"
-                  color={dataBadge === 'STALE' ? colors.sentiment.bear_red : colors.text.secondary}
-                  style={{ fontSize: 10 }}
+              <Text variant="h3">{symbol}</Text>
+              {typeof isFavorite !== 'undefined' && (
+                <Pressable
+                  onPress={() => {
+                    if (Platform.OS !== 'web') {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                    onFavoritePress?.();
+                  }}
+                  hitSlop={10}
+                  style={{ marginLeft: 6, marginTop: 2 }}
                 >
-                  {dataBadge}
-                </Text>
-              </Box>
-            ) : null}
+                  <Star
+                    color={isFavorite ? colors.accent.premium_gold : colors.text.muted}
+                    size={14}
+                    fill={isFavorite ? colors.accent.premium_gold : 'transparent'}
+                  />
+                </Pressable>
+              )}
+            </Box>
+            <Text variant="caption" color={colors.text.secondary}>
+              {name}
+            </Text>
+            <Box row align="center" style={{ marginTop: 4, flexWrap: 'wrap', gap: 6 }}>
+              {dataBadge ? (
+                <Box
+                  style={[
+                    styles.badge,
+                    !isConnected
+                      ? styles.badgeStale
+                      : dataBadge === 'LIVE'
+                        ? styles.badgeLive
+                        : dataBadge === 'DERIVED'
+                          ? styles.badgeDerived
+                          : styles.badgeStale,
+                  ]}
+                >
+                  <Text
+                    variant="caption"
+                    weight="600"
+                    color={
+                      !isConnected
+                        ? colors.sentiment.bear_red
+                        : dataBadge === 'STALE'
+                          ? colors.sentiment.bear_red
+                          : colors.text.secondary
+                    }
+                    style={{ fontSize: 10 }}
+                  >
+                    {!isConnected ? 'CACHED' : dataBadge}
+                  </Text>
+                </Box>
+              ) : null}
+              {source || updatedAt ? (
+                <QuoteMetaBadge
+                  symbol={symbol}
+                  source={source}
+                  updatedAt={updatedAt}
+                  isStale={dataBadge === 'STALE'}
+                  isConnected={isConnected}
+                />
+              ) : null}
+            </Box>
             {meta ? (
               <Text variant="caption" color={colors.text.muted} style={{ marginTop: 4 }} numberOfLines={1}>
                 {meta}
@@ -79,28 +136,27 @@ export const AssetRow: React.FC<AssetRowProps> = ({
             ) : null}
           </Box>
         </Box>
-        
+
         <Box align="flex-end" style={styles.priceSection}>
-          <Text
+          <PriceText
+            value={effectivePriceValue}
+            display={price}
             variant="body"
             weight="600"
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.78}
-            style={styles.priceText}
+            style={{ fontSize: 17 }}
+          />
+          <LinearGradient
+            colors={palette.gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.sentimentPill, { borderColor: palette.border }]}
           >
-            {price}
-          </Text>
-          <Box row align="center" style={[styles.sentimentPill, { backgroundColor: isPositive ? 'rgba(59,217,132,0.1)' : 'rgba(255,92,92,0.1)' }]}>
-            {isPositive ? (
-              <TrendingUp color={sentimentColor} size={12} style={{ marginRight: 4 }} />
-            ) : (
-              <TrendingDown color={sentimentColor} size={12} style={{ marginRight: 4 }} />
-            )}
-            <Text variant="caption" color={sentimentColor} weight="600">
-              {isPositive ? '+' : ''}{changePercent.toFixed(2)}%
+            <TrendIcon color={palette.text} size={12} style={{ marginRight: 4 }} />
+            <Text variant="caption" color={palette.text} weight="700" mono>
+              {palette.isPositive ? '+' : ''}
+              {changePercent.toFixed(2)}%
             </Text>
-          </Box>
+          </LinearGradient>
         </Box>
       </Box>
     </Pressable>
@@ -124,14 +180,9 @@ const styles = StyleSheet.create({
     marginLeft: spacing.md,
   },
   priceSection: {
-    minWidth: 86,
-    maxWidth: '42%',
+    minWidth: 96,
+    maxWidth: '46%',
     flexShrink: 1,
-  },
-  priceText: {
-    fontSize: 17,
-    letterSpacing: -0.5,
-    textAlign: 'right',
   },
   iconBox: {
     width: 48,
@@ -142,10 +193,13 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.06)',
   },
   sentimentPill: {
-    marginTop: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   badge: {
     marginTop: 4,

@@ -3,6 +3,7 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
+import Constants from 'expo-constants';
 import { View, ActivityIndicator, Pressable } from 'react-native';
 
 import { useAuthStore } from '../store/useAuthStore';
@@ -10,7 +11,6 @@ import { colors } from '../theme/tokens';
 import { AuthNavigator } from './AuthNavigator';
 import { AppTabNavigator } from './AppTabNavigator';
 import { Text } from '../components/ui/Text';
-import { registerPushTokenWithBackend } from '../services/pushRegistration';
 import { usePortfolioStore } from '../store/usePortfolioStore';
 
 const Stack = createNativeStackNavigator();
@@ -64,19 +64,30 @@ export const RootNavigator = () => {
         return;
       }
 
-      const has = await LocalAuthentication.hasHardwareAsync();
-      const enrolled = await LocalAuthentication.isEnrolledAsync();
-      if (!has || !enrolled) {
+      // Expo Go can be unstable with native biometric prompts; fail open in that env.
+      if (Constants.appOwnership === 'expo') {
         if (!cancelled) setGate('passed');
         return;
       }
 
-      const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Unlock MarketPulse AI',
-        fallbackLabel: 'Use passcode',
-      });
-      if (cancelled) return;
-      setGate(result.success ? 'passed' : 'failed');
+      try {
+        const has = await LocalAuthentication.hasHardwareAsync();
+        const enrolled = await LocalAuthentication.isEnrolledAsync();
+        if (!has || !enrolled) {
+          if (!cancelled) setGate('passed');
+          return;
+        }
+
+        const result = await LocalAuthentication.authenticateAsync({
+          promptMessage: 'Unlock MarketPulse AI',
+          fallbackLabel: 'Use passcode',
+        });
+        if (cancelled) return;
+        setGate(result.success ? 'passed' : 'failed');
+      } catch {
+        // Never crash or lock users out if biometric API fails unexpectedly.
+        if (!cancelled) setGate('passed');
+      }
     })();
 
     return () => {
@@ -88,6 +99,10 @@ export const RootNavigator = () => {
     if (!isAuthenticated || gate !== 'passed') {
       return;
     }
+    if (Constants.appOwnership === 'expo') {
+      // Expo Go has limited native notification support; skip registration there.
+      return;
+    }
     if (pushRegisterOnce.current) {
       return;
     }
@@ -97,17 +112,22 @@ export const RootNavigator = () => {
       if (pref === 'false') {
         return;
       }
-      await registerPushTokenWithBackend();
+      const mod = await import('../services/pushRegistration');
+      await mod.registerPushTokenWithBackend();
     })();
   }, [isAuthenticated, gate]);
 
   const retryBiometric = async () => {
     setGate('checking');
-    const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Unlock MarketPulse AI',
-      fallbackLabel: 'Use passcode',
-    });
-    setGate(result.success ? 'passed' : 'failed');
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Unlock MarketPulse AI',
+        fallbackLabel: 'Use passcode',
+      });
+      setGate(result.success ? 'passed' : 'failed');
+    } catch {
+      setGate('passed');
+    }
   };
 
   if (isLoading) {

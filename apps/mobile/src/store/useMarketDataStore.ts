@@ -1,6 +1,36 @@
 import { create } from 'zustand';
+import * as SecureStore from 'expo-secure-store';
 import { apiClient } from '../api/client';
 import { wsClient } from '../ws/client';
+
+const QUOTE_CACHE_KEY = 'market_quotes_cache_v1';
+const QUOTE_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
+
+let lastPersistAt = 0;
+function persistQuotes(quotes: Record<string, MarketQuote>) {
+  const now = Date.now();
+  if (now - lastPersistAt < 5_000) return; // throttle writes
+  lastPersistAt = now;
+  try {
+    const payload = JSON.stringify({ at: now, quotes });
+    SecureStore.setItemAsync(QUOTE_CACHE_KEY, payload).catch(() => {});
+  } catch {
+    /* noop */
+  }
+}
+
+async function restoreCachedQuotes(): Promise<Record<string, MarketQuote> | null> {
+  try {
+    const raw = await SecureStore.getItemAsync(QUOTE_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { at?: number; quotes?: Record<string, MarketQuote> };
+    if (!parsed?.quotes) return null;
+    if (parsed.at && Date.now() - parsed.at > QUOTE_CACHE_MAX_AGE_MS) return null;
+    return parsed.quotes;
+  } catch {
+    return null;
+  }
+}
 
 export type AssetCategory = 'crypto' | 'forex' | 'metals';
 
@@ -147,9 +177,11 @@ interface MarketDataState {
   isConnected: boolean;
   initialized: boolean;
   lastUpdatedAt: number | null;
+  cacheHydrated: boolean;
 
   initializeRealtime: () => void;
   fetchQuotes: (symbols?: string[]) => Promise<void>;
+  hydrateFromCache: () => Promise<void>;
   getAssetCatalog: () => AssetMeta[];
   getQuotesForCategory: (category: AssetCategory | 'favorites') => MarketQuote[];
   getQuote: (symbol: string) => MarketQuote | null;
@@ -188,6 +220,22 @@ export const useMarketDataStore = create<MarketDataState>((set, get) => ({
   isConnected: false,
   initialized: false,
   lastUpdatedAt: null,
+  cacheHydrated: false,
+
+  hydrateFromCache: async () => {
+    if (get().cacheHydrated) return;
+    const cached = await restoreCachedQuotes();
+    if (cached && Object.keys(get().quotes).length === 0) {
+      // Mark every cached quote as stale so the UI surfaces "Cached".
+      const flagged: Record<string, MarketQuote> = {};
+      for (const [sym, q] of Object.entries(cached)) {
+        flagged[sym] = { ...q, isStale: true };
+      }
+      set({ quotes: flagged, cacheHydrated: true });
+    } else {
+      set({ cacheHydrated: true });
+    }
+  },
 
   initializeRealtime: () => {
     if (get().initialized) {
@@ -218,13 +266,17 @@ export const useMarketDataStore = create<MarketDataState>((set, get) => ({
         return;
       }
 
-      set((state) => ({
-        quotes: {
+      set((state) => {
+        const nextQuotes = {
           ...state.quotes,
           [normalized.symbol]: normalized,
-        },
-        lastUpdatedAt: Date.now(),
-      }));
+        };
+        persistQuotes(nextQuotes);
+        return {
+          quotes: nextQuotes,
+          lastUpdatedAt: Date.now(),
+        };
+      });
     };
 
     wsClient.init();
@@ -263,12 +315,16 @@ export const useMarketDataStore = create<MarketDataState>((set, get) => ({
         }
 
         hasAppliedAnyBatch = true;
-        set((state) => ({
-          quotes: { ...state.quotes, ...mergedBatch },
-          // As soon as first batch lands, stop blocking the screen.
-          isLoading: false,
-          lastUpdatedAt: Date.now(),
-        }));
+        set((state) => {
+          const nextQuotes = { ...state.quotes, ...mergedBatch };
+          persistQuotes(nextQuotes);
+          return {
+            quotes: nextQuotes,
+            // As soon as first batch lands, stop blocking the screen.
+            isLoading: false,
+            lastUpdatedAt: Date.now(),
+          };
+        });
       }
 
       if (!hasAppliedAnyBatch) {

@@ -31,7 +31,8 @@ describe('transaction validation flow', () => {
   it('computes totals and builds payload for valid buy flow', () => {
     const form = {
       ...INITIAL_FORM,
-      assetId: 'btc-id',
+      assetId: '9f6d2d5e-4b29-4d2a-9f5a-0b6b7c8d9e10',
+      assetSymbol: 'BTC',
       type: 'buy' as const,
       quantity: '1.25',
       unitPrice: '40000',
@@ -45,7 +46,8 @@ describe('transaction validation flow', () => {
 
     expect(totals.subtotal).toBe(50000);
     expect(totals.total).toBe(50025);
-    expect(payload.asset_id).toBe('btc-id');
+    expect(payload.asset_id).toBe('9f6d2d5e-4b29-4d2a-9f5a-0b6b7c8d9e10');
+    expect(payload.asset_symbol).toBe('BTC');
     expect(payload.notes).toBe('Long term');
     expect(payload.transaction_date).toBe('2026-01-01T10:00:00.000Z');
   });

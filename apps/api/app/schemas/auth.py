@@ -12,6 +12,7 @@ class Token(BaseModel):
 class LoginPayload(BaseModel):
     email: EmailStr
     password: constr(min_length=8, max_length=128)
+    totp_code: constr(min_length=6, max_length=8) | None = None
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: constr(min_length=20, max_length=4096) | None = None

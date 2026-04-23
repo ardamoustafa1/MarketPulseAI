@@ -13,10 +13,12 @@
       "backgroundColor": "#0B1220"
     },
     "assetBundlePatterns": ["**/*"],
+    "jsEngine": "hermes",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.marketpulse.ai",
       "buildNumber": "1",
+      "jsEngine": "hermes",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Unlock MarketPulse AI with Face ID or Touch ID.",
         "ITSAppUsesNonExemptEncryption": false,
@@ -34,6 +36,7 @@
     "android": {
       "package": "com.marketpulse.ai",
       "versionCode": 1,
+      "jsEngine": "hermes",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#0B1220"
@@ -43,6 +46,7 @@
     "plugins": [
       "expo-secure-store",
       "expo-localization",
+      "expo-local-authentication",
       [
         "expo-notifications",
         {

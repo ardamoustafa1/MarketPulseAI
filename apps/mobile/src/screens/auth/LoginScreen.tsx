@@ -11,11 +11,13 @@ export const LoginScreen = ({ navigation }: any) => {
   const { login } = useAuthStore();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [totpCode, setTotpCode] = React.useState('');
+  const [showTotpInput, setShowTotpInput] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const canSubmit = isEmailValid && password.length >= 8 && !isSubmitting;
+  const canSubmit = isEmailValid && password.length >= 8 && !isSubmitting && (!showTotpInput || totpCode.length >= 6);
 
   const formatLoginError = (loginError: unknown): string => {
     const axiosError = loginError as AxiosError<{ detail?: unknown }>;
@@ -52,10 +54,14 @@ export const LoginScreen = ({ navigation }: any) => {
     setError(null);
 
     try {
-      const { data } = await apiClient.post('/api/v1/auth/login', {
+      const body: { email: string; password: string; totp_code?: string } = {
         email: email.trim(),
         password,
-      });
+      };
+      if (totpCode.trim().length >= 6) {
+        body.totp_code = totpCode.trim();
+      }
+      const { data } = await apiClient.post('/api/v1/auth/login', body);
 
       const accessToken = data?.token?.access_token;
       const refreshToken = data?.token?.refresh_token;
@@ -67,7 +73,17 @@ export const LoginScreen = ({ navigation }: any) => {
 
       await login(accessToken, refreshToken, user);
     } catch (loginError: unknown) {
-      setError(formatLoginError(loginError));
+      const ax = loginError as AxiosError<{ detail?: unknown }>;
+      const detail = typeof ax.response?.data?.detail === 'string' ? ax.response?.data?.detail : '';
+      const headerFlag =
+        ax.response?.headers && typeof (ax.response.headers as Record<string, string>)['x-totp-required'] !== 'undefined';
+      const totpRequired = headerFlag || /two-factor|totp/i.test(detail);
+      if (totpRequired && !showTotpInput) {
+        setShowTotpInput(true);
+        setError('Two-factor authentication required. Enter the 6-digit code from your authenticator app.');
+      } else {
+        setError(formatLoginError(loginError));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -102,6 +118,25 @@ export const LoginScreen = ({ navigation }: any) => {
           style={{ color: colors.text.primary, fontSize: 16 }}
         />
       </Box>
+
+      {showTotpInput ? (
+        <Box bg={colors.background.surface} padding={spacing.md} radius={radius.md} style={{ marginBottom: spacing.md }}>
+          <Text variant="caption" color={colors.text.secondary} style={{ marginBottom: spacing.xs }}>
+            2FA Code
+          </Text>
+          <TextInput
+            value={totpCode}
+            onChangeText={setTotpCode}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="number-pad"
+            maxLength={8}
+            placeholder="123456"
+            placeholderTextColor={colors.text.muted}
+            style={{ color: colors.text.primary, fontSize: 18, letterSpacing: 4 }}
+          />
+        </Box>
+      ) : null}
 
       {error ? (
         <Text color={colors.sentiment.bear_red} style={{ marginBottom: spacing.md }}>{error}</Text>

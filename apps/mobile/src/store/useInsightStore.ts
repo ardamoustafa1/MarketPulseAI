@@ -39,7 +39,7 @@ export const useInsightStore = create<InsightState>((set) => ({
   fetchLatestInsight: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await apiClient.get('/api/v1/insights');
+      const response = await apiClient.get('/api/v1/insights/');
       set({ latestInsight: response.data, isLoading: false });
     } catch (error: any) {
       set({

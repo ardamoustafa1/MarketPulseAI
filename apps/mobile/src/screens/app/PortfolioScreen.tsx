@@ -13,8 +13,8 @@ import { AllocationChart } from '../../components/portfolio/AllocationChart';
 import { PositionRow } from '../../components/portfolio/PositionRow';
 import { GuidedStateCard } from '../../components/ui/GuidedStateCard';
 import { colors, radius, spacing } from '../../theme';
-import { HelpCircle, PlusCircle } from 'lucide-react-native';
-import { usePortfolioStore } from '../../store/usePortfolioStore';
+import { HelpCircle, PlusCircle, FlaskConical } from 'lucide-react-native';
+import { usePortfolioStore, isSandboxBucket } from '../../store/usePortfolioStore';
 import { formatCurrencyByLocale, formatNumberByLocale } from '../../utils/localeFormat';
 import { useTranslation } from 'react-i18next';
 
@@ -37,7 +37,21 @@ export const PortfolioScreen = ({ navigation }: any) => {
     activePortfolioId,
     setActivePortfolioId,
     fetchBuckets,
+    ensureSandboxBucket,
   } = usePortfolioStore();
+
+  const activeBucket = useMemo(
+    () => buckets.find((b) => (activePortfolioId ? b.id === activePortfolioId : b.is_default)),
+    [buckets, activePortfolioId]
+  );
+  const inSandbox = isSandboxBucket(activeBucket);
+  const hasSandbox = buckets.some((b) => isSandboxBucket(b));
+
+  const handleEnterSandbox = async () => {
+    if (Platform.OS !== 'web') Haptics.selectionAsync();
+    const bucket = await ensureSandboxBucket();
+    if (bucket) await setActivePortfolioId(bucket.id);
+  };
 
   useEffect(() => {
     void fetchBuckets();
@@ -140,7 +154,17 @@ export const PortfolioScreen = ({ navigation }: any) => {
       <View style={styles.blurHeaderWrap}>
         <BlurView intensity={80} tint="dark" style={[styles.blurHeader, { paddingTop: insets.top + 8 }]}>
           <Box row justify="space-between" align="center" style={styles.headerContent}>
-            <Text variant="h3" weight="700" style={{ letterSpacing: -0.5 }}>{t('portfolioScreen.title')}</Text>
+            <Box row align="center">
+              <Text variant="h3" weight="700" style={{ letterSpacing: -0.5 }}>{t('portfolioScreen.title')}</Text>
+              {inSandbox ? (
+                <Box row align="center" style={styles.sandboxBadge}>
+                  <FlaskConical color="#7BD1FF" size={12} style={{ marginRight: 4 }} />
+                  <Text variant="caption" weight="700" color="#7BD1FF">
+                    {t('portfolioScreen.sandboxBadge')}
+                  </Text>
+                </Box>
+              ) : null}
+            </Box>
             <Pressable onPress={handleAddTx} hitSlop={15} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}> 
               <Box row align="center" style={styles.addBtn}>
                 <Text variant="caption" weight="600" color={colors.accent.premium_gold} style={{ marginRight: 6 }}>{t('common.add')}</Text>
@@ -156,6 +180,25 @@ export const PortfolioScreen = ({ navigation }: any) => {
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={fetchPortfolio} tintColor={colors.text.muted} />}
         contentContainerStyle={{ paddingTop: insets.top + 70, paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + 40 }}
       >
+        {!hasSandbox ? (
+          <Pressable
+            onPress={handleEnterSandbox}
+            style={({ pressed }) => [styles.sandboxCta, { opacity: pressed ? 0.85 : 1 }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('portfolioScreen.sandboxCta')}
+          >
+            <FlaskConical color="#7BD1FF" size={16} style={{ marginRight: 8 }} />
+            <Box flex={1}>
+              <Text variant="caption" color="#7BD1FF" weight="700">
+                {t('portfolioScreen.sandboxCta')}
+              </Text>
+              <Text variant="caption" color={colors.text.muted}>
+                {t('portfolioScreen.sandboxDesc')}
+              </Text>
+            </Box>
+          </Pressable>
+        ) : null}
+
         {buckets.length > 0 ? (
           <ScrollView
             horizontal
@@ -268,5 +311,24 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: 'rgba(200, 169, 126, 0.2)',
+  },
+  sandboxBadge: {
+    marginLeft: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(123,209,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(123,209,255,0.3)',
+  },
+  sandboxCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: 'rgba(123,209,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(123,209,255,0.2)',
   },
 });

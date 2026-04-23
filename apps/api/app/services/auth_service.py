@@ -14,6 +14,7 @@ from app.core.security import (
     hash_refresh_token,
     is_password_strong,
     verify_password,
+    verify_totp_code,
 )
 from app.core.config import settings
 from app.db.redis import get_redis_client
@@ -45,9 +46,9 @@ class AuthService:
         key = f"bruteforce:login:{email}"
         await self.redis.delete(key)
 
-    async def authenticate(self, email: str, password: str) -> User:
+    async def authenticate(self, email: str, password: str, totp_code: str | None = None) -> User:
         await self._check_brute_force(email)
-        
+
         user = self.db.query(User).filter(User.email == email).first()
         if not user or not verify_password(password, user.hashed_password):
             await self._register_failed_attempt(email)
@@ -55,10 +56,26 @@ class AuthService:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect email or password",
             )
-            
+
         if not user.is_active:
             raise HTTPException(status_code=400, detail="Inactive user")
-            
+
+        if getattr(user, "totp_enabled", False):
+            secret = getattr(user, "totp_secret", None) or ""
+            if not totp_code:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Two-factor authentication code required.",
+                    headers={"X-TOTP-Required": "true"},
+                )
+            if not verify_totp_code(secret, totp_code):
+                await self._register_failed_attempt(email)
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid two-factor authentication code.",
+                    headers={"X-TOTP-Required": "true"},
+                )
+
         await self._clear_failed_attempts(email)
         return user
 

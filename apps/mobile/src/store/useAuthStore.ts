@@ -3,6 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { wsClient } from '../ws/client';
 import { apiClient } from '../api/client';
 import { useMarketDataStore } from './useMarketDataStore';
+import { identifyCrashUser } from '../monitoring/crashReporting';
 
 export interface User {
   id: string;
@@ -13,6 +14,7 @@ export interface User {
   is_active?: boolean;
   created_at?: string;
   subscription_tier?: string;
+  totp_enabled?: boolean;
 }
 
 interface AuthState {
@@ -36,10 +38,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     await SecureStore.setItemAsync('access_token', accessToken);
     await SecureStore.setItemAsync('refresh_token', refreshToken);
     set({ user, isAuthenticated: true });
-    
-    // Initialize WebSocket as soon as we have a valid session
-    wsClient.init();
-    wsClient.connect();
+    identifyCrashUser({ id: user.id });
+
+    // Initialize WebSocket as soon as we have a valid session.
+    // Never let WS boot failures crash auth flow (especially in Expo Go).
+    try {
+      wsClient.init();
+      void wsClient.connect();
+    } catch {
+      /* keep session alive even if realtime socket boot fails */
+    }
   },
 
   logout: async () => {
@@ -74,6 +82,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     await SecureStore.deleteItemAsync('access_token');
     await SecureStore.deleteItemAsync('refresh_token');
 
+    identifyCrashUser(null);
     // 5. Reset state — this triggers RootNavigator to switch to AuthFlow
     set({ user: null, isAuthenticated: false });
   },
@@ -85,10 +94,15 @@ export const useAuthStore = create<AuthState>((set) => ({
         // Validate token by fetching user profile
         const { data } = await apiClient.get('/api/v1/users/me');
         set({ user: data, isAuthenticated: true, isLoading: false });
-        
-        // Boot WebSocket for price feeds
-        wsClient.init();
-        wsClient.connect();
+        identifyCrashUser({ id: data?.id });
+
+        // Boot WebSocket for price feeds without risking hydrate crashes.
+        try {
+          wsClient.init();
+          void wsClient.connect();
+        } catch {
+          /* keep session alive even if realtime socket boot fails */
+        }
       } else {
         set({ isAuthenticated: false, isLoading: false });
       }

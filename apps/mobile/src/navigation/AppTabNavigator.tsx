@@ -21,6 +21,39 @@ import { CompareAssetsScreen } from '../screens/app/CompareAssetsScreen';
 import { MarketNewsScreen } from '../screens/app/MarketNewsScreen';
 import { FifoSummaryScreen } from '../screens/app/FifoSummaryScreen';
 import { StrategyHubScreen } from '../screens/app/StrategyHubScreen';
+import { AcademyScreen } from '../screens/app/AcademyScreen';
+import { AcademyArticleScreen } from '../screens/app/AcademyArticleScreen';
+import { WeeklyRecapScreen } from '../screens/app/WeeklyRecapScreen';
+import { MonthlyWrappedScreen } from '../screens/app/MonthlyWrappedScreen';
+import { SharedWatchlistScreen } from '../screens/app/SharedWatchlistScreen';
+import { TwoFactorScreen } from '../screens/app/TwoFactorScreen';
+import { IntelligenceHubScreen } from '../screens/app/IntelligenceHubScreen';
+import { PortfolioPowersHubScreen } from '../screens/app/PortfolioPowersHubScreen';
+import { PortfolioDenominationScreen } from '../screens/app/PortfolioDenominationScreen';
+import { PortfolioRebalancerScreen } from '../screens/app/PortfolioRebalancerScreen';
+import { PortfolioDcaSimulatorScreen } from '../screens/app/PortfolioDcaSimulatorScreen';
+import { PaperOrdersScreen } from '../screens/app/PaperOrdersScreen';
+import { PortfolioTaxLotsScreen } from '../screens/app/PortfolioTaxLotsScreen';
+import { PortfolioMultiGoalsScreen } from '../screens/app/PortfolioMultiGoalsScreen';
+import { PortfolioSharedScreen } from '../screens/app/PortfolioSharedScreen';
+import { PortfolioStressTestScreen } from '../screens/app/PortfolioStressTestScreen';
+import { SocialHubScreen } from '../screens/app/SocialHubScreen';
+import { ShareCardStudioScreen } from '../screens/app/ShareCardStudioScreen';
+import { CommunityListsScreen } from '../screens/app/CommunityListsScreen';
+import { CommunityListDetailScreen } from '../screens/app/CommunityListDetailScreen';
+import { CopyStrategyScreen } from '../screens/app/CopyStrategyScreen';
+import { LeaderboardScreen } from '../screens/app/LeaderboardScreen';
+import { ReferralScreen } from '../screens/app/ReferralScreen';
+import { LiveEventsScreen } from '../screens/app/LiveEventsScreen';
+import { ProToolsHubScreen } from '../screens/app/ProToolsHubScreen';
+import { TechnicalAnalysisScreen } from '../screens/app/TechnicalAnalysisScreen';
+import { FormulaAlertsScreen } from '../screens/app/FormulaAlertsScreen';
+import { SpreadDetectorScreen } from '../screens/app/SpreadDetectorScreen';
+import { VolatilityConeScreen } from '../screens/app/VolatilityConeScreen';
+import { PositionSlicingScreen } from '../screens/app/PositionSlicingScreen';
+import { TaxReportScreen } from '../screens/app/TaxReportScreen';
+import { StrategyPlaygroundScreen } from '../screens/app/StrategyPlaygroundScreen';
+import { TransparencyScreen } from '../screens/app/TransparencyScreen';
 
 import { colors } from '../theme/tokens';
 
@@ -186,6 +219,171 @@ export const AppTabNavigator = () => {
           presentation: 'card',
           animation: 'slide_from_right',
         }}
+      />
+      <Stack.Screen
+        name="Academy"
+        component={AcademyScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="AcademyArticle"
+        component={AcademyArticleScreen as any}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="WeeklyRecap"
+        component={WeeklyRecapScreen}
+        options={{ presentation: 'card', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="MonthlyWrapped"
+        component={MonthlyWrappedScreen}
+        options={{ presentation: 'fullScreenModal', animation: 'fade' }}
+      />
+      <Stack.Screen
+        name="SharedWatchlist"
+        component={SharedWatchlistScreen as any}
+        options={{ presentation: 'card', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="TwoFactor"
+        component={TwoFactorScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="IntelligenceHub"
+        component={IntelligenceHubScreen}
+        options={{ presentation: 'card', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="PortfolioPowersHub"
+        component={PortfolioPowersHubScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="PortfolioDenomination"
+        component={PortfolioDenominationScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="PortfolioRebalancer"
+        component={PortfolioRebalancerScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="PortfolioDcaSimulator"
+        component={PortfolioDcaSimulatorScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="PaperOrders"
+        component={PaperOrdersScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="PortfolioTaxLots"
+        component={PortfolioTaxLotsScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="PortfolioMultiGoals"
+        component={PortfolioMultiGoalsScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="PortfolioShared"
+        component={PortfolioSharedScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="PortfolioStressTest"
+        component={PortfolioStressTestScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="SocialHub"
+        component={SocialHubScreen}
+        options={{ presentation: 'card', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="ShareCardStudio"
+        component={ShareCardStudioScreen as any}
+        options={{ presentation: 'card', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="CommunityLists"
+        component={CommunityListsScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="CommunityListDetail"
+        component={CommunityListDetailScreen as any}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="CopyStrategy"
+        component={CopyStrategyScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="Leaderboard"
+        component={LeaderboardScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="Referral"
+        component={ReferralScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="LiveEvents"
+        component={LiveEventsScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="ProToolsHub"
+        component={ProToolsHubScreen}
+        options={{ presentation: 'card', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="TechnicalAnalysis"
+        component={TechnicalAnalysisScreen as any}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="FormulaAlerts"
+        component={FormulaAlertsScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="SpreadDetector"
+        component={SpreadDetectorScreen as any}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="VolatilityCone"
+        component={VolatilityConeScreen as any}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="PositionSlicing"
+        component={PositionSlicingScreen as any}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="TaxReport"
+        component={TaxReportScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="StrategyPlayground"
+        component={StrategyPlaygroundScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="Transparency"
+        component={TransparencyScreen}
+        options={{ presentation: 'card', animation: 'slide_from_right' }}
       />
     </Stack.Navigator>
   );

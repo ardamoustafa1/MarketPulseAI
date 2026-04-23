@@ -1,24 +1,36 @@
 from fastapi import APIRouter
+
 from app.api.v1.endpoints import (
+    academy,
     admin,
     alerts,
     analytics,
     assets,
     audit_logs,
-    billing,
     auth,
+    billing,
     charts,
+    deep_card,
     health,
     insights,
+    intelligence,
     market_news,
     notifications,
     portfolio,
+    portfolio_powers,
     prices,
+    pro_tools,
+    recap,
+    sharing,
+    social,
+    stats,
+    strategy,
     transactions,
+    trust,
+    two_factor,
     users,
     watchlist,
     websocket,
-    strategy,
 )
 
 api_router = APIRouter()
@@ -42,3 +54,20 @@ api_router.include_router(billing.router, prefix="/billing", tags=["Billing"])
 api_router.include_router(health.router, prefix="/health", tags=["Health"])
 api_router.include_router(admin.router, prefix="/admin", tags=["Admin"])
 api_router.include_router(strategy.router, prefix="/strategy", tags=["Product Strategy"])
+api_router.include_router(academy.router, prefix="/academy", tags=["Academy"])
+api_router.include_router(stats.router, prefix="/stats", tags=["Platform Stats"])
+api_router.include_router(recap.router, prefix="/portfolio", tags=["Portfolio Recaps"])
+api_router.include_router(sharing.router, prefix="", tags=["Sharing"])
+api_router.include_router(two_factor.router, prefix="/auth/2fa", tags=["Two-Factor Authentication"])
+api_router.include_router(intelligence.router, prefix="/intelligence", tags=["Cross-Asset Intelligence"])
+api_router.include_router(deep_card.router, prefix="/deep-card", tags=["Asset Deep Card"])
+api_router.include_router(portfolio_powers.router, prefix="/portfolio-powers", tags=["Portfolio Super Powers"])
+api_router.include_router(
+    social.router, prefix="/social", tags=["Social & Virality"]
+)
+api_router.include_router(
+    pro_tools.router, prefix="/pro-tools", tags=["Pro Tools"]
+)
+api_router.include_router(
+    trust.router, prefix="/trust", tags=["Trust & Compliance"]
+)

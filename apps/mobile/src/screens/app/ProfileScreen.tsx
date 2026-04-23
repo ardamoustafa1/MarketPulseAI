@@ -20,6 +20,10 @@ import { formatCurrency } from '../../utils/formatters';
 import { registerPushTokenWithBackend, unregisterPushFromBackend } from '../../services/pushRegistration';
 import { apiClient } from '../../api/client';
 import { setAppLanguage } from '../../i18n';
+import { useAppearance, AppearanceMode } from '../../theme/appearance';
+import { SteelAccountBadge } from '../../components/trust/SteelAccountBadge';
+import { fetchSteelAccount } from '../../api/trust';
+import type { SteelAccountView } from '../../types/trust';
 
 const BIO_LOCK_KEY = 'biometric_app_lock_enabled';
 const PUSH_PREF_KEY = 'push_notifications_pref';
@@ -65,6 +69,9 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
   const [refreshing, setRefreshing] = useState(false);
   const [biometricOn, setBiometricOn] = useState(false);
   const [pushOn, setPushOn] = useState(true);
+  const [steelAccount, setSteelAccount] = useState<SteelAccountView | null>(null);
+  const appearanceMode = useAppearance((s) => s.mode);
+  const setAppearanceMode = useAppearance((s) => s.setMode);
 
   useFocusEffect(
     useCallback(() => {
@@ -79,6 +86,11 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
 
   const loadAll = useCallback(async () => {
     await Promise.all([refreshProfile(), fetchWatchlist(), fetchPortfolio()]);
+    try {
+      setSteelAccount(await fetchSteelAccount());
+    } catch {
+      /* non-fatal */
+    }
   }, [fetchPortfolio, fetchWatchlist, refreshProfile]);
 
   const exportTransactionsCsv = useCallback(async () => {
@@ -242,6 +254,72 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
               <ChevronRight color={colors.text.muted} size={20} />
             </Box>
           </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate('ProToolsHub')}
+            style={{ marginBottom: spacing.sm }}
+          >
+            <Box
+              row
+              align="center"
+              justify="space-between"
+              style={{
+                padding: spacing.md,
+                borderRadius: radius.lg,
+                backgroundColor: colors.background.surface,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.08)',
+              }}
+            >
+              <Text variant="body" weight="600">
+                Pro Araçlar
+              </Text>
+              <ChevronRight color={colors.text.muted} size={20} />
+            </Box>
+          </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate('TaxReport')}
+            style={{ marginBottom: spacing.sm }}
+          >
+            <Box
+              row
+              align="center"
+              justify="space-between"
+              style={{
+                padding: spacing.md,
+                borderRadius: radius.lg,
+                backgroundColor: colors.background.surface,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.08)',
+              }}
+            >
+              <Text variant="body" weight="600">
+                Vergi Raporu Export
+              </Text>
+              <ChevronRight color={colors.text.muted} size={20} />
+            </Box>
+          </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate('Transparency')}
+            style={{ marginBottom: spacing.sm }}
+          >
+            <Box
+              row
+              align="center"
+              justify="space-between"
+              style={{
+                padding: spacing.md,
+                borderRadius: radius.lg,
+                backgroundColor: colors.background.surface,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.08)',
+              }}
+            >
+              <Text variant="body" weight="600">
+                Şeffaflık & Veri Kaynakları
+              </Text>
+              <ChevronRight color={colors.text.muted} size={20} />
+            </Box>
+          </Pressable>
           <Box
             row
             align="center"
@@ -252,6 +330,7 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
               backgroundColor: colors.background.surface,
               borderWidth: 1,
               borderColor: 'rgba(255,255,255,0.08)',
+              marginBottom: spacing.sm,
             }}
           >
             <Text variant="body" weight="600">
@@ -270,6 +349,58 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
               </Pressable>
             </Box>
           </Box>
+
+          <Box
+            style={{
+              padding: spacing.md,
+              borderRadius: radius.lg,
+              backgroundColor: colors.background.surface,
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.08)',
+            }}
+          >
+            <Box row align="center" justify="space-between" style={{ marginBottom: spacing.sm }}>
+              <Box flex={1} style={{ paddingRight: spacing.sm }}>
+                <Text variant="body" weight="600">
+                  {t('appearance.title')}
+                </Text>
+                <Text variant="caption" color={colors.text.muted} style={{ marginTop: 2 }}>
+                  {t('appearance.desc')}
+                </Text>
+              </Box>
+            </Box>
+            <Box row style={{ gap: 6 }}>
+              {(['dark', 'light', 'auto'] as AppearanceMode[]).map((mode) => {
+                const active = appearanceMode === mode;
+                return (
+                  <Pressable
+                    key={mode}
+                    onPress={() => void setAppearanceMode(mode)}
+                    style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.7 : 1 }]}
+                  >
+                    <Box
+                      center
+                      style={{
+                        paddingVertical: 10,
+                        borderRadius: radius.pill,
+                        borderWidth: 1,
+                        borderColor: active ? 'rgba(200,169,126,0.55)' : 'rgba(255,255,255,0.08)',
+                        backgroundColor: active ? 'rgba(200,169,126,0.12)' : 'rgba(255,255,255,0.03)',
+                      }}
+                    >
+                      <Text
+                        variant="caption"
+                        weight={active ? '700' : '500'}
+                        color={active ? colors.accent.premium_gold : colors.text.secondary}
+                      >
+                        {t(`appearance.${mode}`)}
+                      </Text>
+                    </Box>
+                  </Pressable>
+                );
+              })}
+            </Box>
+          </Box>
         </Box>
 
         <Box
@@ -285,6 +416,14 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
           <Text variant="caption" color={colors.text.muted} style={{ marginBottom: spacing.md }}>
             {t('profileScreen.security')}
           </Text>
+          {steelAccount && (
+            <Box style={{ marginBottom: spacing.md }}>
+              <SteelAccountBadge
+                view={steelAccount}
+                onPress={() => navigation.navigate('TwoFactor')}
+              />
+            </Box>
+          )}
           <Box row align="center" justify="space-between" style={{ marginBottom: spacing.sm }}>
             <Box flex={1} style={{ paddingRight: spacing.md }}>
               <Text variant="body" weight="600">
@@ -343,6 +482,46 @@ export const ProfileScreen = ({ navigation }: { navigation: { navigate: (name: s
               thumbColor={Platform.OS === 'ios' ? '#fff' : undefined}
             />
           </Box>
+          <Pressable
+            onPress={() => navigation.navigate('TwoFactor')}
+            style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+          >
+            <Box row align="center" justify="space-between" style={{ marginTop: spacing.md }}>
+              <Box flex={1} style={{ paddingRight: spacing.md }}>
+                <Text variant="body" weight="600">
+                  {t('profileScreen.twoFactorTitle', 'Two-factor authentication')}
+                </Text>
+                <Text variant="caption" color={colors.text.muted}>
+                  {user?.totp_enabled
+                    ? t('profileScreen.twoFactorEnabled', 'Enabled — TOTP required on sign-in')
+                    : t('profileScreen.twoFactorDisabled', 'Add an authenticator app for extra security')}
+                </Text>
+              </Box>
+              <Box row align="center">
+                <Box
+                  style={{
+                    paddingHorizontal: 8,
+                    paddingVertical: 3,
+                    borderRadius: 6,
+                    backgroundColor: user?.totp_enabled ? 'rgba(59,217,132,0.14)' : 'rgba(255,255,255,0.06)',
+                    borderWidth: 1,
+                    borderColor: user?.totp_enabled ? 'rgba(59,217,132,0.3)' : 'rgba(255,255,255,0.12)',
+                    marginRight: 8,
+                  }}
+                >
+                  <Text
+                    variant="caption"
+                    weight="700"
+                    color={user?.totp_enabled ? colors.sentiment.bull_green : colors.text.muted}
+                    style={{ fontSize: 10 }}
+                  >
+                    {user?.totp_enabled ? t('common.on', 'ON') : t('common.off', 'OFF')}
+                  </Text>
+                </Box>
+                <ChevronRight color={colors.text.muted} size={18} />
+              </Box>
+            </Box>
+          </Pressable>
         </Box>
 
         {mergedError ? (

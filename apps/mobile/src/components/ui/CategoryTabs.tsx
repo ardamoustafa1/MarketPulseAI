@@ -1,5 +1,6 @@
 import React from 'react';
-import { ScrollView, Pressable, StyleSheet } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Box } from './Box';
 import { Text } from './Text';
 import { colors, radius, spacing } from '../../theme';
@@ -20,8 +21,14 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({ categories, activeId
       >
         {categories.map((cat) => {
           const isActive = cat.id === activeId;
+          const handlePress = () => {
+            if (!isActive && Platform.OS !== 'web') {
+              Haptics.selectionAsync();
+            }
+            onChange(cat.id);
+          };
           return (
-            <Pressable key={cat.id} onPress={() => onChange(cat.id)}>
+            <Pressable key={cat.id} onPress={handlePress}>
               <Box 
                 center 
                 style={[

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, RefreshCw } from 'lucide-react-native';
+import { ArrowLeft, RefreshCw, Share2 } from 'lucide-react-native';
 import { DualNormalizedChart } from '../../components/charts/DualNormalizedChart';
 import { Box } from '../../components/ui/Box';
 import { GuidedStateCard } from '../../components/ui/GuidedStateCard';
@@ -46,6 +46,28 @@ export const CompareAssetsScreen = ({ navigation }: { navigation: { goBack: () =
     void load();
   }, [load]);
 
+  const onShareCompare = async () => {
+    if (seriesA.length === 0 || seriesB.length === 0) return;
+    const startA = seriesA[0];
+    const endA = seriesA[seriesA.length - 1];
+    const pctA = startA > 0 ? ((endA - startA) / startA) * 100 : 0;
+    const startB = seriesB[0];
+    const endB = seriesB[seriesB.length - 1];
+    const pctB = startB > 0 ? ((endB - startB) / startB) * 100 : 0;
+    const sign = (p: number) => (p >= 0 ? '+' : '');
+    const message = t('compareScreen.shareMessage', {
+      assetA: a.toUpperCase(),
+      pctA: `${sign(pctA)}${pctA.toFixed(2)}%`,
+      assetB: b.toUpperCase(),
+      pctB: `${sign(pctB)}${pctB.toFixed(2)}%`,
+      range,
+    });
+    await Share.share({
+      title: t('compareScreen.shareTitle'),
+      message,
+    });
+  };
+
   return (
     <Box flex={1} bg={colors.background.base} style={{ paddingTop: insets.top }}>
       <Box row align="center" justify="space-between" style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}>
@@ -60,9 +82,19 @@ export const CompareAssetsScreen = ({ navigation }: { navigation: { goBack: () =
         <Text variant="h2" weight="600">
           {t('compareScreen.title')}
         </Text>
-        <Pressable onPress={() => void load()} style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
-          <RefreshCw color={colors.text.secondary} size={22} />
-        </Pressable>
+        <Box row>
+          <Pressable
+            onPress={() => void onShareCompare()}
+            style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.7 : 1, marginRight: 6 }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('compareScreen.shareCta')}
+          >
+            <Share2 color={colors.text.secondary} size={20} />
+          </Pressable>
+          <Pressable onPress={() => void load()} style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.7 : 1 }]}>
+            <RefreshCw color={colors.text.secondary} size={20} />
+          </Pressable>
+        </Box>
       </Box>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + 24 }}>

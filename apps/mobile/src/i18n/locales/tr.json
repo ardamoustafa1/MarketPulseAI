@@ -1,4 +1,123 @@
 {
+  "alertsRail": {
+    "title": "Senin uyarıların",
+    "viewAll": "Tümünü gör",
+    "watching": "aktif"
+  },
+  "socialProof": {
+    "weekLine": "Bu hafta {{count}} kullanıcı portföyünü güncelledi",
+    "dauLine": "Bugün {{count}} aktif yatırımcı"
+  },
+  "academyRail": {
+    "title": "MarketPulse Akademi",
+    "browseAll": "Hepsini gör",
+    "minutesShort": "dk"
+  },
+  "academyScreen": {
+    "title": "Akademi",
+    "minutes": "dakika okuma",
+    "emptyTitle": "Henüz içerik yüklenmedi",
+    "emptyDesc": "Bağlantını kontrol edip tekrar dene.",
+    "retry": "Yeniden dene"
+  },
+  "weeklyRecap": {
+    "eyebrow": "HAFTALIK ÖZET",
+    "defaultHeadline": "AI destekli haftalık özetin hazır"
+  },
+  "weeklyRecapScreen": {
+    "title": "Haftalık Özet",
+    "period": "{{start}} — {{end}}",
+    "topAssets": "Ön plana çıkan varlıklar",
+    "emptyTitle": "Özet hazırlanamadı",
+    "emptyDesc": "Bu hafta için yeterli veri yok. Daha sonra tekrar dene.",
+    "retry": "Yeniden dene"
+  },
+  "monthlyWrappedScreen": {
+    "share": "Paylaş",
+    "emptyTitle": "Ay henüz özetlenemedi",
+    "emptyDesc": "İşlem birikimi oluştukça wrapped gelecek.",
+    "retry": "Yeniden dene"
+  },
+  "sharedWatchlist": {
+    "title": "Paylaşılan liste",
+    "sharedBy": "Paylaşan",
+    "count": "{{count}} varlık",
+    "importAll": "Tümünü favorilere ekle",
+    "expiredTitle": "Link süresi dolmuş",
+    "expiredDesc": "Kullanıcıdan yeni bir link iste.",
+    "back": "Geri dön"
+  },
+  "onboarding": {
+    "skip": "Atla",
+    "next": "Devam et",
+    "start": "Hemen Başla",
+    "loginCta": "Hesabım var, giriş yap",
+    "slide1": {
+      "headline": "Quiet Luxury. Akıllı Portföy.",
+      "body": "Altın nabız, anlık fiyatlar ve AI içgörüleriyle portföyünüzü sakin bir sofistikasyonla takip edin."
+    },
+    "slide2": {
+      "headline": "Gerçek Zamanlı Sinyal",
+      "body": "Kripto, döviz ve değerli metallerde kanıtlanmış veri kaynakları, anlık flash güncellemeler ve sentiment gradyanı."
+    },
+    "slide3": {
+      "headline": "Kişisel Koç Desteği",
+      "body": "AI önerileri ve akıllı alarmlar kararlarınızı hızlandırır. İlk 10 dakikada portföyünüz aktif."
+    },
+    "consent": {
+      "headline": "Güvenliğiniz önceliğimiz",
+      "body": "Devam etmeden önce kullanım şartlarını ve KVKK/GDPR aydınlatma metnini inceleyin.",
+      "terms": "Kullanım Şartlarını okudum ve kabul ediyorum.",
+      "termsLink": "Şartları görüntüle",
+      "privacy": "KVKK/GDPR Aydınlatma Metnini kabul ediyorum.",
+      "privacyLink": "Aydınlatma metnini görüntüle",
+      "disclaimer": "Bu uygulama yatırım tavsiyesi vermez. Fiyatlar bilgilendirme amaçlıdır.",
+      "cta": "Kabul Et ve Devam Et"
+    }
+  },
+  "quoteMeta": {
+    "title": "Veri kaynağı",
+    "symbol": "Sembol",
+    "provider": "Sağlayıcı",
+    "updated": "Son güncelleme",
+    "status": "Durum",
+    "statusLive": "Canlı",
+    "statusStale": "Eski",
+    "statusCached": "Önbellekten",
+    "a11yOpen": "Veri kaynağı ve son güncelleme bilgisini göster",
+    "disclaimer": "Fiyatlar üçüncü taraf sağlayıcılardan toplanır ve yalnızca bilgilendirme amaçlıdır. Yatırım tavsiyesi değildir."
+  },
+  "twoFactor": {
+    "title": "İki adımlı doğrulama",
+    "statusEnabled": "Aktif",
+    "statusDisabled": "Pasif",
+    "description": "Authenticator uygulamanızla (Google Authenticator, 1Password, Authy) ek bir güvenlik katmanı ekleyin. Girişte 6 haneli kod istenir.",
+    "enableCta": "2FA'yı aktifleştir",
+    "disableCta": "2FA'yı kapat",
+    "enrollTitle": "Authenticator uygulamanıza ekleyin",
+    "enrollBody": "Authenticator uygulamanızı açıp yeni bir hesap ekleyin. Aşağıdaki gizli anahtarı yazın veya tarayıcıdan QR kodunu tarayın.",
+    "secret": "Gizli anahtar",
+    "codeLabel": "Doğrulama kodu",
+    "verifyCta": "Doğrula ve etkinleştir",
+    "disableTitle": "2FA'yı kapat",
+    "disableBody": "Şifrenizi ve geçerli bir TOTP kodunu girerek iki adımlı doğrulamayı kaldırın.",
+    "passwordLabel": "Mevcut şifre",
+    "disableConfirmCta": "Kapat",
+    "enabledTitle": "2FA aktif",
+    "enabledBody": "İki adımlı doğrulama etkinleştirildi.",
+    "enterCode": "Authenticator uygulamanızdaki 6 haneli kodu girin.",
+    "enterPassword": "2FA'yı kapatmak için şifrenizi onaylayın.",
+    "genericError": "İşlem başarısız oldu, tekrar deneyin.",
+    "verifyError": "Kod geçersiz. Tekrar deneyin.",
+    "disableError": "2FA kapatılamadı."
+  },
+  "appearance": {
+    "title": "Görünüm",
+    "desc": "Uygulamanın tema modunu sistemle eşitleyin veya sabitleyin.",
+    "dark": "Koyu",
+    "light": "Açık",
+    "auto": "Otomatik"
+  },
   "common": {
     "overview": "Özet",
     "markets": "Piyasalar",
@@ -60,7 +179,10 @@
     "watchlistMissing": "• En az 1 varlığı izle",
     "alertsReady": "✓ Alarm kuruldu ({{count}})",
     "alertsMissing": "• En az 1 fiyat alarmı kur",
-    "progressDone": "%{{value}} tamamlandı"
+    "progressDone": "%{{value}} tamamlandı",
+    "wrappedEyebrow": "AYLIK WRAPPED",
+    "wrappedTitle": "Senin {{month}} ayın hazır",
+    "wrappedDesc": "Bu ay ne yaptın, neyi kaçırdın — tek dokunuşla gör."
   },
   "marketsScreen": {
     "title": "Keşfet",
@@ -90,7 +212,10 @@
     "emptyDesc": "İlk işleminden sonra getiri, maliyet ve AI içgörüsü otomatik hesaplanır. Başlamak için ilk işlemini ekle.",
     "loadErrorTitle": "Portföy verisi yüklenemedi",
     "loadErrorDefault": "Portföyü yüklemek için bağlantını kontrol et ve tekrar dene.",
-    "partialValuation": "Değerleme kısmen tamamlandı: {{missing}} fiyat eksik, {{stale}} fiyat gecikmeli."
+    "partialValuation": "Değerleme kısmen tamamlandı: {{missing}} fiyat eksik, {{stale}} fiyat gecikmeli.",
+    "sandboxBadge": "SIMÜLASYON",
+    "sandboxCta": "Simülasyon modunu aç",
+    "sandboxDesc": "Gerçek işlem açmadan strateji dene. Aynı fiyatlar, sıfır risk."
   },
   "profileScreen": {
     "title": "Profil",
@@ -125,6 +250,9 @@
     "feedLockDesc": "Uygulama açılırken biyometrik doğrulama iste",
     "pushTitle": "Fiyat alarmı bildirimleri",
     "pushDesc": "Fiyat alarmı tetiklenince bildirim gönder (Expo push)",
+    "twoFactorTitle": "İki adımlı doğrulama",
+    "twoFactorEnabled": "Aktif — Giriş yaparken TOTP istenir",
+    "twoFactorDisabled": "Authenticator uygulamanla ek güvenlik ekle",
     "enableAppLock": "Uygulama kilidini etkinleştir",
     "exportUnavailable": "Dışa aktarma kullanılamıyor",
     "exportUnavailableDesc": "Bu ortamda dosya sistemi kullanılamıyor.",
@@ -162,7 +290,10 @@
     "emptyTitle": "İzleme listen boş",
     "emptyDesc": "İlgili varlıkları favorilere alarak fiyat değişimlerini tek ekranda takip edebilirsin.",
     "emptyCta": "Piyasaları keşfet",
-    "errorHint": "{{error}} Tekrar denemek için bildirime dokun."
+    "errorHint": "{{error}} Tekrar denemek için bildirime dokun.",
+    "shareCta": "Listeni paylaş",
+    "shareTitle": "İzleme listemi incele",
+    "shareBody": "MarketPulse'daki {{count}} favori varlığımı senin için paylaşıyorum: {{url}}"
   },
   "insightsScreen": {
     "title": "AI İçgörüler",
@@ -262,7 +393,10 @@
     "loadError": "Karşılaştırma yüklenemedi. Sembolleri kontrol edip tekrar dene.",
     "emptyTitle": "Karşılaştırma verisi bulunamadı",
     "emptyDesc": "Seçilen semboller için bu zaman aralığında yeterli veri yok. Farklı sembol veya aralık deneyin.",
-    "emptyCta": "1M aralığına dön"
+    "emptyCta": "1M aralığına dön",
+    "shareCta": "Karşılaştırmayı paylaş",
+    "shareTitle": "MarketPulse karşılaştırma",
+    "shareMessage": "{{assetA}} {{pctA}} vs {{assetB}} {{pctB}} ({{range}}) — MarketPulse"
   },
   "fifoScreen": {
     "title": "FIFO Özeti",
@@ -298,5 +432,71 @@
     "subtitle": "Aralığın başında 100'e normalize edilir.",
     "symbolA": "Sembol A",
     "symbolB": "Sembol B"
+  },
+  "intelligence": {
+    "screenTitle": "Zeka Merkezi",
+    "dashboardEyebrow": "ÇAPRAZ-VARLIK AI",
+    "dashboardDefaultHeadline": "Bugünün çapraz-varlık sinyali",
+    "dashboardMeta": "Rejim: {{regime}} · {{bullish}} alım · {{bearish}} satım",
+    "dashboardPrimerMeta": "BTC, altın, USDTRY ve 12 varlık için güncel AI sinyallerine dokun",
+    "heroEyebrow": "BUGÜN PORTFÖYÜN İÇİN",
+    "heroEmpty": "Sinyal çalışılıyor…",
+    "heroHint": "Veri toplanınca portföyüne özel makro sinyal burada görünecek.",
+    "bullishChip": "{{count}} alım eğilimi",
+    "bearishChip": "{{count}} satım eğilimi",
+    "confidence": "Güven: %{{value}}",
+    "todayTitle": "Bugünün Sinyali",
+    "todaySubtitle": "En kuvvetli 12 varlık",
+    "scoreConfidence": "Güven %{{value}}",
+    "historicalHit": "Geçmiş isabet: %{{value}}",
+    "ratiosTitle": "Çapraz Oran Radarı",
+    "ratioMeta": "Değer: {{value}} · z: {{z}} · p{{pct}}",
+    "ratioDirection": {
+      "extreme_low": "TARİHSEL DİP",
+      "low": "DÜŞÜK",
+      "normal": "NORMAL",
+      "high": "YÜKSEK",
+      "extreme_high": "TARİHSEL ZİRVE"
+    },
+    "correlationTitle": "Korelasyon Isı Haritası ({{window}}g)",
+    "newsImpactTitle": "Haber → Cüzdan Etkisi",
+    "impactValue": "Tahmini etki {{amount}}",
+    "macroTitle": "Makro Takvim",
+    "importance": {
+      "low": "DÜŞÜK",
+      "medium": "ORTA",
+      "high": "YÜKSEK"
+    },
+    "winRate": "isabet %{{value}}",
+    "onchainTitle": "On-chain Nabız",
+    "onchainBias": {
+      "accumulation": "BİRİKİM",
+      "distribution": "DAĞITIM",
+      "neutral": "NÖTR"
+    },
+    "fearGreed": "Fear & Greed: {{value}}",
+    "halvingCountdown": "Halving: {{days}} gün",
+    "bazaarTitle": "LBMA / Kapalıçarşı Spread",
+    "bazaarRow": "Piyasa: {{bazaar}} · Teorik: {{fair}}",
+    "bazaarVerdict": {
+      "rich": "PAHALI",
+      "fair": "DENGELİ",
+      "cheap": "UCUZ"
+    },
+    "carryTitle": "FX Carry Skorları",
+    "carryVerdict": {
+      "attractive": "ALBENİLİ",
+      "neutral": "NÖTR",
+      "avoid": "UZAK DUR"
+    },
+    "regime": {
+      "risk_on": "RISK-ON",
+      "risk_off": "RISK-OFF",
+      "rotation": "ROTASYON",
+      "neutral": "DENGEDE"
+    },
+    "regimeTitle": "Rejim Bileşenleri",
+    "loading": "Çapraz-varlık zekâsı hazırlanıyor…",
+    "errorTitle": "Veri yüklenemedi"
   }
 }

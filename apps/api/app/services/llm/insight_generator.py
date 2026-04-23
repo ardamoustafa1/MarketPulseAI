@@ -272,7 +272,7 @@ async def generate_insights_for_user(
         id=uuid.uuid4(),
         user_id=user.id, 
         insight_type=model_used,
-        content=json.dumps([c.model_dump() for c in cards]),
+        content=json.dumps([c.model_dump() for c in cards], default=str),
         data_snapshot={
             "include_portfolio": include_portfolio,
             "include_watchlist": include_watchlist,

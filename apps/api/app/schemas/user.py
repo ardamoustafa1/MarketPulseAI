@@ -27,6 +27,7 @@ class UserInDBBase(UserBase):
     is_active: bool
     created_at: datetime
     subscription_tier: str = "free"
+    totp_enabled: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 

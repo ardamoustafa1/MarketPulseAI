@@ -30,6 +30,7 @@ module.exports = {
       termsUrl,
       supportUrl,
       sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN || null,
+      environment: process.env.EXPO_PUBLIC_ENVIRONMENT || (process.env.NODE_ENV === 'production' ? 'production' : 'development'),
     },
   },
 };

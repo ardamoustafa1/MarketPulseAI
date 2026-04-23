@@ -45,18 +45,37 @@ async def websocket_endpoint(
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
-    auth_header = websocket.headers.get("authorization", "")
     # Explicitly reject query-string token transport to avoid URL leakage.
     if websocket.query_params.get("token"):
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
-    token = auth_header[7:] if auth_header.lower().startswith("bearer ") else ""
+
+    # Primary transport: Authorization: Bearer <jwt> header.
+    # Fallback transport: Sec-WebSocket-Protocol subprotocol, used by clients
+    # (e.g. React Native) where custom headers on WebSocket upgrades are
+    # unreliable. Format: "access_token, <jwt>".
+    token = ""
+    accepted_subprotocol: str | None = None
+    auth_header = websocket.headers.get("authorization", "")
+    if auth_header.lower().startswith("bearer "):
+        token = auth_header[7:].strip()
+
+    if not token:
+        raw_protocols = websocket.headers.get("sec-websocket-protocol", "")
+        protocols = [p.strip() for p in raw_protocols.split(",") if p.strip()]
+        if len(protocols) >= 2 and protocols[0] == "access_token":
+            token = protocols[1]
+            accepted_subprotocol = "access_token"
+
     user_id = await get_ws_user(token)
     if not user_id:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
-        
-    await websocket.accept()
+
+    if accepted_subprotocol:
+        await websocket.accept(subprotocol=accepted_subprotocol)
+    else:
+        await websocket.accept()
         
     # Inject FastAPI framework specific socket into our agnostic wrapper adapter
     connection = FastAPIWebSocketConnection(websocket)

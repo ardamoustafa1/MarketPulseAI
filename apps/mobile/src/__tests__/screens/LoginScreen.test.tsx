@@ -62,6 +62,8 @@ describe('LoginScreen', () => {
     useStateSpy
       .mockImplementationOnce(() => ['test@user.com', jest.fn()] as any)
       .mockImplementationOnce(() => ['Password123!', jest.fn()] as any)
+      .mockImplementationOnce(() => ['', jest.fn()] as any)
+      .mockImplementationOnce(() => [false, jest.fn()] as any)
       .mockImplementationOnce(() => [false, jest.fn()] as any)
       .mockImplementationOnce(() => [null, jest.fn()] as any);
 
@@ -88,6 +90,8 @@ describe('LoginScreen', () => {
     useStateSpy
       .mockImplementationOnce(() => ['', jest.fn()] as any)
       .mockImplementationOnce(() => ['', jest.fn()] as any)
+      .mockImplementationOnce(() => ['', jest.fn()] as any)
+      .mockImplementationOnce(() => [false, jest.fn()] as any)
       .mockImplementationOnce(() => [false, jest.fn()] as any)
       .mockImplementationOnce(() => [null, jest.fn()] as any);
 

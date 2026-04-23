@@ -6,13 +6,16 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, ArrowLeftRight, BellPlus, Star, Zap } from 'lucide-react-native';
+import { ArrowLeft, ArrowLeftRight, BellPlus, Share2, Star, Zap } from 'lucide-react-native';
 import { fetchPriceHistory } from '../../api/charts';
 import { AISummaryCard } from '../../components/dashboard/AISummaryCard';
 import { CreateAlertSheet } from '../../components/alert/CreateAlertSheet';
 import { PriceLineChart } from '../../components/charts/PriceLineChart';
 import { PositionSummaryCard } from '../../components/asset/PositionSummaryCard';
 import { RangeSelector } from '../../components/asset/RangeSelector';
+import { DeepCardSection } from '../../components/deep-card/DeepCardSection';
+import { AssetSocialProof } from '../../components/effects/AssetSocialProof';
+import { LiveDataBadge } from '../../components/trust/LiveDataBadge';
 import { Box } from '../../components/ui/Box';
 import { Text } from '../../components/ui/Text';
 import { useMarketDataStore } from '../../store/useMarketDataStore';
@@ -152,8 +155,17 @@ export const AssetDetailScreen = ({ navigation, route }: any) => {
                   color={isFav ? colors.accent.premium_gold : colors.text.muted}
                   fill={isFav ? colors.accent.premium_gold : 'transparent'}
                   size={24}
-                  style={{ marginRight: spacing.xl }}
+                  style={{ marginRight: spacing.md }}
                 />
+              </Pressable>
+              <Pressable
+                hitSlop={15}
+                onPress={() =>
+                  navigation.navigate('ShareCardStudio', { symbol: snapshot.symbol })
+                }
+                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, marginRight: spacing.md }]}
+              >
+                <Share2 color={colors.text.primary} size={22} />
               </Pressable>
               <Pressable
                 hitSlop={15}
@@ -201,6 +213,76 @@ export const AssetDetailScreen = ({ navigation, route }: any) => {
             {t('common:source')}: {formatQuoteSourceLabel(snapshot.source)} · {t('common:lastUpdate')}:{' '}
             {formatQuoteTime(snapshot.updatedAt)}
           </Text>
+          <View style={{ marginTop: spacing.sm }}>
+            <LiveDataBadge symbol={snapshot.symbol} />
+          </View>
+        </Box>
+
+        <Box
+          row
+          style={{
+            paddingHorizontal: spacing.lg,
+            gap: spacing.sm,
+            marginBottom: spacing.sm,
+          }}
+        >
+          <Pressable
+            onPress={() =>
+              navigation.navigate('TechnicalAnalysis', { symbol: snapshot.symbol })
+            }
+            style={({ pressed }) => ({
+              flex: 1,
+              paddingVertical: 10,
+              borderRadius: radius.pill,
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.08)',
+              backgroundColor: 'rgba(255,255,255,0.03)',
+              alignItems: 'center',
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Text variant="caption" weight="700">
+              Teknik Analiz
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() =>
+              navigation.navigate('VolatilityCone', { symbol: snapshot.symbol })
+            }
+            style={({ pressed }) => ({
+              flex: 1,
+              paddingVertical: 10,
+              borderRadius: radius.pill,
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.08)',
+              backgroundColor: 'rgba(255,255,255,0.03)',
+              alignItems: 'center',
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Text variant="caption" weight="700">
+              Volatilite
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() =>
+              navigation.navigate('SpreadDetector', { symbol: snapshot.symbol })
+            }
+            style={({ pressed }) => ({
+              flex: 1,
+              paddingVertical: 10,
+              borderRadius: radius.pill,
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.08)',
+              backgroundColor: 'rgba(255,255,255,0.03)',
+              alignItems: 'center',
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Text variant="caption" weight="700">
+              Spread
+            </Text>
+          </Pressable>
         </Box>
 
         <Animated.View entering={FadeInUp.duration(600).springify().damping(20)} style={styles.chartContainer}>
@@ -225,6 +307,14 @@ export const AssetDetailScreen = ({ navigation, route }: any) => {
             unrealizedPnl={'--'}
             unrealizedPercent={snapshot.changePercent}
           />
+
+          <View style={{ marginTop: spacing.md }}>
+            <DeepCardSection symbol={snapshot.symbol} label={snapshot.name} />
+          </View>
+
+          <View style={{ marginTop: spacing.md }}>
+            <AssetSocialProof symbol={snapshot.symbol} />
+          </View>
 
           <AISummaryCard
             summary="Live quote stream connected. Position-level analytics will become exact once transaction portfolio backend is fully integrated."

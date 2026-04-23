@@ -9,6 +9,7 @@ import { Box } from '../../components/ui/Box';
 import { Text } from '../../components/ui/Text';
 import { PremiumCard } from '../../components/ui/PremiumCard';
 import { Skeleton } from '../../components/ui/Skeleton';
+import { GuidedStateCard } from '../../components/ui/GuidedStateCard';
 import { colors, spacing, radius } from '../../theme';
 import {
   Sparkles,
@@ -252,13 +253,13 @@ export const InsightsScreen = ({ navigation }: any) => {
 
             {(!latestInsight || latestInsight.cards.length === 0) && !error && (
               <Animated.View entering={FadeInDown.duration(500).springify()}>
-                <Box center style={{ marginTop: spacing.xxl }}>
-                  <Info color={colors.text.muted} size={32} style={{ marginBottom: spacing.md }} />
-                  <Text variant="h3" color={colors.text.secondary}>{t('insightsScreen.emptyTitle')}</Text>
-                  <Text variant="body" color={colors.text.muted} align="center" style={{ marginTop: spacing.sm }}>
-                    {t('insightsScreen.emptyDesc')}
-                  </Text>
-                </Box>
+                <GuidedStateCard
+                  title={t('insightsScreen.emptyTitle')}
+                  description={t('insightsScreen.emptyDesc')}
+                  ctaLabel={t('insightsScreen.generateCta', 'Yeni içgörü üret')}
+                  onPress={handleGenerate}
+                  icon={<Sparkles color={colors.accent.premium_gold} size={32} />}
+                />
               </Animated.View>
             )}
           </Box>

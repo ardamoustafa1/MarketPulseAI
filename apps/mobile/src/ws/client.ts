@@ -1,5 +1,6 @@
 import { AppState, AppStateStatus, Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import Constants from 'expo-constants';
 
 export const WS_BASE_URL = process.env.EXPO_PUBLIC_WS_URL ?? 'ws://localhost:8000/api/v1/ws';
 
@@ -63,6 +64,13 @@ export class MarketPulseWebSocket {
   };
 
   async connect() {
+    // Expo Go can be unstable with custom websocket auth handshakes in some SDK/runtime
+    // combinations. Keep app usable by disabling realtime socket in Expo Go only.
+    if (Constants.appOwnership === 'expo') {
+      this.onConnectionChange?.(false);
+      return;
+    }
+
     // Prevent duplicate connections
     if (this.ws && [WebSocket.OPEN, WebSocket.CONNECTING].includes(this.ws.readyState)) return;
     
@@ -78,9 +86,13 @@ export class MarketPulseWebSocket {
 
     try {
       const normalizedBaseUrl = WS_BASE_URL.endsWith('/') ? WS_BASE_URL.slice(0, -1) : WS_BASE_URL;
-      this.ws = new WebSocket(`${normalizedBaseUrl}/`, undefined, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // Primary transport: Sec-WebSocket-Protocol subprotocols — this works
+      // reliably across iOS/Android/Expo Go. The backend accepts either this
+      // or a standard Authorization header.
+      // Expo Go / RN WebSocket signatures vary by runtime. Using 3rd-arg options
+      // can crash in some environments ("expected 1-2 args"). We authenticate via
+      // Sec-WebSocket-Protocol token, so keep constructor to 2 args for stability.
+      this.ws = new WebSocket(`${normalizedBaseUrl}/`, ['access_token', token]);
     } catch (e) {
       this.scheduleReconnect();
       return;

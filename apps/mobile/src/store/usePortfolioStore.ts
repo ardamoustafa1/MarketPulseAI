@@ -67,7 +67,16 @@ interface PortfolioState {
   setActivePortfolioId: (id: string | null) => Promise<void>;
   fetchPortfolio: () => Promise<void>;
   submitTransaction: (data: TransactionFormData) => Promise<{ success: boolean; error?: string }>;
+  ensureSandboxBucket: () => Promise<PortfolioBucket | null>;
   clearError: () => void;
+}
+
+export const SANDBOX_BUCKET_NAME = 'Sandbox';
+
+export function isSandboxBucket(b?: PortfolioBucket | null): boolean {
+  if (!b) return false;
+  const n = (b.name || '').toLowerCase();
+  return n === 'sandbox' || n.startsWith('sandbox') || n.includes('paper');
 }
 
 function toNumber(value: unknown): number {
@@ -210,6 +219,20 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
       const errorMessage = error?.response?.data?.detail || 'Transaction failed. Please try again.';
       set({ isSubmitting: false, error: errorMessage });
       return { success: false, error: errorMessage };
+    }
+  },
+
+  ensureSandboxBucket: async () => {
+    const existing = get().buckets.find((b) => isSandboxBucket(b));
+    if (existing) return existing;
+    try {
+      const { data } = await apiClient.post<PortfolioBucket>('/api/v1/portfolio/buckets', {
+        name: SANDBOX_BUCKET_NAME,
+      });
+      set((state) => ({ buckets: [...state.buckets, data] }));
+      return data;
+    } catch {
+      return null;
     }
   },
 
