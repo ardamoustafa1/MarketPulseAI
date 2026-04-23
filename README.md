@@ -82,13 +82,65 @@ MarketPulse AI is a **monorepo fintech product**: a consumer-grade investor mobi
 | Zustand stores | **11** | `apps/mobile/src/store/` |
 | Admin pages | **7** | `apps/admin/src/pages/` |
 | i18n locales | **EN + TR** | `apps/mobile/src/i18n/locales/` |
-| CI/CD jobs | **13** | `.github/workflows/ci-cd.yml` |
+| CI/CD jobs | **15** (13 on every PR + 2 deploy/ops gates) | `.github/workflows/ci-cd.yml` |
 | Ops scripts | **9** | `infra/scripts/` |
 | ADRs | **3** | `docs/adr/` |
 | Lint / type gate | **0 warnings** | ruff 0.14 · ESLint 9 flat · `tsc --noEmit` |
 | Backend coverage floor | **≥ 75%** | `pytest --cov-fail-under=75` |
 
 </div>
+
+---
+
+## 📊 Performance & reliability numbers
+
+> All values below are **pulled straight from the code** (`apps/api/app/core/config.py`, `apps/api/app/services/price/*`, `apps/api/app/core/rate_limit.py`, `tests/perf/k6-portfolio-benchmark.js`, `.github/workflows/ci-cd.yml`). Nothing is hand-waved.
+
+<div align="center">
+
+| Surface | Metric | Value | Source of truth |
+|---|---|---:|---|
+| Pricing cache | Redis write-through TTL | **300 s** | `PRICE_CACHE_TTL_SECONDS` |
+| Pricing cache | Stale-tag threshold | **60 s** | `PRICE_STALE_THRESHOLD_SECONDS` |
+| Pricing scheduler | Background poll interval | **5 s** | `PRICE_POLL_INTERVAL_SECONDS` |
+| Pricing scheduler | Leader-lock TTL | **`interval × 3`** (Redis `SETNX`) | `scheduler.py` — multi-worker safe |
+| Provider HTTP | Per-call timeout / retries / backoff | **8.0 s · 2 retries · 0.4 s** | `PRICE_HTTP_TIMEOUT_SECONDS`, `PRICE_PROVIDER_MAX_RETRIES`, `PRICE_PROVIDER_RETRY_BACKOFF_SECONDS` |
+| Aggregator | Fallback chain depth (non-crypto) | **7 providers** | `aggregator.py` ER-Host → Frankfurter → Gold-API → Twelve Data → Alpha Vantage → Yahoo → Stooq |
+| Aggregator | Fallback chain depth (crypto) | **2 providers** | Binance → Yahoo |
+| Derived metals | On-demand refresh hard cap | **8 symbols / 8.0 s** per request | `ON_DEMAND_REFRESH_MAX_SYMBOLS`, `ON_DEMAND_REFRESH_TIMEOUT_SECONDS` |
+| Derived metals | Derived instruments generated | **≈ 25** from 6 bases (`XAU · XAG · XPT · XPD · USDTRY · EURUSD`) | `derived_instruments.py` |
+| Auth | Rate limit per action per IP | **20 req / 60 s** | `AUTH_RATE_LIMIT_*` |
+| WebSocket | Connect rate limit | **30 req / 60 s** | `WS_CONNECT_RATE_LIMIT_*` |
+| k6 perf gate | Latency SLO (fails CI on breach) | **p95 < 800 ms** | `tests/perf/k6-portfolio-benchmark.js` |
+| k6 perf gate | Error-rate SLO | **< 2 %** | same file |
+| k6 perf gate | Load profile | **10 VUs · 45 s** | same file |
+| Tests | Backend coverage floor (fails CI) | **≥ 75 %** | `pytest --cov-fail-under=75` |
+
+</div>
+
+> These are **configured SLOs and code invariants**, not marketing numbers. p95/throughput on a real production deploy will be measured by the k6 gate and tracked through the release-gate check. That path is scripted: `tests/perf/k6-portfolio-benchmark.js` → CI job `perf-smoke` → `infra/scripts/release_gate_check.py`.
+
+---
+
+## 🔬 Hard problems, solved
+
+> Quick "why this took real engineering" tour. Full write-up: **[`docs/CASE_STUDY_MARKETPULSE.md`](docs/CASE_STUDY_MARKETPULSE.md)**.
+
+**1. Turkish gold derivatives from LBMA bases, without a direct feed.**
+*Why it's hard:* GRAMALTIN, ÇEYREK, ATA, HASALTIN, GÜMÜŞ/TL… have no direct upstream — they must be synthesised from `XAU/XAG/XPT/XPD × USDTRY/EURUSD` and TRY market premia, then kept internally consistent when any single base is stale or missing. Missing XAU must produce no gold derivatives. Missing USDTRY must skip TRY-denominated pairs but still publish USD/EUR ones. Missing EURUSD must skip the EUR leg only. Zero-price bases must never propagate division errors.
+*How it's solved:* `build_derived_prices()` treats each base as an optional input with explicit guards (`if usdtry and usdtry.price > 0`, `if xag and xag.price > 0`, etc.) and a ~25-instrument derivation table. When a derived symbol is requested and its bases are cold, `/prices` auto-adds `(XAU, XAG, XPT, XPD, USDTRY, EURUSD)` to the refresh batch and wraps the upstream fan-out in an 8 s `asyncio.wait_for` so one slow provider can't stall the response.
+
+**2. 8 providers → 1 unified feed, with zero double-counting under horizontal scale.**
+*Why it's hard:* 8 external providers with different auth schemes, different symbol conventions, different rate limits, some of which 429 or ban IPs. Run 3 API workers and a naïve scheduler means 3× calls, 3× the chance of being throttled. One provider timing out must not kill the whole response.
+*How it's solved:* priority-aware fan-out with a 7-deep fallback chain for non-crypto and a 2-deep chain for crypto. Every provider call is isolated in its own `try/except` so a single failure demotes that provider to "missed" without poisoning the aggregate. The background scheduler uses a **Redis `SETNX` leader lock** (`locks:price_feed_scheduler`) with `interval × 3` TTL — only one worker polls upstream at any time, and leadership gracefully re-elects on crash.
+
+**3. Cache invalidation that doesn't lie to the UI.**
+*Why it's hard:* The mobile UI must never silently show stale prices, but it also must not block on the network when Redis has a recent-enough value. "Stale" and "missing" are not the same thing.
+*How it's solved:* write-through to Redis with `ex=300 s`, every cached record carries `last_updated_at`, reads compute `age = now − last_updated_at` and set `is_stale = age > 60 s`. The mobile layer renders a live/stale/derived badge on every price cell using that flag. On-demand misses trigger a refresh; on-demand stales fall through to the upstream fan-out via the same refresh code path, so there is exactly one write-through site.
+
+**4. Session hardening without ejecting the user.**
+*Why it's hard:* short-lived access tokens + rotation is the right answer for fintech, but naïve rotation logs every user out on refresh or creates a "replay an old refresh token and stay logged in forever" window.
+*How it's solved:* refresh tokens are **hashed at rest**, rotated on every use, and the previous family is revoked atomically. CSRF is enforced on all mutating cookie flows. Destructive admin actions require a **step-up TOTP re-auth** challenge, not just the existing session. Billing webhooks go through HMAC signature verification + a Redis body-fingerprint replay guard.
 
 ---
 
